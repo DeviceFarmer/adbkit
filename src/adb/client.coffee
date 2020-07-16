@@ -1,6 +1,7 @@
 Monkey = require '@devicefarmer/adbkit-monkey'
 Logcat = require '@devicefarmer/adbkit-logcat'
 Promise = require 'bluebird'
+{EventEmitter} = require 'events'
 debug = require('debug')('adb:client')
 
 Connection = require './connection'
@@ -54,7 +55,7 @@ WaitForDeviceCommand = require './command/host-serial/waitfordevice'
 
 TcpUsbServer = require './tcpusb/server'
 
-class Client
+class Client extends EventEmitter
   constructor: (@options = {}) ->
     @options.port ||= 5037
     @options.bin ||= 'adb'
@@ -63,16 +64,13 @@ class Client
     new TcpUsbServer this, serial, options
 
   connection: ->
-    resolver = Promise.defer()
-    conn = new Connection(@options)
-      .on 'error', errorListener = (err) ->
-        resolver.reject err
-      .on 'connect', connectListener = ->
-        resolver.resolve conn
-      .connect()
-    resolver.promise.finally ->
-      conn.removeListener 'error', errorListener
-      conn.removeListener 'connect', connectListener
+    connection = new Connection(@options)
+
+    # Reemit unhandled connection errors, so they can be handled externally.
+    # If not handled at all, these will crash node.
+    connection.on('error', (err) => this.emit('error', err))
+
+    return connection.connect()
 
   version: (callback) ->
     this.connection()
