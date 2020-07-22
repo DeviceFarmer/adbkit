@@ -13,18 +13,18 @@
     "adbkit": "./bin/adbkit"
   },
   "bugs": {
-    "url": "https://github.com/openstf/adbkit/issues"
+    "url": "https://github.com/DeviceFarmer/adbkit/issues"
   },
   "license": "Apache-2.0",
   "author": {
-    "name": "The OpenSTF Project",
+    "name": "Device Farmer",
     "email": "contact@openstf.io",
-    "url": "https://openstf.io"
+    "url": "https://devicefarmer.github.io/"
   },
   "main": "./index",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openstf/adbkit.git"
+    "url": "https://github.com/DeviceFarmer/adbkit.git"
   },
   "scripts": {
     "postpublish": "grunt clean",
