@@ -2,3 +2,11 @@
 /temp/
 /*.tgz
 package-lock.json
+
+# Yarn 2
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
