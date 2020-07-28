@@ -32,7 +32,7 @@
     "test": "grunt test"
   },
   "dependencies": {
-    "@devicefarmer/adbkit-logcat": "^1.1.0",
+    "@devicefarmer/adbkit-logcat": "^2.0.1",
     "@devicefarmer/adbkit-monkey": "~1.0.1",
     "bluebird": "~2.9.24",
     "commander": "^2.3.0",
