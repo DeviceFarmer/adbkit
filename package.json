@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "bench": "~0.3.5",
-    "chai": "~2.2.0",
+    "chai": "~4.2.0",
     "coffee-script": "~1.9.1",
     "grunt": "~0.4.5",
     "grunt-cli": "~0.1.13",
