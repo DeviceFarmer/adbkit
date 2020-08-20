@@ -39,8 +39,10 @@ class Connection extends EventEmitter
     return this
 
   startServer: (callback) ->
-    debug "Starting ADB server via '#{@options.bin} start-server'"
-    return this._exec ['start-server'], {}, callback
+    port = @options.port
+    args = if port then ['-P', port, 'start-server'] else ['start-server']
+    debug "Starting ADB server via '#{@options.bin} #{args.join ' '}'"
+    return this._exec args, {}, callback
 
   _exec: (args, options, callback) ->
     debug "CLI: #{@options.bin} #{args.join ' '}"
