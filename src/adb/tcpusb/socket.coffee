@@ -2,7 +2,6 @@ crypto = require 'crypto'
 {EventEmitter} = require 'events'
 
 Promise = require 'bluebird'
-Forge = require 'node-forge'
 debug = require('debug')('adb:tcpusb:socket')
 
 Parser = require '../parser'
