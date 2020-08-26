@@ -1,4 +1,5 @@
 Net = require 'net'
+Promise = require 'bluebird'
 debug = require('debug')('adb:connection')
 {EventEmitter} = require 'events'
 {execFile} = require 'child_process'
@@ -24,11 +25,28 @@ class Connection extends EventEmitter
       this.emit 'drain'
     @socket.on 'timeout', =>
       this.emit 'timeout'
-    @socket.on 'error', (err) =>
-      this._handleError err
     @socket.on 'close', (hadError) =>
       this.emit 'close', hadError
-    return this
+
+    return new Promise (resolve, reject) =>
+      @socket.once 'connect', resolve
+      @socket.once 'error', reject
+    .catch (err) =>
+      if err.code is 'ECONNREFUSED' and not @triedStarting
+        debug "Connection was refused, let's try starting the server once"
+        @triedStarting = true
+        return this.startServer().then =>
+          this.connect()
+      else
+        this.end()
+        throw err
+    .then =>
+      # Emit unhandled error events, so that they can be handled on the client.
+      # Without this, they would just crash node unavoidably.
+      @socket.on 'error', (err) =>
+        if @socket.listenerCount('error') == 1
+          this.emit('error', err)
+      return this
 
   end: ->
     @socket.end()
@@ -38,28 +56,17 @@ class Connection extends EventEmitter
     @socket.write dump(data), callback
     return this
 
-  startServer: (callback) ->
+  startServer: () ->
     port = @options.port
     args = if port then ['-P', port, 'start-server'] else ['start-server']
     debug "Starting ADB server via '#{@options.bin} #{args.join ' '}'"
-    return this._exec args, {}, callback
+    return this._exec args, {}
 
-  _exec: (args, options, callback) ->
+  _exec: (args, options) ->
     debug "CLI: #{@options.bin} #{args.join ' '}"
-    execFile @options.bin, args, options, callback
-    return this
+    return Promise.promisify(execFile)(@options.bin, args, options)
 
   _handleError: (err) ->
-    if err.code is 'ECONNREFUSED' and not @triedStarting
-      debug "Connection was refused, let's try starting the server once"
-      @triedStarting = true
-      this.startServer (err) =>
-        return this._handleError err if err
-        this.connect()
-    else
-      debug "Connection had an error: #{err.message}"
-      this.emit 'error', err
-      this.end()
     return
 
 module.exports = Connection
