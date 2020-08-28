@@ -20,3 +20,8 @@ blocks:
             - cache store
             - npm run build --if-present
             - npm test
+promotions:
+  - name: NPM publish
+    pipeline_file: publish.yml
+    auto_promote:
+      when: (branch = 'master' OR tag =~ '.*') AND result = 'passed'
