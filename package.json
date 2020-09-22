@@ -38,7 +38,7 @@
     "commander": "^2.3.0",
     "debug": "~2.6.3",
     "node-forge": "^0.10.0",
-    "split": "~0.3.3"
+    "split": "~1.0.1"
   },
   "devDependencies": {
     "bench": "~0.3.5",
