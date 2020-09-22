@@ -36,7 +36,7 @@
     "@devicefarmer/adbkit-monkey": "~1.0.1",
     "bluebird": "~2.9.24",
     "commander": "^2.3.0",
-    "debug": "~2.6.3",
+    "debug": "~4.2.0",
     "node-forge": "^0.10.0",
     "split": "~0.3.3"
   },
