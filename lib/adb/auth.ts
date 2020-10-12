@@ -61,8 +61,14 @@ class Auth {
 		if (!(e === 3 || e === 65537)) {
 			throw new Error(`Invalid exponent ${e}, only 3 and 65537 are supported`);
 		}
+
+		// FIXME: bug in @types/node-forge
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		const modulus = new BigInteger(n.toString('hex'), 16);
+
+		// FIXME: bug in @types/node-forge
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		const exponent = new BigInteger(e.toString(), 10);
 		// Restore the public key
