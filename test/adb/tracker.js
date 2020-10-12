@@ -10,13 +10,13 @@ Chai.use(require('sinon-chai'));
 
 ({expect} = require('chai'));
 
-Parser = require('../../src/adb/parser');
+Parser = require('../../lib/adb/parser');
 
-Tracker = require('../../src/adb/tracker');
+Tracker = require('../../lib/adb/tracker');
 
-Protocol = require('../../src/adb/protocol');
+Protocol = require('../../lib/adb/protocol');
 
-HostTrackDevicesCommand = require('../../src/adb/command/host/trackdevices');
+HostTrackDevicesCommand = require('../../lib/adb/command/host/trackdevices');
 
 describe('Tracker', function() {
   beforeEach(function() {

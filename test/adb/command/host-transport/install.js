@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-InstallCommand = require('../../../../src/adb/command/host-transport/install');
+InstallCommand = require('../../../../lib/adb/command/host-transport/install');
 
 describe('InstallCommand', function() {
   it("should send 'pm install -r <apk>'", function(done) {

@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-TcpIpCommand = require('../../../../src/adb/command/host-transport/tcpip');
+TcpIpCommand = require('../../../../lib/adb/command/host-transport/tcpip');
 
 describe('TcpIpCommand', function() {
   it("should send 'tcp:<port>'", function(done) {

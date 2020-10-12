@@ -2,13 +2,13 @@ var Adb, Client, Keycode, expect, util;
 
 ({expect} = require('chai'));
 
-Adb = require('../src/adb');
+Adb = require('../lib/adb');
 
-Client = require('../src/adb/client');
+Client = require('../lib/adb/client');
 
-Keycode = require('../src/adb/keycode');
+Keycode = require('../lib/adb/keycode');
 
-util = require('../src/adb/util');
+util = require('../lib/adb/util');
 
 describe('Adb', function() {
   it("should expose Keycode", function(done) {

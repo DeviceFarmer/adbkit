@@ -14,11 +14,11 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-Parser = require('../../../../src/adb/parser');
+Parser = require('../../../../lib/adb/parser');
 
-LogcatCommand = require('../../../../src/adb/command/host-transport/logcat');
+LogcatCommand = require('../../../../lib/adb/command/host-transport/logcat');
 
 describe('LogcatCommand', function() {
   it("should send 'echo && logcat -B *:I'", function(done) {

@@ -10,9 +10,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-RebootCommand = require('../../../../src/adb/command/host-transport/reboot');
+RebootCommand = require('../../../../lib/adb/command/host-transport/reboot');
 
 describe('RebootCommand', function() {
   it("should send 'reboot:'", function(done) {

@@ -10,11 +10,11 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-Parser = require('../../../../src/adb/parser');
+Parser = require('../../../../lib/adb/parser');
 
-ScreencapCommand = require('../../../../src/adb/command/host-transport/screencap');
+ScreencapCommand = require('../../../../lib/adb/command/host-transport/screencap');
 
 describe('ScreencapCommand', function() {
   it("should send 'screencap -p'", function(done) {

@@ -12,7 +12,7 @@ Chai.use(require('sinon-chai'));
 
 ({expect} = require('chai'));
 
-Parser = require('../../src/adb/parser');
+Parser = require('../../lib/adb/parser');
 
 describe('Parser', function() {
   describe('end()', function() {

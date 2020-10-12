@@ -10,9 +10,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-RemountCommand = require('../../../../src/adb/command/host-transport/remount');
+RemountCommand = require('../../../../lib/adb/command/host-transport/remount');
 
 describe('RemountCommand', function() {
   return it("should send 'remount:'", function(done) {

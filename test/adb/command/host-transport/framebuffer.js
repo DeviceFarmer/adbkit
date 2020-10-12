@@ -10,9 +10,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-FrameBufferCommand = require('../../../../src/adb/command/host-transport/framebuffer');
+FrameBufferCommand = require('../../../../lib/adb/command/host-transport/framebuffer');
 
 describe('FrameBufferCommand', function() {
   it("should send 'framebuffer:'", function(done) {

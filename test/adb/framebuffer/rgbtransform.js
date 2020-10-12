@@ -10,7 +10,7 @@ Chai.use(require('sinon-chai'));
 
 ({expect} = Chai);
 
-RgbTransform = require('../../../src/adb/framebuffer/rgbtransform');
+RgbTransform = require('../../../lib/adb/framebuffer/rgbtransform');
 
 describe('RgbTransform', function() {
   it("should transform BGRA into RGB", function(done) {

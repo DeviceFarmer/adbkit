@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-GetFeaturesCommand = require('../../../../src/adb/command/host-transport/getfeatures');
+GetFeaturesCommand = require('../../../../lib/adb/command/host-transport/getfeatures');
 
 describe('GetFeaturesCommand', function() {
   it("should send 'pm list features'", function(done) {

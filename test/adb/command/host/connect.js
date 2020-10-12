@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-ConnectCommand = require('../../../../src/adb/command/host/connect');
+ConnectCommand = require('../../../../lib/adb/command/host/connect');
 
 describe('ConnectCommand', function() {
   it("should send 'host:connect:<host>:<port>'", function(done) {

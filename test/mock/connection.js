@@ -1,6 +1,6 @@
 var MockConnection, MockDuplex, Parser;
 
-Parser = require('../../src/adb/parser');
+Parser = require('../../lib/adb/parser');
 
 MockDuplex = require('./duplex');
 

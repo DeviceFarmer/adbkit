@@ -12,11 +12,11 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-Parser = require('../../../../src/adb/parser');
+Parser = require('../../../../lib/adb/parser');
 
-ShellCommand = require('../../../../src/adb/command/host-transport/shell');
+ShellCommand = require('../../../../lib/adb/command/host-transport/shell');
 
 describe('ShellCommand', function() {
   it("should pass String commands as-is", function(done) {

@@ -12,7 +12,7 @@ Chai.use(require('sinon-chai'));
 
 ({expect} = require('chai'));
 
-util = require('../../src/adb/util');
+util = require('../../lib/adb/util');
 
 describe('util', function() {
   return describe('readAll(stream)', function() {

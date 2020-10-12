@@ -12,11 +12,11 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-Parser = require('../../../../src/adb/parser');
+Parser = require('../../../../lib/adb/parser');
 
-WaitBootCompleteCommand = require('../../../../src/adb/command/host-transport/waitbootcomplete');
+WaitBootCompleteCommand = require('../../../../lib/adb/command/host-transport/waitbootcomplete');
 
 describe('WaitBootCompleteCommand', function() {
   it("should send a while loop with boot check", function(done) {
