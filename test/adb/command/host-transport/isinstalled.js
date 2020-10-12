@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-IsInstalledCommand = require('../../../../src/adb/command/host-transport/isinstalled');
+IsInstalledCommand = require('../../../../lib/adb/command/host-transport/isinstalled');
 
 describe('IsInstalledCommand', function() {
   it("should send 'pm path <pkg>'", function(done) {

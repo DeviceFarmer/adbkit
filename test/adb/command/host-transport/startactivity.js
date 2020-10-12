@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-StartActivityCommand = require('../../../../src/adb/command/host-transport/startactivity');
+StartActivityCommand = require('../../../../lib/adb/command/host-transport/startactivity');
 
 describe('StartActivityCommand', function() {
   it("should succeed when 'Success' returned", function(done) {

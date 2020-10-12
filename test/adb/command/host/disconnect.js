@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-DisconnectCommand = require('../../../../src/adb/command/host/disconnect');
+DisconnectCommand = require('../../../../lib/adb/command/host/disconnect');
 
 describe('DisconnectCommand', function() {
   it("should send 'host:disconnect:<host>:<port>'", function(done) {

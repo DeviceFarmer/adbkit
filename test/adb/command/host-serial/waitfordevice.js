@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-WaitForDeviceCommand = require('../../../../src/adb/command/host-serial/waitfordevice');
+WaitForDeviceCommand = require('../../../../lib/adb/command/host-serial/waitfordevice');
 
 describe('WaitForDeviceCommand', function() {
   it("should send 'host-serial:<serial>:wait-for-any'", function(done) {

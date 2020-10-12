@@ -10,9 +10,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-SyncCommand = require('../../../../src/adb/command/host-transport/sync');
+SyncCommand = require('../../../../lib/adb/command/host-transport/sync');
 
 describe('SyncCommand', function() {
   return it("should send 'sync:'", function(done) {

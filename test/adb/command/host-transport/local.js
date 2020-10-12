@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-LocalCommand = require('../../../../src/adb/command/host-transport/local');
+LocalCommand = require('../../../../lib/adb/command/host-transport/local');
 
 describe('LocalCommand', function() {
   it("should send 'localfilesystem:<path>'", function(done) {

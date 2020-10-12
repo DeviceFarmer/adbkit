@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-ClearCommand = require('../../../../src/adb/command/host-transport/clear');
+ClearCommand = require('../../../../lib/adb/command/host-transport/clear');
 
 describe('ClearCommand', function() {
   it("should send 'pm clear <pkg>'", function(done) {

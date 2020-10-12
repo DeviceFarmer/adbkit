@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-TcpCommand = require('../../../../src/adb/command/host-transport/tcp');
+TcpCommand = require('../../../../lib/adb/command/host-transport/tcp');
 
 describe('TcpCommand', function() {
   it("should send 'tcp:<port>' when no host given", function(done) {

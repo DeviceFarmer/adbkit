@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-UsbCommand = require('../../../../src/adb/command/host-transport/usb');
+UsbCommand = require('../../../../lib/adb/command/host-transport/usb');
 
 describe('UsbCommand', function() {
   it("should send 'usb:'", function(done) {

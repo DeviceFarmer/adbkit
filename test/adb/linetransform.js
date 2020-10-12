@@ -10,7 +10,7 @@ Chai.use(require('sinon-chai'));
 
 ({expect} = Chai);
 
-LineTransform = require('../../src/adb/linetransform');
+LineTransform = require('../../lib/adb/linetransform');
 
 MockDuplex = require('../mock/duplex');
 

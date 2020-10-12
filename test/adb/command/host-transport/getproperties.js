@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-GetPropertiesCommand = require('../../../../src/adb/command/host-transport/getproperties');
+GetPropertiesCommand = require('../../../../lib/adb/command/host-transport/getproperties');
 
 describe('GetPropertiesCommand', function() {
   it("should send 'getprop'", function(done) {

@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-RootCommand = require('../../../../src/adb/command/host-transport/root');
+RootCommand = require('../../../../lib/adb/command/host-transport/root');
 
 describe('RootCommand', function() {
   it("should send 'root:'", function(done) {

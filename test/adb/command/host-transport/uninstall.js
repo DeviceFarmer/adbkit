@@ -12,11 +12,11 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-Parser = require('../../../../src/adb/parser');
+Parser = require('../../../../lib/adb/parser');
 
-UninstallCommand = require('../../../../src/adb/command/host-transport/uninstall');
+UninstallCommand = require('../../../../lib/adb/command/host-transport/uninstall');
 
 describe('UninstallCommand', function() {
   it("should succeed when command responds with 'Success'", function(done) {

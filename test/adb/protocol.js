@@ -2,7 +2,7 @@ var Protocol, expect;
 
 ({expect} = require('chai'));
 
-Protocol = require('../../src/adb/protocol');
+Protocol = require('../../lib/adb/protocol');
 
 describe('Protocol', function() {
   it("should expose a 'FAIL' property", function(done) {

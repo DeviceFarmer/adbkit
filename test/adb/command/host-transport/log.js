@@ -12,9 +12,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-LogCommand = require('../../../../src/adb/command/host-transport/log');
+LogCommand = require('../../../../lib/adb/command/host-transport/log');
 
 describe('LogCommand', function() {
   it("should send 'log:<log>'", function(done) {

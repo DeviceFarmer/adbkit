@@ -10,9 +10,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-HostVersionCommand = require('../../../../src/adb/command/host/version');
+HostVersionCommand = require('../../../../lib/adb/command/host/version');
 
 describe('HostVersionCommand', function() {
   it("should send 'host:version'", function(done) {

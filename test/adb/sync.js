@@ -14,17 +14,17 @@ Chai.use(require('sinon-chai'));
 
 ({expect, assert} = Chai);
 
-Adb = require('../../src/adb');
+Adb = require('../../lib/adb');
 
-Sync = require('../../src/adb/sync');
+Sync = require('../../lib/adb/sync');
 
-Stats = require('../../src/adb/sync/stats');
+Stats = require('../../lib/adb/sync/stats');
 
-Entry = require('../../src/adb/sync/entry');
+Entry = require('../../lib/adb/sync/entry');
 
-PushTransfer = require('../../src/adb/sync/pushtransfer');
+PushTransfer = require('../../lib/adb/sync/pushtransfer');
 
-PullTransfer = require('../../src/adb/sync/pulltransfer');
+PullTransfer = require('../../lib/adb/sync/pulltransfer');
 
 MockConnection = require('../mock/connection');
 

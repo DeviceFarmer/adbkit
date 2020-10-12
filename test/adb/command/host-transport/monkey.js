@@ -14,9 +14,9 @@ Chai.use(require('sinon-chai'));
 
 MockConnection = require('../../../mock/connection');
 
-Protocol = require('../../../../src/adb/protocol');
+Protocol = require('../../../../lib/adb/protocol');
 
-MonkeyCommand = require('../../../../src/adb/command/host-transport/monkey');
+MonkeyCommand = require('../../../../lib/adb/command/host-transport/monkey');
 
 describe('MonkeyCommand', function() {
   it("should send 'monkey --port <port> -v'", function(done) {
