@@ -68,6 +68,7 @@ import { Features } from '../Features';
 import { FramebufferStreamWithMeta } from '../FramebufferStreamWithMeta';
 import { WithToString } from '../WithToString';
 import Tracker from './tracker';
+import JdwpTracker from './jdwptracker';
 import { DeviceWithPath } from '../DeviceWithPath';
 
 const debug = d('adb:client');
@@ -334,7 +335,7 @@ class Client extends EventEmitter {
 			.nodeify(callback);
 	}
 
-	public trackJdwp(serial: string, callback?: Callback<any>): Bluebird<any> {
+	public trackJdwp(serial: string, callback?: Callback<JdwpTracker>): Bluebird<JdwpTracker> {
 		return this.transport(serial)
 			.then(function (transport) {
 				return new TrackJdwpCommand(transport).execute();
