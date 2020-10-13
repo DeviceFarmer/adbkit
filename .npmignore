@@ -1,5 +1,9 @@
 /.editorconfig
 /.npmignore
+/.editorconfig
+/.eslintignore
+/.eslintrc
+/.prettierrc
 /*.tgz
 /npm-debug.log
 /Gruntfile.coffee
@@ -12,3 +16,6 @@
 /temp/
 /git_hooks/
 *.!sync
+/lib/**/*.ts
+/index.ts
+/tsconfig.json

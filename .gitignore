@@ -1,6 +1,7 @@
 /node_modules/
-/lib/
+/lib/**/*.js
 /temp/
 /index.js
 /*.tgz
+/types
 package-lock.json
