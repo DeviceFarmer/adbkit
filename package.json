@@ -27,6 +27,7 @@
     "url": "https://github.com/DeviceFarmer/adbkit.git"
   },
   "scripts": {
+    "keycode": "node tasks/keycode.js",
     "prepublish": "npm run compile && npm run test",
     "compile": "tsc -p .",
     "lint": "eslint ./ --ext .ts",
