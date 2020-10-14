@@ -64,5 +64,11 @@
   "engines": {
     "node": ">= 0.10.4"
   },
-  "types": "./types"
+  "files": [
+    "/bin/",
+    "/lib/**/*.js",
+    "/lib/**/*.d.ts",
+    "/index.js",
+    "/index.d.ts"
+  ]
 }
