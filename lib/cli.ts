@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import * as program from 'commander';
-import * as forge from 'node-forge';
+import program from 'commander';
+import forge from 'node-forge';
 import * as pkg from '../package.json';
 import Adb from './adb';
 import Auth from './adb/auth';
