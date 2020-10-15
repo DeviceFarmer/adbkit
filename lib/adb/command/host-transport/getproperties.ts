@@ -5,7 +5,9 @@ import { Properties } from '../../../Properties';
 
 const RE_KEYVAL = /^\[([\s\S]*?)\]: \[([\s\S]*?)\]\r?$/gm;
 
-class GetPropertiesCommand extends Command<Properties> {
+// FIXME(intentional any): not "any" will break it all
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+class GetPropertiesCommand extends Command<any> {
 	execute(): Bluebird<Properties> {
 		this._send('shell:getprop');
 		return this.parser.readAscii(4).then((reply) => {

@@ -3,7 +3,9 @@ import Protocol from '../../protocol';
 import Command from '../../command';
 import * as Bluebird from 'bluebird';
 
-class LogcatCommand extends Command<LineTransform> {
+// FIXME(intentional any): not "any" will break it all
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+class LogcatCommand extends Command<any> {
 	execute(options: { clear?: boolean } = {}): Bluebird<LineTransform> {
 		let cmd;
 		// For some reason, LG G Flex requires a filter spec with the -B option.
