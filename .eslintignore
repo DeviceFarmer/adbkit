@@ -1,0 +1,3 @@
+test/**/*.js
+*.js
+/lib/**/*.d.ts
