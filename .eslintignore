@@ -1,3 +1,3 @@
 test/**/*.js
 *.js
-/types/**/*.ts
+/lib/**/*.d.ts
