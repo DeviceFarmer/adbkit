@@ -27,13 +27,18 @@
     "url": "https://github.com/DeviceFarmer/adbkit.git"
   },
   "scripts": {
-    "postpublish": "grunt clean",
-    "prepublish": "grunt test coffee",
-    "test": "grunt test"
+    "keycode": "node tasks/keycode.js",
+    "prepublish": "npm run compile && npm run test",
+    "compile": "tsc -p .",
+    "lint": "eslint ./ --ext .ts",
+    "format": "eslint ./ --fix --ext .ts",
+    "test": "mocha --reporter spec --colors --recursive"
   },
   "dependencies": {
     "@devicefarmer/adbkit-logcat": "^1.1.0",
     "@devicefarmer/adbkit-monkey": "~1.0.1",
+    "@types/bluebird": "^2.0.33",
+    "@types/node-forge": "^0.9.5",
     "bluebird": "~2.9.24",
     "commander": "^2.3.0",
     "debug": "~2.6.3",
@@ -41,24 +46,30 @@
     "split": "~0.3.3"
   },
   "devDependencies": {
+    "@types/node": "^12.12.67",
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
     "bench": "~0.3.5",
     "chai": "~2.2.0",
-    "coffee-script": "~1.9.1",
-    "grunt": "~0.4.5",
-    "grunt-cli": "~0.1.13",
-    "grunt-coffeelint": "0.0.13",
-    "grunt-contrib-clean": "~0.6.0",
-    "grunt-contrib-coffee": "~0.13.0",
-    "grunt-contrib-watch": "~0.6.1",
-    "grunt-exec": "~0.4.3",
-    "grunt-jsonlint": "~1.0.4",
-    "grunt-notify": "~0.4.1",
+    "eslint": "^7.10.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-progress": "0.0.1",
     "mocha": "~2.2.1",
+    "prettier": "^2.1.2",
     "sinon": "~1.14.1",
     "sinon-chai": "~2.7.0",
-    "coffeelint": "~1.9.3"
+    "typescript": "^4.0.3"
   },
   "engines": {
     "node": ">= 0.10.4"
-  }
+  },
+  "files": [
+    "/bin/",
+    "/lib/**/*.js",
+    "/lib/**/*.d.ts",
+    "/index.js",
+    "/index.d.ts"
+  ],
+  "types": "./index.d.ts"
 }
