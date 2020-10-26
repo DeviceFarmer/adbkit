@@ -40,7 +40,7 @@
     "@types/bluebird": "^2.0.33",
     "@types/node-forge": "^0.9.5",
     "bluebird": "~2.9.24",
-    "commander": "^2.3.0",
+    "commander": "^6.2.0",
     "debug": "~2.6.3",
     "node-forge": "^0.10.0",
     "split": "~0.3.3"
