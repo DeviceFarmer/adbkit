@@ -58,7 +58,7 @@
     "mocha": "~2.2.1",
     "prettier": "^2.1.2",
     "sinon": "~1.14.1",
-    "sinon-chai": "~2.7.0",
+    "sinon-chai": "~2.14.0",
     "typescript": "^4.0.3"
   },
   "engines": {
