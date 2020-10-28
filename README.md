@@ -27,8 +27,6 @@ npm install --save adbkit
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
 
-Note that even though the module is written in [CoffeeScript][coffeescript], only the compiled JavaScript is published to [NPM][npm], which means that it can easily be used with pure JavaScript codebases, too.
-
 ### Examples
 
 The examples may be a bit verbose, but that's because we're trying to keep them as close to real-life code as possible, with flow control and error handling taken care of.
@@ -1106,7 +1104,6 @@ See [LICENSE](LICENSE).
 Copyright © The OpenSTF Project. All Rights Reserved.
 
 [nodejs]: <http://nodejs.org/>
-[coffeescript]: <http://coffeescript.org/>
 [npm]: <https://npmjs.org/>
 [adb-js]: <https://github.com/flier/adb.js>
 [adb-site]: <http://developer.android.com/tools/help/adb.html>
