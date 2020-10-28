@@ -86,7 +86,6 @@ describe('UninstallCommand', function() {
     cmd = new UninstallCommand(conn);
     setImmediate(function() {
       conn.socket.causeRead(Protocol.OKAY);
-      // coffeelint: disable=max_line_length
       conn.socket.causeRead(`
 Exception occurred while dumping:
 java.lang.IllegalArgumentException: Unknown package: foo
@@ -103,7 +102,6 @@ java.lang.IllegalArgumentException: Unknown package: foo
 	at android.content.pm.IPackageManager$Stub.onTransact(IPackageManager.java:2387)
 	at com.android.server.pm.PackageManagerService.onTransact(PackageManagerService.java:3019)
 	at android.os.Binder.execTransact(Binder.java:565)`);
-      // coffeelint: enable=max_line_length
       return conn.socket.causeEnd();
     });
     return cmd.execute('foo').then(function() {
