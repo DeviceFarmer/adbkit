@@ -1,7 +1,5 @@
 # adbkit
 
-_**Interested in helping to convert the CoffeeScript codebase to plain JavaScript? [Help us](https://github.com/openstf/adbkit/issues/48)!**_
-
 **adbkit** is a pure [Node.js][nodejs] client for the [Android Debug Bridge][adb-site] server. It can be used either as a library in your own application, or simply as a convenient utility for playing with your device.
 
 Most of the `adb` command line tool's functionality is supported (including pushing/pulling files, installing APKs and processing logs), with some added functionality such as being able to generate touch/key events and take screenshots. Some shims are provided for older devices, but we have not and will not test anything below Android 2.3.
@@ -28,8 +26,6 @@ npm install --save adbkit
 ```
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
-
-Note that even though the module is written in [CoffeeScript][coffeescript], only the compiled JavaScript is published to [NPM][npm], which means that it can easily be used with pure JavaScript codebases, too.
 
 ### Examples
 
@@ -1108,7 +1104,6 @@ See [LICENSE](LICENSE).
 Copyright © The OpenSTF Project. All Rights Reserved.
 
 [nodejs]: <http://nodejs.org/>
-[coffeescript]: <http://coffeescript.org/>
 [npm]: <https://npmjs.org/>
 [adb-js]: <https://github.com/flier/adb.js>
 [adb-site]: <http://developer.android.com/tools/help/adb.html>
