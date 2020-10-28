@@ -32,7 +32,7 @@
     "compile": "tsc -p .",
     "lint": "eslint ./ --ext .ts",
     "format": "eslint ./ --fix --ext .ts",
-    "test": "mocha --reporter spec --colors --recursive"
+    "test": "npm run lint && mocha --reporter spec --colors --recursive"
   },
   "dependencies": {
     "@devicefarmer/adbkit-logcat": "^1.1.0",
