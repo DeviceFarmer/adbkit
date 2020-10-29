@@ -37,7 +37,7 @@
   "dependencies": {
     "@devicefarmer/adbkit-logcat": "^1.1.0",
     "@devicefarmer/adbkit-monkey": "~1.0.1",
-    "@types/bluebird": "^2.0.33",
+    "@types/bluebird": "^3.5.33",
     "@types/node-forge": "^0.9.5",
     "bluebird": "~2.9.24",
     "commander": "^2.3.0",
