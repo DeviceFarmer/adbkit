@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class HostKillCommand extends Command<boolean> {
-    execute(): Bluebird<boolean> {
+    execute(): Promise<boolean> {
         this._send('host:kill');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

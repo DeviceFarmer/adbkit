@@ -1,9 +1,8 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 export default class RemountCommand extends Command<boolean> {
-    execute(): Bluebird<boolean> {
+    execute(): Promise<boolean> {
         this._send('remount:');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

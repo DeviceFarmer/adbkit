@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class HostTransportCommand extends Command<boolean> {
-    execute(serial: string): Bluebird<boolean> {
+    execute(serial: string): Promise<boolean> {
         this._send(`host:transport:${serial}`);
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
