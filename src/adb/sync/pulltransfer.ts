@@ -11,7 +11,7 @@ export default class PullTransfer extends Stream.PassThrough {
 
     write(
         chunk: Buffer,
-        encoding?: string | typeof callback,
+        encoding?: BufferEncoding | typeof callback,
         callback?: (error: Error | null | undefined) => void,
     ): boolean {
         this.stats.bytesTransferred += chunk.length;
