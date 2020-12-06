@@ -16,10 +16,9 @@ export default class HostDevicesCommand extends Command<Device[]> {
         }
     }
 
-    public _readDevices(): Promise<Device[]> {
-        return this.parser.readValue().then((value) => {
-            return this._parseDevices(value);
-        });
+    public async _readDevices(): Promise<Device[]> {
+        const value = await this.parser.readValue();
+        return this._parseDevices(value);
     }
 
     _parseDevices(value: Buffer): Device[] {
