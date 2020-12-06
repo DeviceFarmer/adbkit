@@ -89,7 +89,7 @@ export default class Service extends EventEmitter {
         });
     }
 
-    private _handleOpenPacket(packet): Promise<boolean> {
+    private _handleOpenPacket(packet): Bluebird<boolean> {
         debug('I:A_OPEN', packet);
         return this.client
             .transport(this.serial)
@@ -113,7 +113,7 @@ export default class Service extends EventEmitter {
                 });
             })
             .then(() => {
-                return new Promise<boolean>((resolve, reject) => {
+                return new Bluebird<boolean>((resolve, reject) => {
                     this.transport.socket
                         .on('readable', () => {
                             return this._tryPush();

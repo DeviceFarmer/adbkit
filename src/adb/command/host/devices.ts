@@ -1,24 +1,27 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
 import Device from '../../../Device';
+import Bluebird from 'bluebird';
 
 export default class HostDevicesCommand extends Command<Device[]> {
-    async execute(): Promise<Device[]> {
+    execute(): Bluebird<Device[]> {
         this._send('host:devices');
-        const reply = await this.parser.readAscii(4);
-        switch (reply) {
-            case Protocol.OKAY:
-                return this._readDevices();
-            case Protocol.FAIL:
-                return this.parser.readError();
-            default:
-                return this.parser.unexpected(reply, 'OKAY or FAIL');
-        }
+        return this.parser.readAscii(4).then((reply) => {
+            switch (reply) {
+                case Protocol.OKAY:
+                    return this._readDevices();
+                case Protocol.FAIL:
+                    return this.parser.readError();
+                default:
+                    return this.parser.unexpected(reply, 'OKAY or FAIL');
+            }
+        });
     }
 
-    public async _readDevices(): Promise<Device[]> {
-        const value = await this.parser.readValue();
-        return this._parseDevices(value);
+    public _readDevices(): Bluebird<Device[]> {
+        return this.parser.readValue().then((value) => {
+            return this._parseDevices(value);
+        });
     }
 
     _parseDevices(value: Buffer): Device[] {

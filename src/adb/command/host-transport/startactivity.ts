@@ -19,7 +19,7 @@ const EXTRA_TYPES = {
 };
 
 class StartActivityCommand extends Command<boolean> {
-    execute(options: StartActivityOptions): Promise<boolean> {
+    execute(options: StartActivityOptions): Bluebird<boolean> {
         const args = this._intentArgs(options);
         if (options.debug) {
             args.push('-D');
@@ -33,7 +33,7 @@ class StartActivityCommand extends Command<boolean> {
         return this._run('start', args);
     }
 
-    _run(command: string, args: Array<string | number>): Promise<boolean> {
+    _run(command: string, args: Array<string | number>): Bluebird<boolean> {
         this._send(`shell:am ${command} ${args.join(' ')}`);
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

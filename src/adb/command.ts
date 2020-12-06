@@ -2,6 +2,7 @@ import Connection from './connection';
 import Protocol from './protocol';
 import Parser from './parser';
 import d from 'debug';
+import Bluebird from 'bluebird';
 import WithToString from '../WithToString';
 
 const debug = d('adb:command');
@@ -21,7 +22,7 @@ export default abstract class Command<T> {
 
     // FIXME(intentional any): not "any" will break it all
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-    public abstract execute(...args: any[]): Promise<T>;
+    public abstract execute(...args: any[]): Bluebird<T>;
 
     public _send(data: string | Buffer): Command<T> {
         const encoded = Protocol.encodeData(data);

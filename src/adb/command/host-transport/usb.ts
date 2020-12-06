@@ -1,10 +1,11 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
+import Bluebird from 'bluebird';
 
 const RE_OK = /restarting in/;
 
 export default class UsbCommand extends Command<boolean> {
-    execute(): Promise<boolean> {
+    execute(): Bluebird<boolean> {
         this._send('usb:');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

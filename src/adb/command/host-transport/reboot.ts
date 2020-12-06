@@ -1,8 +1,9 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
+import Bluebird from 'bluebird';
 
 export default class RebootCommand extends Command<boolean> {
-    execute(): Promise<boolean> {
+    execute(): Bluebird<boolean> {
         this._send('reboot:');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
