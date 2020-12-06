@@ -5,18 +5,13 @@
         "prettier",
         "prettier/@typescript-eslint"
     ],
-    "plugins": [
-        "progress",
-        "@typescript-eslint",
-        "prettier"
-    ],
-    "parserOptions":  {
-        "ecmaVersion":  2020,
-        "sourceType":  "module"
+    "plugins": ["progress", "@typescript-eslint", "prettier"],
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module"
     },
     "rules": {
         "progress/activate": 1
     },
-    "overrides": [
-    ]
+    "overrides": []
 }
