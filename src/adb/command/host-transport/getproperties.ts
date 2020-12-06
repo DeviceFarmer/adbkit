@@ -1,6 +1,6 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 import { Properties } from '../../../Properties';
 
 const RE_KEYVAL = /^\[([\s\S]*?)\]: \[([\s\S]*?)\]\r?$/gm;

@@ -199,7 +199,7 @@ describe('Parser', function () {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readValue();
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
             promise.catch(Bluebird.CancellationError, function () {
                 done();
