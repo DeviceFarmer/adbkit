@@ -1,9 +1,7 @@
 import Stream from 'stream';
-Promise = require('bluebird');
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import MonkeyCommand from '../../../../src/adb/command/host-transport/monkey';

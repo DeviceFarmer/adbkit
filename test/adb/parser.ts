@@ -1,5 +1,5 @@
 import Stream from 'stream';
-Promise = require('bluebird');
+import Bluebird from 'bluebird';
 import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
@@ -23,9 +23,9 @@ describe('Parser', function () {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readAll();
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -58,9 +58,9 @@ describe('Parser', function () {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readBytes(1);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -86,7 +86,7 @@ describe('Parser', function () {
                 expect(buf.toString()).to.equal('BYTES');
                 done();
             });
-            Promise.delay(50).then(function () {
+            Bluebird.delay(50).then(function () {
                 return stream.write('BYTES');
             });
         });
@@ -94,7 +94,7 @@ describe('Parser', function () {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             stream.write('FOO');
-            Promise.delay(50).then(function () {
+            Bluebird.delay(50).then(function () {
                 return parser.readBytes(2).then(function (buf) {
                     expect(buf.length).to.equal(2);
                     expect(buf.toString()).to.equal('FO');
@@ -119,9 +119,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const target = new Stream.PassThrough();
             const promise = parser.readByteFlow(1, target);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -164,13 +164,13 @@ describe('Parser', function () {
         });
     });
     describe('readAscii(howMany)', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readAscii(1);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, () => done());
+            promise.catch(Bluebird.CancellationError, () => done());
             promise.cancel();
         });
         it('should read as many ascii characters as requested', function (done) {
@@ -195,13 +195,13 @@ describe('Parser', function () {
         });
     });
     describe('readValue()', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readValue();
             expect(promise).to.be.an.instanceOf(Promise);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -238,13 +238,13 @@ describe('Parser', function () {
         });
     });
     describe('readError()', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readError();
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -269,13 +269,13 @@ describe('Parser', function () {
         });
     });
     describe('searchLine(re)', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.searchLine(/foo/);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -302,13 +302,13 @@ describe('Parser', function () {
         });
     });
     describe('readLine()', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readLine();
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
@@ -353,13 +353,13 @@ describe('Parser', function () {
         });
     });
     describe('readUntil(code)', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const parser = new Parser(stream);
             const promise = parser.readUntil(0xa0);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();

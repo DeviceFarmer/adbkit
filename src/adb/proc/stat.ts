@@ -48,6 +48,7 @@ class ProcStat extends EventEmitter {
             })
             .catch((err) => {
                 this._error(err);
+                return Bluebird.reject(err);
             });
     }
 
