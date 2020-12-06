@@ -98,7 +98,7 @@ export default class Client extends EventEmitter {
         return new TcpUsbServer(this, serial, options);
     }
 
-    public connection(): Promise<Connection> {
+    public connection(): Bluebird<Connection> {
         const connection = new Connection(this.options);
         // Reemit unhandled connection errors, so they can be handled externally.
         // If not handled at all, these will crash node.
@@ -106,13 +106,13 @@ export default class Client extends EventEmitter {
         return connection.connect();
     }
 
-    public version(callback?: Callback<number>): Promise<number> {
+    public version(callback?: Callback<number>): Bluebird<number> {
         return this.connection()
             .then((conn) => new HostVersionCommand(conn).execute())
             .nodeify(callback);
     }
 
-    public connect(host: string, port: number | typeof callback = 5555, callback?: Callback<string>): Promise<string> {
+    public connect(host: string, port: number | typeof callback = 5555, callback?: Callback<string>): Bluebird<string> {
         let p: number;
         if (typeof port === 'function') {
             callback = port;
@@ -158,31 +158,31 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public listDevices(callback?: Callback<Device[]>): Promise<Device[]> {
+    public listDevices(callback?: Callback<Device[]>): Bluebird<Device[]> {
         return this.connection()
             .then((conn) => new HostDevicesCommand(conn).execute())
             .nodeify(callback);
     }
 
-    public listDevicesWithPaths(callback?: Callback<DeviceWithPath[]>): Promise<DeviceWithPath[]> {
+    public listDevicesWithPaths(callback?: Callback<DeviceWithPath[]>): Bluebird<DeviceWithPath[]> {
         return this.connection()
             .then((conn) => new HostDevicesWithPathsCommand(conn).execute())
             .nodeify(callback);
     }
 
-    public trackDevices(callback?: Callback<Tracker>): Promise<Tracker> {
+    public trackDevices(callback?: Callback<Tracker>): Bluebird<Tracker> {
         return this.connection()
             .then((conn) => new HostTrackDevicesCommand(conn).execute())
             .nodeify(callback);
     }
 
-    public kill(callback?: Callback<boolean>): Promise<boolean> {
+    public kill(callback?: Callback<boolean>): Bluebird<boolean> {
         return this.connection()
             .then((conn) => new HostKillCommand(conn).execute())
             .nodeify(callback);
     }
 
-    public getSerialNo(serial: string, callback?: Callback<string>): Promise<string> {
+    public getSerialNo(serial: string, callback?: Callback<string>): Bluebird<string> {
         return this.connection()
             .then((conn) => new GetSerialNoCommand(conn).execute(serial))
             .nodeify(callback);
@@ -197,25 +197,25 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public getState(serial: string, callback?: Callback<string>): Promise<string> {
+    public getState(serial: string, callback?: Callback<string>): Bluebird<string> {
         return this.connection()
             .then((conn) => new GetStateCommand(conn).execute(serial))
             .nodeify(callback);
     }
 
-    public getProperties(serial: string, callback?: Callback<Properties>): Promise<Properties> {
+    public getProperties(serial: string, callback?: Callback<Properties>): Bluebird<Properties> {
         return this.transport(serial)
             .then((transport) => new GetPropertiesCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public getFeatures(serial: string, callback?: Callback<Features>): Promise<Features> {
+    public getFeatures(serial: string, callback?: Callback<Features>): Bluebird<Features> {
         return this.transport(serial)
             .then((transport) => new GetFeaturesCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public getPackages(serial: string, callback?: Callback<string[]>): Promise<string[]> {
+    public getPackages(serial: string, callback?: Callback<string[]>): Bluebird<string[]> {
         return this.transport(serial)
             .then((transport) => new GetPackagesCommand(transport).execute())
             .nodeify(callback);
@@ -241,31 +241,31 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public forward(serial: string, local: string, remote: string, callback?: Callback<boolean>): Promise<boolean> {
+    public forward(serial: string, local: string, remote: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.connection()
             .then((conn) => new ForwardCommand(conn).execute(serial, local, remote))
             .nodeify(callback);
     }
 
-    public listForwards(serial: string, callback?: Callback<Forward[]>): Promise<Forward[]> {
+    public listForwards(serial: string, callback?: Callback<Forward[]>): Bluebird<Forward[]> {
         return this.connection()
             .then((conn) => new ListForwardsCommand(conn).execute(serial))
             .nodeify(callback);
     }
 
-    public reverse(serial: string, remote: string, local: string, callback?: Callback<boolean>): Promise<boolean> {
+    public reverse(serial: string, remote: string, local: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new ReverseCommand(transport).execute(remote, local))
             .nodeify(callback);
     }
 
-    public listReverses(serial: string, callback?: Callback<Reverse[]>): Promise<Reverse[]> {
+    public listReverses(serial: string, callback?: Callback<Reverse[]>): Bluebird<Reverse[]> {
         return this.transport(serial)
             .then((transport) => new ListReversesCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public transport(serial: string, callback?: Callback<Connection>): Promise<Connection> {
+    public transport(serial: string, callback?: Callback<Connection>): Bluebird<Connection> {
         return this.connection()
             .then((conn) => new HostTransportCommand(conn).execute(serial).return(conn))
             .nodeify(callback);
@@ -281,19 +281,19 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public reboot(serial: string, callback?: Callback<boolean>): Promise<boolean> {
+    public reboot(serial: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new RebootCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public remount(serial: string, callback?: Callback<boolean>): Promise<boolean> {
+    public remount(serial: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new RemountCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public root(serial: string, callback?: Callback<boolean>): Promise<boolean> {
+    public root(serial: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new RootCommand(transport).execute())
             .nodeify(callback);
@@ -322,7 +322,7 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public screencap(serial: string, callback?: Callback<Duplex>): Promise<Duplex> {
+    public screencap(serial: string, callback?: Callback<Duplex>): Bluebird<Duplex> {
         return this.transport(serial)
             .then((transport) => {
                 return new ScreencapCommand(transport).execute().catch((err) => {
@@ -333,13 +333,13 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public openLocal(serial: string, path: string, callback?: Callback<Duplex>): Promise<Duplex> {
+    public openLocal(serial: string, path: string, callback?: Callback<Duplex>): Bluebird<Duplex> {
         return this.transport(serial)
             .then((transport) => new LocalCommand(transport).execute(path))
             .nodeify(callback);
     }
 
-    public openLog(serial: string, name: string, callback?: Callback<Duplex>): Promise<Duplex> {
+    public openLog(serial: string, name: string, callback?: Callback<Duplex>): Bluebird<Duplex> {
         return this.transport(serial)
             .then((transport) => new LogCommand(transport).execute(name))
             .nodeify(callback);
@@ -350,7 +350,7 @@ export default class Client extends EventEmitter {
         port: number,
         host?: string | typeof callback,
         callback?: Callback<Duplex>,
-    ): Promise<Duplex> {
+    ): Bluebird<Duplex> {
         let h: string | undefined;
         if (typeof host === 'function') {
             callback = host;
@@ -366,7 +366,7 @@ export default class Client extends EventEmitter {
         serial: string,
         port: number | typeof callback = 1080,
         callback?: Callback<Duplex>,
-    ): Promise<Duplex> {
+    ): Bluebird<Duplex> {
         let p: number;
         if (typeof port === 'function') {
             callback = port;
@@ -415,19 +415,19 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public openProcStat(serial: string, callback?: Callback<ProcStat>): Promise<ProcStat> {
+    public openProcStat(serial: string, callback?: Callback<ProcStat>): Bluebird<ProcStat> {
         return this.syncService(serial)
             .then((sync) => new ProcStat(sync))
             .nodeify(callback);
     }
 
-    public clear(serial: string, pkg: string, callback?: Callback<boolean>): Promise<boolean> {
+    public clear(serial: string, pkg: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new ClearCommand(transport).execute(pkg))
             .nodeify(callback);
     }
 
-    public install(serial: string, apk: string | ReadStream, callback?: Callback<boolean>): Promise<boolean> {
+    public install(serial: string, apk: string | ReadStream, callback?: Callback<boolean>): Bluebird<boolean> {
         const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
         return this.push(serial, apk, temp)
             .then((transfer) => {
@@ -447,7 +447,7 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public installRemote(serial: string, apk: string, callback?: Callback<boolean>): Promise<boolean> {
+    public installRemote(serial: string, apk: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => {
                 return new InstallCommand(transport)
@@ -459,13 +459,13 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public uninstall(serial: string, pkg: string, callback?: Callback<boolean>): Promise<boolean> {
+    public uninstall(serial: string, pkg: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new UninstallCommand(transport).execute(pkg))
             .nodeify(callback);
     }
 
-    public isInstalled(serial: string, pkg: string, callback?: Callback<boolean>): Promise<boolean> {
+    public isInstalled(serial: string, pkg: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new IsInstalledCommand(transport).execute(pkg))
             .nodeify(callback);
@@ -475,7 +475,7 @@ export default class Client extends EventEmitter {
         serial: string,
         options: StartActivityOptions,
         callback?: Callback<boolean>,
-    ): Promise<boolean> {
+    ): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new StartActivityCommand(transport).execute(options))
             .catch(NoUserOptionError, () => {
@@ -485,7 +485,7 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public startService(serial: string, options: StartServiceOptions, callback?: Callback<boolean>): Promise<boolean> {
+    public startService(serial: string, options: StartServiceOptions, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => {
                 if (!(options.user || options.user === null)) {
@@ -500,25 +500,25 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public syncService(serial: string, callback?: Callback<Sync>): Promise<Sync> {
+    public syncService(serial: string, callback?: Callback<Sync>): Bluebird<Sync> {
         return this.transport(serial)
             .then((transport) => new SyncCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public stat(serial: string, path: string, callback?: Callback<Stats>): Promise<Stats> {
+    public stat(serial: string, path: string, callback?: Callback<Stats>): Bluebird<Stats> {
         return this.syncService(serial)
             .then((sync) => sync.stat(path).finally(() => sync.end()))
             .nodeify(callback);
     }
 
-    public readdir(serial: string, path: string, callback?: Callback<Entry[]>): Promise<Entry[]> {
+    public readdir(serial: string, path: string, callback?: Callback<Entry[]>): Bluebird<Entry[]> {
         return this.syncService(serial)
             .then((sync) => sync.readdir(path).finally(() => sync.end()))
             .nodeify(callback);
     }
 
-    public pull(serial: string, path: string, callback?: Callback<PullTransfer>): Promise<PullTransfer> {
+    public pull(serial: string, path: string, callback?: Callback<PullTransfer>): Bluebird<PullTransfer> {
         return this.syncService(serial)
             .then((sync) => sync.pull(path).on('end', () => sync.end()))
             .nodeify(callback);
@@ -530,7 +530,7 @@ export default class Client extends EventEmitter {
         path: string,
         mode?: number | typeof callback,
         callback?: Callback<PushTransfer>,
-    ): Promise<PushTransfer> {
+    ): Bluebird<PushTransfer> {
         let m: number | undefined;
         if (typeof mode === 'function') {
             callback = mode;
@@ -542,7 +542,7 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public tcpip(serial: string, port: number | typeof callback = 5555, callback?: Callback<number>): Promise<number> {
+    public tcpip(serial: string, port: number | typeof callback = 5555, callback?: Callback<number>): Bluebird<number> {
         let p: number;
         if (typeof port === 'function') {
             callback = port;
@@ -555,19 +555,19 @@ export default class Client extends EventEmitter {
             .nodeify(callback);
     }
 
-    public usb(serial: string, callback?: Callback<boolean>): Promise<boolean> {
+    public usb(serial: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new UsbCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public waitBootComplete(serial: string, callback?: Callback<boolean>): Promise<boolean> {
+    public waitBootComplete(serial: string, callback?: Callback<boolean>): Bluebird<boolean> {
         return this.transport(serial)
             .then((transport) => new WaitBootCompleteCommand(transport).execute())
             .nodeify(callback);
     }
 
-    public waitForDevice(serial: string, callback?: Callback<string>): Promise<string> {
+    public waitForDevice(serial: string, callback?: Callback<string>): Bluebird<string> {
         return this.connection()
             .then((conn) => new WaitForDeviceCommand(conn).execute(serial))
             .nodeify(callback);

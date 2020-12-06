@@ -6,36 +6,38 @@ import Command from '../../command';
 import { Readable } from 'stream';
 import FramebufferMeta from '../../../FramebufferMeta';
 import FramebufferStreamWithMeta from '../../../FramebufferStreamWithMeta';
+import * as Bluebird from 'bluebird';
 
 const debug = d('adb:command:framebuffer');
 
 // FIXME(intentional any): not "any" will break it all
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default class FrameBufferCommand extends Command<any> {
-    async execute(format: string): Promise<FramebufferStreamWithMeta> {
+    execute(format: string): Bluebird<FramebufferStreamWithMeta> {
         this._send('framebuffer:');
-        const reply = await this.parser.readAscii(4);
-        switch (reply) {
-            case Protocol.OKAY:
-                return this.parser.readBytes(52).then((header) => {
-                    let stream: FramebufferStreamWithMeta;
-                    const meta = this._parseHeader(header);
-                    switch (format) {
-                        case 'raw':
-                            stream = this.parser.raw() as FramebufferStreamWithMeta;
-                            stream.meta = meta;
-                            return stream;
-                        default:
-                            stream = this._convert(meta, format) as FramebufferStreamWithMeta;
-                            stream.meta = meta;
-                            return stream;
-                    }
-                });
-            case Protocol.FAIL:
-                return this.parser.readError();
-            default:
-                return this.parser.unexpected(reply, 'OKAY or FAIL');
-        }
+        return this.parser.readAscii(4).then((reply) => {
+            switch (reply) {
+                case Protocol.OKAY:
+                    return this.parser.readBytes(52).then((header) => {
+                        let stream: FramebufferStreamWithMeta;
+                        const meta = this._parseHeader(header);
+                        switch (format) {
+                            case 'raw':
+                                stream = this.parser.raw() as FramebufferStreamWithMeta;
+                                stream.meta = meta;
+                                return stream;
+                            default:
+                                stream = this._convert(meta, format) as FramebufferStreamWithMeta;
+                                stream.meta = meta;
+                                return stream;
+                        }
+                    });
+                case Protocol.FAIL:
+                    return this.parser.readError();
+                default:
+                    return this.parser.unexpected(reply, 'OKAY or FAIL');
+            }
+        });
     }
 
     _convert(meta: FramebufferMeta, format: string, raw?: Readable): Readable {

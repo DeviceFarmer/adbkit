@@ -1,4 +1,4 @@
-import Bluebird from 'bluebird';
+import * as Bluebird from 'bluebird';
 import Parser from './parser';
 import { EventEmitter } from 'events';
 import Device from '../Device';

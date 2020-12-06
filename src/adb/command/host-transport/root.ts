@@ -1,10 +1,11 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
+import Bluebird from 'bluebird';
 
 const RE_OK = /restarting adbd as root/;
 
 export default class RootCommand extends Command<boolean> {
-    execute(): Promise<boolean> {
+    execute(): Bluebird<boolean> {
         this._send('root:');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
