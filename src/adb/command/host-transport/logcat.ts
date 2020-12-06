@@ -1,7 +1,7 @@
 import LineTransform from '../../linetransform';
 import Protocol from '../../protocol';
 import Command from '../../command';
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 
 // FIXME(intentional any): not "any" will break it all
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

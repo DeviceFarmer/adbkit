@@ -6,7 +6,7 @@ import Command from '../../command';
 import { Readable } from 'stream';
 import FramebufferMeta from '../../../FramebufferMeta';
 import FramebufferStreamWithMeta from '../../../FramebufferStreamWithMeta';
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 
 const debug = d('adb:command:framebuffer');
 
