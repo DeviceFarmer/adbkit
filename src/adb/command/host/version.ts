@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class HostVersionCommand extends Command<number> {
-    execute(): Bluebird<number> {
+    execute(): Promise<number> {
         this._send('host:version');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

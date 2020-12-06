@@ -1,10 +1,9 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
 import DeviceWithPath from '../../../DeviceWithPath';
-import Bluebird from 'bluebird';
 
 export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[]> {
-    execute(): Bluebird<DeviceWithPath[]> {
+    execute(): Promise<DeviceWithPath[]> {
         this._send('host:devices-l');
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
@@ -18,7 +17,7 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
         });
     }
 
-    public _readDevices(): Bluebird<DeviceWithPath[]> {
+    public _readDevices(): Promise<DeviceWithPath[]> {
         return this.parser.readValue().then((value) => {
             return this._parseDevices(value);
         });

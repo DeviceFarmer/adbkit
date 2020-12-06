@@ -94,7 +94,7 @@ export default class Socket extends EventEmitter {
         return this.end();
     }
 
-    private _handle(packet: Packet): Bluebird<boolean> {
+    private _handle(packet: Packet): Promise<boolean> {
         if (this.ended) {
             return Bluebird.resolve(false);
         }
@@ -138,7 +138,7 @@ export default class Socket extends EventEmitter {
         return this.write(Packet.assemble(Packet.A_SYNC, 1, this.syncToken.next()));
     }
 
-    private _handleConnectionPacket(packet): Bluebird<boolean> {
+    private _handleConnectionPacket(packet): Promise<boolean> {
         debug('I:A_CNXN', packet);
         this.version = Packet.swap32(packet.arg0);
         this.maxPayload = Math.min(UINT16_MAX, packet.arg1);
@@ -150,7 +150,7 @@ export default class Socket extends EventEmitter {
         });
     }
 
-    private _handleAuthPacket(packet: Packet): Bluebird<boolean> {
+    private _handleAuthPacket(packet: Packet): Promise<boolean> {
         debug('I:A_AUTH', packet);
         switch (packet.arg0) {
             case AUTH_SIGNATURE:

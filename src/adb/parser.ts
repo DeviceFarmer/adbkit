@@ -39,9 +39,9 @@ export default class Parser {
 
     constructor(public stream: Duplex) {}
 
-    public end(): Bluebird<boolean> {
+    public end(): Promise<boolean> {
         if (this.ended) {
-            return Bluebird.resolve<boolean>(true);
+            return Promise.resolve<boolean>(true);
         }
         const resolver = Bluebird.defer<boolean>();
         const tryRead = () => {

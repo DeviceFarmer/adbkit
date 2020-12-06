@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class ForwardCommand extends Command<boolean> {
-    execute(serial: string, local: string, remote: string): Bluebird<boolean> {
+    execute(serial: string, local: string, remote: string): Promise<boolean> {
         this._send(`host-serial:${serial}:forward:${local};${remote}`);
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

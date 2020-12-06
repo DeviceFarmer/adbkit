@@ -1,9 +1,8 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 export default class ClearCommand extends Command<boolean> {
-    execute(pkg: string): Bluebird<boolean> {
+    execute(pkg: string): Promise<boolean> {
         this._send(`shell:pm clear ${pkg}`);
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {

@@ -1,6 +1,5 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 // Possible replies:
 // "unable to connect to 192.168.2.2:5555"
@@ -9,7 +8,7 @@ import Bluebird from 'bluebird';
 const RE_OK = /connected to|already connected/;
 
 export default class HostConnectCommand extends Command<string> {
-    execute(host: string, port: number): Bluebird<string> {
+    execute(host: string, port: number): Promise<string> {
         this._send(`host:connect:${host}:${port}`);
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
