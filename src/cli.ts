@@ -38,9 +38,9 @@ program
 
 program
     .command('usb-device-to-tcp <serial>')
-    .option('-p, --port <port>', 'port number', String, 6174)
+    .option('-p, --port <port>', 'port number', (value: string) => String(value), '6174')
     .description('Provides an USB device over TCP using a translating proxy.')
-    .action(function (serial, options) {
+    .action((serial, options) => {
         const adb = Adb.createClient();
         const server = adb
             .createTcpUsbBridge(serial, {
@@ -48,15 +48,15 @@ program
             })
             .on('listening', () => console.info('Connect with `adb connect localhost:%d`', options.port))
             .on('error', (err) => console.error('An error occured: ' + err.message));
-        return server.listen(options.port);
+        server.listen(options.port);
     });
 
 program
     .command('parse-tcp-packets <file>')
     .description('Parses ADB TCP packets from the given file.')
-    .action(function (file) {
+    .action((file) => {
         const reader = new PacketReader(fs.createReadStream(file));
-        return reader.on('packet', (packet) => console.log(packet.toString()));
+        reader.on('packet', (packet) => console.log(packet.toString()));
     });
 
 program.parse(process.argv);
