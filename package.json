@@ -41,7 +41,7 @@
         "@devicefarmer/adbkit-monkey": "~1.0.1",
         "@types/bluebird": "^2.0.33",
         "@types/node-forge": "^0.9.5",
-        "bluebird": "~2.10.2",
+        "bluebird": "~2.11",
         "commander": "^6.2.0",
         "debug": "~4.3.1",
         "node-forge": "^0.10.0",
