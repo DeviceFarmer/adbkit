@@ -273,7 +273,7 @@ export default class Socket extends EventEmitter {
                 }
                 return results;
             })().join('');
-            return new Buffer(`device::${id}\x00`);
+            return Buffer.from(`device::${id}\x00`);
         });
     }
 }

@@ -29,7 +29,7 @@ describe('LineTransform', function () {
             const transform = new LineTransform({
                 autoDetect: true,
             });
-            let buffer = new Buffer('');
+            let buffer = Buffer.from('');
             transform.on('data', function (data) {
                 return (buffer = Buffer.concat([buffer, data]));
             });
@@ -46,7 +46,7 @@ describe('LineTransform', function () {
             const transform = new LineTransform({
                 autoDetect: true,
             });
-            let buffer = new Buffer('');
+            let buffer = Buffer.from('');
             transform.on('data', function (data) {
                 return (buffer = Buffer.concat([buffer, data]));
             });
@@ -63,7 +63,7 @@ describe('LineTransform', function () {
             const transform = new LineTransform({
                 autoDetect: true,
             });
-            let buffer = new Buffer('');
+            let buffer = Buffer.from('');
             transform.on('data', function (data) {
                 return (buffer = Buffer.concat([buffer, data]));
             });
@@ -81,7 +81,7 @@ describe('LineTransform', function () {
             const transform = new LineTransform({
                 autoDetect: true,
             });
-            let buffer = new Buffer('');
+            let buffer = Buffer.from('');
             transform.on('data', function (data) {
                 return (buffer = Buffer.concat([buffer, data]));
             });
@@ -98,7 +98,7 @@ describe('LineTransform', function () {
         return it('should transform as usual even if first byte is 0x0a', function (done) {
             const duplex = new MockDuplex();
             const transform = new LineTransform();
-            let buffer = new Buffer('');
+            let buffer = Buffer.from('');
             transform.on('data', function (data) {
                 return (buffer = Buffer.concat([buffer, data]));
             });
@@ -132,7 +132,7 @@ describe('LineTransform', function () {
             done();
         });
         duplex.pipe(transform);
-        duplex.causeRead(new Buffer([0x0d, 0x05]));
+        duplex.causeRead(Buffer.from([0x0d, 0x05]));
         duplex.causeEnd();
     });
     it('should remove 0x0d if followed by 0x0a', function (done) {
@@ -145,7 +145,7 @@ describe('LineTransform', function () {
             done();
         });
         duplex.pipe(transform);
-        duplex.causeRead(new Buffer([0x0d, 0x0a, 0x97]));
+        duplex.causeRead(Buffer.from([0x0d, 0x0a, 0x97]));
         duplex.causeEnd();
     });
     it('should push 0x0d without 0x0a if last in stream', function (done) {
@@ -157,13 +157,13 @@ describe('LineTransform', function () {
             done();
         });
         duplex.pipe(transform);
-        duplex.causeRead(new Buffer([0x0d]));
+        duplex.causeRead(Buffer.from([0x0d]));
         duplex.causeEnd();
     });
     it('should push saved 0x0d if next chunk does not start with 0x0a', function (done) {
         const duplex = new MockDuplex();
         const transform = new LineTransform();
-        let buffer = new Buffer('');
+        let buffer = Buffer.from('');
         transform.on('data', function (data) {
             return (buffer = Buffer.concat([buffer, data]));
         });
@@ -175,15 +175,15 @@ describe('LineTransform', function () {
             done();
         });
         duplex.pipe(transform);
-        duplex.causeRead(new Buffer([0x62, 0x0d]));
-        duplex.causeRead(new Buffer([0x37]));
+        duplex.causeRead(Buffer.from([0x62, 0x0d]));
+        duplex.causeRead(Buffer.from([0x37]));
         duplex.causeEnd();
         duplex.end();
     });
     return it('should remove saved 0x0d if next chunk starts with 0x0a', function (done) {
         const duplex = new MockDuplex();
         const transform = new LineTransform();
-        let buffer = new Buffer('');
+        let buffer = Buffer.from('');
         transform.on('data', function (data) {
             return (buffer = Buffer.concat([buffer, data]));
         });
@@ -194,8 +194,8 @@ describe('LineTransform', function () {
             done();
         });
         duplex.pipe(transform);
-        duplex.causeRead(new Buffer([0x62, 0x0d]));
-        duplex.causeRead(new Buffer([0x0a]));
+        duplex.causeRead(Buffer.from([0x62, 0x0d]));
+        duplex.causeRead(Buffer.from([0x0a]));
         duplex.causeEnd();
         duplex.end();
     });

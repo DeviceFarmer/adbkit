@@ -14,7 +14,7 @@ describe('FrameBufferCommand', function () {
             return expect(chunk.toString()).to.equal(Protocol.encodeData('framebuffer:').toString());
         });
         setImmediate(function () {
-            const meta = new Buffer(52);
+            const meta = Buffer.alloc(52);
             meta.fill(0);
             conn.getSocket().causeRead(Protocol.OKAY);
             conn.getSocket().causeRead(meta);

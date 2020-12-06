@@ -68,7 +68,7 @@ export default class PacketReader extends EventEmitter {
                         header.readUInt32LE(12),
                         header.readUInt32LE(16),
                         header.readUInt32LE(20),
-                        new Buffer(0),
+                        Buffer.alloc(0),
                     );
                     if (!this.packet.verifyMagic()) {
                         this.emit('error', new PacketReader.MagicError(this.packet));

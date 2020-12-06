@@ -312,7 +312,7 @@ export default class Sync extends EventEmitter {
         if (cmd !== Protocol.DATA) {
             debug(cmd);
         }
-        const payload = new Buffer(cmd.length + 4);
+        const payload = Buffer.alloc(cmd.length + 4);
         payload.write(cmd, 0, cmd.length);
         payload.writeUInt32LE(length, cmd.length);
         return this.connection.write(payload);
@@ -321,7 +321,7 @@ export default class Sync extends EventEmitter {
     private _sendCommandWithArg(cmd: string, arg: string): Connection {
         debug(`${cmd} ${arg}`);
         const arglen = Buffer.byteLength(arg, 'utf-8');
-        const payload = new Buffer(cmd.length + 4 + arglen);
+        const payload = Buffer.alloc(cmd.length + 4 + arglen);
         let pos = 0;
         payload.write(cmd, pos, cmd.length);
         pos += cmd.length;

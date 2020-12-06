@@ -26,7 +26,7 @@ export default class Auth {
         return new Bluebird(function (resolve, reject) {
             const match = Auth.RE.exec(buffer);
             if (match) {
-                const struct = new Buffer(match[1], 'base64');
+                const struct = Buffer.from(match[1], 'base64');
                 const comment = match[2].trim();
                 return resolve(Auth.readPublicKeyFromStruct(struct, comment));
             } else {
@@ -50,7 +50,7 @@ export default class Auth {
         // Skip n0inv, we don't need it
         offset += 4;
         // Get n
-        const n = new Buffer(len);
+        const n = Buffer.alloc(len);
         struct.copy(n, 0, offset, offset + len);
         [].reverse.call(n);
         offset += len;
