@@ -8,7 +8,7 @@ import DisconnectCommand from '../../../../src/adb/command/host/disconnect';
 import Connection from '../../../../src/adb/connection';
 
 describe('DisconnectCommand', function () {
-    it("should send 'host:disconnect:<host>:<port>'", function (done) {
+    it("should send 'host:disconnect:<host>:<port>'", function () {
         const conn = new MockConnection();
         const cmd = new DisconnectCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -21,11 +21,9 @@ describe('DisconnectCommand', function () {
             conn.getSocket().causeRead(Protocol.encodeData(''));
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('192.168.2.2', 5555).then(function () {
-            return done();
-        });
+        return cmd.execute('192.168.2.2', 5555);
     });
-    it('should resolve with the new device id if disconnected', function (done) {
+    it('should resolve with the new device id if disconnected', function () {
         const conn = new MockConnection();
         const cmd = new DisconnectCommand(conn as Connection);
         setImmediate(function () {
@@ -35,10 +33,9 @@ describe('DisconnectCommand', function () {
         });
         return cmd.execute('192.168.2.2', 5555).then(function (val) {
             expect(val).to.be.equal('192.168.2.2:5555');
-            return done();
         });
     });
-    return it('should reject with error if unable to disconnect', function (done) {
+    return it('should reject with error if unable to disconnect', function () {
         const conn = new MockConnection();
         const cmd = new DisconnectCommand(conn as Connection);
         setImmediate(function () {
@@ -48,7 +45,6 @@ describe('DisconnectCommand', function () {
         });
         return cmd.execute('192.168.2.2', 5555).catch(function (err) {
             expect(err.message).to.eql('No such device 192.168.2.2:5555');
-            return done();
         });
     });
 });

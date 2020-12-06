@@ -39,16 +39,13 @@ describe('Sync', function () {
             });
         });
         return Promise.all(promises)
-            .then(function () {
-                return done();
-            })
+            .then(() => done())
             .catch(done);
     };
-    before(function (done) {
+    before(function () {
         client = Adb.createClient();
         return client.listDevices().then(function (devices) {
             deviceList = devices;
-            return done();
         });
     });
     describe('end()', function () {
@@ -197,7 +194,7 @@ describe('Sync', function () {
         describe('Stats', function () {
             it('should implement Fs.Stats', function (done) {
                 expect(new Stats(0, 0, 0)).to.be.an.instanceof(Fs.Stats);
-                return done();
+                done();
             });
             dt('should set the `.mode` property for isFile() etc', function (done) {
                 return forEachSyncDevice(function (sync) {
@@ -230,7 +227,7 @@ describe('Sync', function () {
         return describe('Entry', function () {
             it('should implement Stats', function (done) {
                 expect(new Entry('foo', 0, 0, 0)).to.be.an.instanceof(Stats);
-                return done();
+                done();
             });
             dt('should set the `.name` property', function (done) {
                 return forEachSyncDevice(function (sync) {

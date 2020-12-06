@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import SyncCommand from '../../../../src/adb/command/host-transport/sync';
 
 describe('SyncCommand', function () {
-    return it("should send 'sync:'", function (done) {
+    return it("should send 'sync:'", function () {
         const conn = new MockConnection();
         const cmd = new SyncCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -15,8 +15,6 @@ describe('SyncCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
 });

@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import RootCommand from '../../../../src/adb/command/host-transport/root';
 
 describe('RootCommand', function () {
-    it("should send 'root:'", function (done) {
+    it("should send 'root:'", function () {
         const conn = new MockConnection();
         const cmd = new RootCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -20,7 +20,6 @@ describe('RootCommand', function () {
         });
         return cmd.execute().then(function (val) {
             expect(val).to.be.true;
-            return done();
         });
     });
     return it('should reject on unexpected reply', function (done) {
@@ -31,9 +30,9 @@ describe('RootCommand', function () {
             conn.getSocket().causeRead('adbd cannot run as root in production builds\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().catch(function (err) {
+        cmd.execute().catch(function (err) {
             expect(err.message).to.eql('adbd cannot run as root in production builds');
-            return done();
+            done();
         });
     });
 });

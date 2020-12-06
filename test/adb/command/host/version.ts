@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import HostVersionCommand from '../../../../src/adb/command/host/version';
 
 describe('HostVersionCommand', function () {
-    it("should send 'host:version'", function (done) {
+    it("should send 'host:version'", function () {
         const conn = new MockConnection();
         const cmd = new HostVersionCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('HostVersionCommand', function () {
             conn.getSocket().causeRead(Protocol.encodeData('0000'));
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function (version) {
-            return done();
-        });
+        return cmd.execute()
     });
-    it('should resolve with version', function (done) {
+    it('should resolve with version', function () {
         const conn = new MockConnection();
         const cmd = new HostVersionCommand(conn);
         setImmediate(function () {
@@ -32,10 +30,9 @@ describe('HostVersionCommand', function () {
         });
         return cmd.execute().then(function (version) {
             expect(version).to.equal(0x1234);
-            return done();
         });
     });
-    return it('should handle old-style version', function (done) {
+    return it('should handle old-style version', function () {
         const conn = new MockConnection();
         const cmd = new HostVersionCommand(conn);
         setImmediate(function () {
@@ -44,7 +41,6 @@ describe('HostVersionCommand', function () {
         });
         return cmd.execute().then(function (version) {
             expect(version).to.equal(0x1234);
-            return done();
         });
     });
 });

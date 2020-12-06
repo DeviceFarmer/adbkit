@@ -7,7 +7,7 @@ import Parser from '../../../../src/adb/parser';
 import UninstallCommand from '../../../../src/adb/command/host-transport/uninstall';
 
 describe('UninstallCommand', function () {
-    it("should succeed when command responds with 'Success'", function (done) {
+    it("should succeed when command responds with 'Success'", function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('UninstallCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it("should succeed even if command responds with 'Failure'", function (done) {
+    it("should succeed even if command responds with 'Failure'", function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -33,11 +31,9 @@ describe('UninstallCommand', function () {
             conn.getSocket().causeRead('Failure\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it("should succeed even if command responds with 'Failure' with info in standard format", function (done) {
+    it("should succeed even if command responds with 'Failure' with info in standard format", function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -48,11 +44,9 @@ describe('UninstallCommand', function () {
             conn.getSocket().causeRead('Failure [DELETE_FAILED_INTERNAL_ERROR]\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it("should succeed even if command responds with 'Failure' with info info in weird format", function (done) {
+    it("should succeed even if command responds with 'Failure' with info info in weird format", function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         setImmediate(function () {
@@ -60,11 +54,9 @@ describe('UninstallCommand', function () {
             conn.getSocket().causeRead('Failure - not installed for 0\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it('should succeed even if command responds with a buggy exception', function (done) {
+    it('should succeed even if command responds with a buggy exception', function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         setImmediate(function () {
@@ -87,9 +79,7 @@ java.lang.IllegalArgumentException: Unknown package: foo
 	at android.os.Binder.execTransact(Binder.java:565)`);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
     it('should reject with Parser.PrematureEOFError if stream ends before match', function (done) {
         const conn = new MockConnection();
@@ -99,11 +89,11 @@ java.lang.IllegalArgumentException: Unknown package: foo
             conn.getSocket().causeRead('Hello. Is it me you are looking for?\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').catch(Parser.PrematureEOFError, function (err) {
-            return done();
+        cmd.execute('foo').catch(Parser.PrematureEOFError, function (err) {
+            done();
         });
     });
-    return it('should ignore any other data', function (done) {
+    return it('should ignore any other data', function () {
         const conn = new MockConnection();
         const cmd = new UninstallCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -115,8 +105,6 @@ java.lang.IllegalArgumentException: Unknown package: foo
             conn.getSocket().causeRead('Failure\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
 });

@@ -8,7 +8,7 @@ import Protocol from '../../../../src/adb/protocol';
 import IsInstalledCommand from '../../../../src/adb/command/host-transport/isinstalled';
 
 describe('IsInstalledCommand', function () {
-    it("should send 'pm path <pkg>'", function (done) {
+    it("should send 'pm path <pkg>'", function () {
         const conn = new MockConnection();
         const cmd = new IsInstalledCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -19,11 +19,9 @@ describe('IsInstalledCommand', function () {
             conn.getSocket().causeRead('package:foo\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it('should resolve with true if package returned by command', function (done) {
+    it('should resolve with true if package returned by command', function () {
         const conn = new MockConnection();
         const cmd = new IsInstalledCommand(conn);
         setImmediate(function () {
@@ -33,10 +31,9 @@ describe('IsInstalledCommand', function () {
         });
         return cmd.execute('foo').then(function (found) {
             expect(found).to.be.true;
-            return done();
         });
     });
-    it('should resolve with false if no package returned', function (done) {
+    it('should resolve with false if no package returned', function () {
         const conn = new MockConnection();
         const cmd = new IsInstalledCommand(conn);
         setImmediate(function () {
@@ -45,7 +42,6 @@ describe('IsInstalledCommand', function () {
         });
         return cmd.execute('foo').then(function (found) {
             expect(found).to.be.false;
-            return done();
         });
     });
     return it('should fail if any other data is received', function (done) {
@@ -56,9 +52,9 @@ describe('IsInstalledCommand', function () {
             conn.getSocket().causeRead('open: Permission failed\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').catch(function (err) {
+        cmd.execute('foo').catch(function (err) {
             expect(err).to.be.an.instanceof(Error);
-            return done();
+            done();
         });
     });
 });

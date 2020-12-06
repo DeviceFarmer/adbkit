@@ -8,7 +8,7 @@ import Parser from '../../../../src/adb/parser';
 import ShellCommand from '../../../../src/adb/command/host-transport/shell';
 
 describe('ShellCommand', function () {
-    it('should pass String commands as-is', function (done) {
+    it('should pass String commands as-is', function () {
         const conn = new MockConnection();
         const cmd = new ShellCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('ShellCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute("foo 'bar").then(function () {
-            return done();
-        });
+        return cmd.execute("foo 'bar");
     });
-    it('should escape Array commands', function (done) {
+    it('should escape Array commands', function () {
         const conn = new MockConnection();
         const cmd = new ShellCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -32,11 +30,9 @@ describe('ShellCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute(['foo', "'bar'", '"']).then(function () {
-            return done();
-        });
+        return cmd.execute(['foo', "'bar'", '"']);
     });
-    it('should not escape numbers in arguments', function (done) {
+    it('should not escape numbers in arguments', function () {
         const conn = new MockConnection();
         const cmd = new ShellCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -46,9 +42,7 @@ describe('ShellCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute(['foo', 67]).then(function () {
-            return done();
-        });
+        return cmd.execute(['foo', 67]);
     });
     return it('should reject with FailError on ADB failure (not command failure)', function (done) {
         const conn = new MockConnection();
@@ -61,8 +55,8 @@ describe('ShellCommand', function () {
             conn.getSocket().causeRead(Protocol.encodeData('mystery'));
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute(['foo']).catch(Parser.FailError, function () {
-            return done();
+        cmd.execute(['foo']).catch(Parser.FailError, function () {
+            done();
         });
     });
 });

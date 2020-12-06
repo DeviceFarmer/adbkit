@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import GetPackagesCommand from '../../../../src/adb/command/host-transport/getpackages';
 
 describe('GetPackagesCommand', function () {
-    it("should send 'pm list packages'", function (done) {
+    it("should send 'pm list packages'", function () {
         const conn = new MockConnection();
         const cmd = new GetPackagesCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -19,11 +19,9 @@ describe('GetPackagesCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
-    it('should return an empty array for an empty package list', function (done) {
+    it('should return an empty array for an empty package list', function () {
         const conn = new MockConnection();
         const cmd = new GetPackagesCommand(conn);
         setImmediate(function () {
@@ -32,10 +30,9 @@ describe('GetPackagesCommand', function () {
         });
         return cmd.execute().then(function (packages) {
             expect(packages).to.be.empty;
-            return done();
         });
     });
-    return it('should return an array of packages', function (done) {
+    return it('should return an array of packages', function () {
         const conn = new MockConnection();
         const cmd = new GetPackagesCommand(conn);
         setImmediate(function () {
@@ -60,7 +57,6 @@ package:com.google.earth`);
                 'com.google.android.apps.magazines',
                 'com.google.earth',
             ]);
-            return done();
         });
     });
 });

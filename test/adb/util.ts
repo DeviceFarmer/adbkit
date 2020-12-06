@@ -13,16 +13,16 @@ describe('util', function () {
             expect(promise).to.be.an.instanceOf(Promise);
             expect(promise.isCancellable()).to.be.true;
             promise.catch(Promise.CancellationError, function () {
-                return done();
+                done();
             });
-            return promise.cancel();
+            promise.cancel();
         });
         return it('should read all remaining content until the stream ends', function (done) {
             const stream = new Stream.PassThrough();
             util.readAll(stream).then(function (buf) {
                 expect(buf.length).to.equal(3);
                 expect(buf.toString()).to.equal('FOO');
-                return done();
+                done();
             });
             stream.write('F');
             stream.write('O');

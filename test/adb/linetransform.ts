@@ -8,7 +8,7 @@ import MockDuplex from '../mock/duplex';
 describe('LineTransform', function () {
     it('should implement stream.Transform', function (done) {
         expect(new LineTransform()).to.be.an.instanceOf(Stream.Transform);
-        return done();
+        done();
     });
     describe('with autoDetect', function () {
         it('should not modify data if first byte is 0x0a', function (done) {
@@ -18,11 +18,11 @@ describe('LineTransform', function () {
             });
             transform.on('data', function (data) {
                 expect(data.toString()).to.equal('bar\r\n');
-                return done();
+                done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\nbar\r\n');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
         it('should not include initial 0x0a', function (done) {
             const duplex = new MockDuplex();
@@ -35,11 +35,11 @@ describe('LineTransform', function () {
             });
             transform.on('end', function () {
                 expect(buffer.toString()).to.equal('bar\r\n');
-                return done();
+                 done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\nbar\r\n');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
         it('should not include initial 0x0d 0x0a', function (done) {
             const duplex = new MockDuplex();
@@ -52,11 +52,11 @@ describe('LineTransform', function () {
             });
             transform.on('end', function () {
                 expect(buffer.toString()).to.equal('bar\n');
-                return done();
+                done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\r\nbar\r\n');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
         it('should not include initial 0x0d 0x0a even if in separate chunks', function (done) {
             const duplex = new MockDuplex();
@@ -69,12 +69,12 @@ describe('LineTransform', function () {
             });
             transform.on('end', function () {
                 expect(buffer.toString()).to.equal('bar\n');
-                return done();
+                done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\r');
             duplex.causeRead('\nbar\r\n');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
         return it('should transform as usual if first byte is not 0x0a', function (done) {
             const duplex = new MockDuplex();
@@ -87,11 +87,11 @@ describe('LineTransform', function () {
             });
             transform.on('end', function () {
                 expect(buffer.toString()).to.equal('bar\nfoo');
-                return done();
+                done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\r\nbar\r\nfoo');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
     });
     describe('without autoDetect', function () {
@@ -104,11 +104,11 @@ describe('LineTransform', function () {
             });
             transform.on('end', function () {
                 expect(buffer.toString()).to.equal('\n\nbar\nfoo');
-                return done();
+                done();
             });
             duplex.pipe(transform);
             duplex.causeRead('\n\r\nbar\r\nfoo');
-            return duplex.causeEnd();
+            duplex.causeEnd();
         });
     });
     it('should not modify data that does not have 0x0d 0x0a in it', function (done) {
@@ -116,11 +116,11 @@ describe('LineTransform', function () {
         const transform = new LineTransform();
         transform.on('data', function (data) {
             expect(data.toString()).to.equal('foo');
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead('foo');
-        return duplex.causeEnd();
+        duplex.causeEnd();
     });
     it('should not remove 0x0d if not followed by 0x0a', function (done) {
         const duplex = new MockDuplex();
@@ -129,11 +129,11 @@ describe('LineTransform', function () {
             expect(data.length).to.equal(2);
             expect(data[0]).to.equal(0x0d);
             expect(data[1]).to.equal(0x05);
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead(new Buffer([0x0d, 0x05]));
-        return duplex.causeEnd();
+        duplex.causeEnd();
     });
     it('should remove 0x0d if followed by 0x0a', function (done) {
         const duplex = new MockDuplex();
@@ -142,11 +142,11 @@ describe('LineTransform', function () {
             expect(data.length).to.equal(2);
             expect(data[0]).to.equal(0x0a);
             expect(data[1]).to.equal(0x97);
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead(new Buffer([0x0d, 0x0a, 0x97]));
-        return duplex.causeEnd();
+        duplex.causeEnd();
     });
     it('should push 0x0d without 0x0a if last in stream', function (done) {
         const duplex = new MockDuplex();
@@ -154,11 +154,11 @@ describe('LineTransform', function () {
         transform.on('data', function (data) {
             expect(data.length).to.equal(1);
             expect(data[0]).to.equal(0x0d);
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead(new Buffer([0x0d]));
-        return duplex.causeEnd();
+        duplex.causeEnd();
     });
     it('should push saved 0x0d if next chunk does not start with 0x0a', function (done) {
         const duplex = new MockDuplex();
@@ -172,13 +172,13 @@ describe('LineTransform', function () {
             expect(buffer[0]).to.equal(0x62);
             expect(buffer[1]).to.equal(0x0d);
             expect(buffer[2]).to.equal(0x37);
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead(new Buffer([0x62, 0x0d]));
         duplex.causeRead(new Buffer([0x37]));
         duplex.causeEnd();
-        return duplex.end();
+        duplex.end();
     });
     return it('should remove saved 0x0d if next chunk starts with 0x0a', function (done) {
         const duplex = new MockDuplex();
@@ -191,12 +191,12 @@ describe('LineTransform', function () {
             expect(buffer).to.have.length(2);
             expect(buffer[0]).to.equal(0x62);
             expect(buffer[1]).to.equal(0x0a);
-            return done();
+            done();
         });
         duplex.pipe(transform);
         duplex.causeRead(new Buffer([0x62, 0x0d]));
         duplex.causeRead(new Buffer([0x0a]));
         duplex.causeEnd();
-        return duplex.end();
+        duplex.end();
     });
 });

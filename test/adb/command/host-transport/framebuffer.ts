@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import FrameBufferCommand from '../../../../src/adb/command/host-transport/framebuffer';
 
 describe('FrameBufferCommand', function () {
-    it("should send 'framebuffer:'", function (done) {
+    it("should send 'framebuffer:'", function () {
         const conn = new MockConnection();
         const cmd = new FrameBufferCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -20,18 +20,16 @@ describe('FrameBufferCommand', function () {
             conn.getSocket().causeRead(meta);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('raw').then(function () {
-            return done();
-        });
+        return cmd.execute('raw');
     });
-    return it("should parse meta header and return it as the 'meta' property of the stream", function (done) {
+    return it("should parse meta header and return it as the 'meta' property of the stream", function () {
         const conn = new MockConnection();
         const cmd = new FrameBufferCommand(conn);
         conn.getSocket().on('write', function (chunk) {
             return expect(chunk.toString()).to.equal(Protocol.encodeData('framebuffer:').toString());
         });
         setImmediate(function () {
-            const meta = new Buffer(52);
+            const meta = Buffer.alloc(52);
             let offset = 0;
             meta.writeUInt32LE(1, offset);
             meta.writeUInt32LE(32, (offset += 4));
@@ -68,7 +66,6 @@ describe('FrameBufferCommand', function () {
                 alpha_length: 8,
                 format: 'rgba',
             });
-            return done();
         });
     });
 });

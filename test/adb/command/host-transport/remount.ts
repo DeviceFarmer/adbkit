@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import RemountCommand from '../../../../src/adb/command/host-transport/remount';
 
 describe('RemountCommand', function () {
-    return it("should send 'remount:'", function (done) {
+    return it("should send 'remount:'", function () {
         const conn = new MockConnection();
         const cmd = new RemountCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -15,8 +15,6 @@ describe('RemountCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
 });

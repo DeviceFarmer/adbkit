@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import StartServiceCommand from '../../../../src/adb/command/host-transport/startservice';
 
 describe('StartServiceCommand', function () {
-    it("should succeed when 'Success' returned", function (done) {
+    it("should succeed when 'Success' returned", function () {
         const conn = new MockConnection();
         const cmd = new StartServiceCommand(conn);
         setImmediate(function () {
@@ -18,9 +18,7 @@ describe('StartServiceCommand', function () {
         const options = {
             component: 'com.dummy.component/.Main',
         };
-        return cmd.execute(options).then(function () {
-            return done();
-        });
+        return cmd.execute(options);
     });
     it("should fail when 'Error' returned", function (done) {
         const conn = new MockConnection();
@@ -33,12 +31,12 @@ describe('StartServiceCommand', function () {
         const options = {
             component: 'com.dummy.component/.Main',
         };
-        return cmd.execute(options).catch(function (err) {
+        cmd.execute(options).catch(function (err) {
             expect(err).to.be.be.an.instanceOf(Error);
-            return done();
+            done();
         });
     });
-    it("should send 'am startservice --user 0 -n <pkg>'", function (done) {
+    it("should send 'am startservice --user 0 -n <pkg>'", function () {
         const conn = new MockConnection();
         const cmd = new StartServiceCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -55,11 +53,9 @@ describe('StartServiceCommand', function () {
             component: 'com.dummy.component/.Main',
             user: 0,
         };
-        return cmd.execute(options).then(function () {
-            return done();
-        });
+        return cmd.execute(options)
     });
-    return it("should not send user option if not set'", function (done) {
+    return it("should not send user option if not set'", function () {
         const conn = new MockConnection();
         const cmd = new StartServiceCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -75,8 +71,6 @@ describe('StartServiceCommand', function () {
         const options = {
             component: 'com.dummy.component/.Main',
         };
-        return cmd.execute(options).then(function () {
-            return done();
-        });
+        return cmd.execute(options);
     });
 });

@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import { WaitForDeviceCommand } from '../../../../src/adb/command/host-serial';
 
 describe('WaitForDeviceCommand', function () {
-    it("should send 'host-serial:<serial>:wait-for-any'", function (done) {
+    it("should send 'host-serial:<serial>:wait-for-any'", function () {
         const conn = new MockConnection();
         const cmd = new WaitForDeviceCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('WaitForDeviceCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('abba').then(function () {
-            return done();
-        });
+        return cmd.execute('abba');
     });
-    it('should resolve with id when the device is connected', function (done) {
+    it('should resolve with id when the device is connected', function () {
         const conn = new MockConnection();
         const cmd = new WaitForDeviceCommand(conn);
         setImmediate(function () {
@@ -32,10 +30,9 @@ describe('WaitForDeviceCommand', function () {
         });
         return cmd.execute('abba').then(function (id) {
             expect(id).to.equal('abba');
-            return done();
         });
     });
-    return it('should reject with error if unable to connect', function (done) {
+    return it('should reject with error if unable to connect', function () {
         const conn = new MockConnection();
         const cmd = new WaitForDeviceCommand(conn);
         setImmediate(function () {
@@ -46,7 +43,6 @@ describe('WaitForDeviceCommand', function () {
         });
         return cmd.execute('abba').catch(function (err) {
             expect(err.message).to.contain('not sure how this might happen');
-            return done();
         });
     });
 });

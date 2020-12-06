@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import TcpIpCommand from '../../../../src/adb/command/host-transport/tcpip';
 
 describe('TcpIpCommand', function () {
-    it("should send 'tcp:<port>'", function (done) {
+    it("should send 'tcp:<port>'", function () {
         const conn = new MockConnection();
         const cmd = new TcpIpCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('TcpIpCommand', function () {
             conn.getSocket().causeRead('restarting in TCP mode port: 5555\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute(5555).then(function () {
-            return done();
-        });
+        return cmd.execute(5555)
     });
-    it('should resolve with the port', function (done) {
+    it('should resolve with the port', function () {
         const conn = new MockConnection();
         const cmd = new TcpIpCommand(conn);
         setImmediate(function () {
@@ -32,7 +30,6 @@ describe('TcpIpCommand', function () {
         });
         return cmd.execute(5555).then(function (port) {
             expect(port).to.equal(5555);
-            return done();
         });
     });
     return it('should reject on unexpected reply', function (done) {
@@ -43,9 +40,9 @@ describe('TcpIpCommand', function () {
             conn.getSocket().causeRead('not sure what this could be\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute(5555).catch(function (err) {
+        cmd.execute(5555).catch(function (err) {
             expect(err.message).to.eql('not sure what this could be');
-            return done();
+            done();
         });
     });
 });

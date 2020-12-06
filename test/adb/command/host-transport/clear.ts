@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import ClearCommand from '../../../../src/adb/command/host-transport/clear';
 
 describe('ClearCommand', function () {
-    it("should send 'pm clear <pkg>'", function (done) {
+    it("should send 'pm clear <pkg>'", function () {
         const conn = new MockConnection();
         const cmd = new ClearCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -16,11 +16,9 @@ describe('ClearCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo.bar.c').then(function () {
-            return done();
-        });
+        return cmd.execute('foo.bar.c');
     });
-    it("should succeed on 'Success'", function (done) {
+    it("should succeed on 'Success'", function () {
         const conn = new MockConnection();
         const cmd = new ClearCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -28,9 +26,7 @@ describe('ClearCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo.bar.c').then(function () {
-            return done();
-        });
+        return cmd.execute('foo.bar.c');
     });
     it("should error on 'Failed'", function (done) {
         const conn = new MockConnection();
@@ -40,9 +36,9 @@ describe('ClearCommand', function () {
             conn.getSocket().causeRead('Failed\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo.bar.c').catch(function (err) {
+        cmd.execute('foo.bar.c').catch(function (err) {
             expect(err).to.be.an.instanceof(Error);
-            return done();
+            done();
         });
     });
     it("should error on 'Failed' even if connection not closed by device", function (done) {
@@ -52,12 +48,12 @@ describe('ClearCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeRead('Failed\r\n');
         });
-        return cmd.execute('foo.bar.c').catch(function (err) {
+        cmd.execute('foo.bar.c').catch(function (err) {
             expect(err).to.be.an.instanceof(Error);
-            return done();
+            done();
         });
     });
-    return it('should ignore irrelevant lines', function (done) {
+    return it('should ignore irrelevant lines', function () {
         const conn = new MockConnection();
         const cmd = new ClearCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -66,8 +62,6 @@ describe('ClearCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo.bar.c').then(function () {
-            return done();
-        });
+        return cmd.execute('foo.bar.c');
     });
 });
