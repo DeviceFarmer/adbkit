@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import ConnectCommand from '../../../../src/adb/command/host/connect';
 
 describe('ConnectCommand', function () {
-    it("should send 'host:connect:<host>:<port>'", function (done) {
+    it("should send 'host:connect:<host>:<port>'", function () {
         const conn = new MockConnection();
         const cmd = new ConnectCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('ConnectCommand', function () {
             conn.getSocket().causeRead(Protocol.encodeData('connected to 192.168.2.2:5555'));
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('192.168.2.2', 5555).then(function () {
-            return done();
-        });
+        return cmd.execute('192.168.2.2', 5555)
     });
-    it('should resolve with the new device id if connected', function (done) {
+    it('should resolve with the new device id if connected', function () {
         const conn = new MockConnection();
         const cmd = new ConnectCommand(conn);
         setImmediate(function () {
@@ -32,10 +30,9 @@ describe('ConnectCommand', function () {
         });
         return cmd.execute('192.168.2.2', 5555).then(function (val) {
             expect(val).to.be.equal('192.168.2.2:5555');
-            return done();
         });
     });
-    it('should resolve with the new device id if already connected', function (done) {
+    it('should resolve with the new device id if already connected', function () {
         const conn = new MockConnection();
         const cmd = new ConnectCommand(conn);
         setImmediate(function () {
@@ -45,10 +42,9 @@ describe('ConnectCommand', function () {
         });
         return cmd.execute('192.168.2.2', 5555).then(function (val) {
             expect(val).to.be.equal('192.168.2.2:5555');
-            return done();
         });
     });
-    return it('should reject with error if unable to connect', function (done) {
+    return it('should reject with error if unable to connect', function () {
         const conn = new MockConnection();
         const cmd = new ConnectCommand(conn);
         setImmediate(function () {
@@ -58,7 +54,6 @@ describe('ConnectCommand', function () {
         });
         return cmd.execute('192.168.2.2', 5555).catch(function (err) {
             expect(err.message).to.eql('unable to connect to 192.168.2.2:5555');
-            return done();
         });
     });
 });

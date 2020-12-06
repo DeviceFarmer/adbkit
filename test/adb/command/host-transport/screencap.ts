@@ -8,7 +8,7 @@ import Parser from '../../../../src/adb/parser';
 import ScreencapCommand from '../../../../src/adb/command/host-transport/screencap';
 
 describe('ScreencapCommand', function () {
-    it("should send 'screencap -p'", function (done) {
+    it("should send 'screencap -p'", function () {
         const conn = new MockConnection();
         const cmd = new ScreencapCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -21,11 +21,9 @@ describe('ScreencapCommand', function () {
             conn.getSocket().causeRead('\r\nlegit image');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function (stream) {
-            return done();
-        });
+        return cmd.execute()
     });
-    it('should resolve with the PNG stream', function (done) {
+    it('should resolve with the PNG stream', function () {
         const conn = new MockConnection();
         const cmd = new ScreencapCommand(conn);
         setImmediate(function () {
@@ -40,7 +38,6 @@ describe('ScreencapCommand', function () {
             })
             .then(function (out) {
                 expect(out.toString()).to.equal('legit image');
-                return done();
             });
     });
     it('should reject if command not supported', function (done) {
@@ -50,11 +47,11 @@ describe('ScreencapCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().catch(function () {
-            return done();
+        cmd.execute().catch(function () {
+            done();
         });
     });
-    it('should perform CRLF transformation by default', function (done) {
+    it('should perform CRLF transformation by default', function () {
         const conn = new MockConnection();
         const cmd = new ScreencapCommand(conn);
         setImmediate(function () {
@@ -69,10 +66,9 @@ describe('ScreencapCommand', function () {
             })
             .then(function (out) {
                 expect(out.toString()).to.equal('foo\n');
-                return done();
             });
     });
-    return it('should not perform CRLF transformation if not needed', function (done) {
+    return it('should not perform CRLF transformation if not needed', function () {
         const conn = new MockConnection();
         const cmd = new ScreencapCommand(conn);
         setImmediate(function () {
@@ -87,7 +83,6 @@ describe('ScreencapCommand', function () {
             })
             .then(function (out) {
                 expect(out.toString()).to.equal('foo\r\n');
-                return done();
             });
     });
 });

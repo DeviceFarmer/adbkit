@@ -8,7 +8,7 @@ import Protocol from '../../../../src/adb/protocol';
 import LogCommand from '../../../../src/adb/command/host-transport/log';
 
 describe('LogCommand', function () {
-    it("should send 'log:<log>'", function (done) {
+    it("should send 'log:<log>'", function () {
         const conn = new MockConnection();
         const cmd = new LogCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('LogCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('main').then(function (stream) {
-            return done();
-        });
+        return cmd.execute('main');
     });
-    return it('should resolve with the log stream', function (done) {
+    return it('should resolve with the log stream', function () {
         const conn = new MockConnection();
         const cmd = new LogCommand(conn);
         setImmediate(function () {
@@ -31,7 +29,6 @@ describe('LogCommand', function () {
         return cmd.execute('main').then(function (stream) {
             stream.end();
             expect(stream).to.be.an.instanceof(Stream.Readable);
-            return done();
         });
     });
 });

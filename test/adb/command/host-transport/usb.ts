@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import UsbCommand from '../../../../src/adb/command/host-transport/usb';
 
 describe('UsbCommand', function () {
-    it("should send 'usb:'", function (done) {
+    it("should send 'usb:'", function () {
         const conn = new MockConnection();
         const cmd = new UsbCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -20,7 +20,6 @@ describe('UsbCommand', function () {
         });
         return cmd.execute().then(function (val) {
             expect(val).to.be.true;
-            return done();
         });
     });
     return it('should reject on unexpected reply', function (done) {
@@ -31,9 +30,9 @@ describe('UsbCommand', function () {
             conn.getSocket().causeRead('invalid port\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().catch(function (err) {
+        cmd.execute().catch(function (err) {
             expect(err.message).to.eql('invalid port');
-            return done();
+            done();
         });
     });
 });

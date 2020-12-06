@@ -8,7 +8,7 @@ import Protocol from '../../../../src/adb/protocol';
 import LocalCommand from '../../../../src/adb/command/host-transport/local';
 
 describe('LocalCommand', function () {
-    it("should send 'localfilesystem:<path>'", function (done) {
+    it("should send 'localfilesystem:<path>'", function () {
         const conn = new MockConnection();
         const cmd = new LocalCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('LocalCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('/foo.sock').then(function (stream) {
-            return done();
-        });
+        return cmd.execute('/foo.sock')
     });
-    it("should send '<type>:<path>' if <path> prefixed with '<type>:'", function (done) {
+    it("should send '<type>:<path>' if <path> prefixed with '<type>:'", function () {
         const conn = new MockConnection();
         const cmd = new LocalCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -33,10 +31,9 @@ describe('LocalCommand', function () {
             return conn.getSocket().causeEnd();
         });
         return cmd.execute('localabstract:/foo.sock').then(function (stream) {
-            return done();
         });
     });
-    return it('should resolve with the stream', function (done) {
+    return it('should resolve with the stream', function () {
         const conn = new MockConnection();
         const cmd = new LocalCommand(conn);
         setImmediate(function () {
@@ -45,7 +42,6 @@ describe('LocalCommand', function () {
         return cmd.execute('/foo.sock').then(function (stream) {
             stream.end();
             expect(stream).to.be.an.instanceof(Stream.Readable);
-            return done();
         });
     });
 });

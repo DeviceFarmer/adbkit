@@ -36,10 +36,10 @@ describe('RgbTransform', function () {
             expect(chunk.readUInt8(0)).to.equal(150);
             expect(chunk.readUInt8(1)).to.equal(100);
             expect(chunk.readUInt8(2)).to.equal(50);
-            return done();
+            done();
         });
         stream.write(pixel);
-        return stream.end();
+        stream.end();
     });
     it('should transform BGR into RGB', function (done) {
         const meta = {
@@ -70,10 +70,10 @@ describe('RgbTransform', function () {
             expect(chunk.readUInt8(0)).to.equal(150);
             expect(chunk.readUInt8(1)).to.equal(100);
             expect(chunk.readUInt8(2)).to.equal(50);
-            return done();
+            done();
         });
         stream.write(pixel);
-        return stream.end();
+        stream.end();
     });
     it('should transform RGB into RGB', function (done) {
         const meta = {
@@ -104,10 +104,10 @@ describe('RgbTransform', function () {
             expect(chunk.readUInt8(0)).to.equal(50);
             expect(chunk.readUInt8(1)).to.equal(100);
             expect(chunk.readUInt8(2)).to.equal(150);
-            return done();
+            done();
         });
         stream.write(pixel);
-        return stream.end();
+        stream.end();
     });
     it('should transform RGBA into RGB', function (done) {
         const meta = {
@@ -139,10 +139,10 @@ describe('RgbTransform', function () {
             expect(chunk.readUInt8(0)).to.equal(50);
             expect(chunk.readUInt8(1)).to.equal(100);
             expect(chunk.readUInt8(2)).to.equal(150);
-            return done();
+            done();
         });
         stream.write(pixel);
-        return stream.end();
+        stream.end();
     });
     it('should wait for a complete pixel before transforming', function (done) {
         const meta: FramebufferMeta = {
@@ -174,12 +174,12 @@ describe('RgbTransform', function () {
             expect(chunk.readUInt8(0)).to.equal(50);
             expect(chunk.readUInt8(1)).to.equal(100);
             expect(chunk.readUInt8(2)).to.equal(150);
-            return done();
+            done();
         });
         stream.write(pixel.slice(0, 2));
         stream.write(pixel.slice(2, 3));
         stream.write(pixel.slice(3, 4));
-        return stream.end();
+        stream.end();
     });
     return it('should transform a stream of multiple pixels', function (done) {
         const meta = {
@@ -223,13 +223,13 @@ describe('RgbTransform', function () {
             expect(all.readUInt8(3)).to.equal(151);
             expect(all.readUInt8(4)).to.equal(101);
             expect(all.readUInt8(5)).to.equal(51);
-            return done();
+            done();
         });
         stream.write(pixel1);
         stream.write(pixel2);
         stream.write(pixel1);
         stream.write(pixel2);
         stream.write(pixel1);
-        return stream.end();
+        stream.end();
     });
 });

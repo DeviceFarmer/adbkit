@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import GetPropertiesCommand from '../../../../src/adb/command/host-transport/getproperties';
 
 describe('GetPropertiesCommand', function () {
-    it("should send 'getprop'", function (done) {
+    it("should send 'getprop'", function () {
         const conn = new MockConnection();
         const cmd = new GetPropertiesCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -17,11 +17,9 @@ describe('GetPropertiesCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
-    it('should return an empty object for an empty property list', function (done) {
+    it('should return an empty object for an empty property list', function () {
         const conn = new MockConnection();
         const cmd = new GetPropertiesCommand(conn);
         setImmediate(function () {
@@ -30,10 +28,9 @@ describe('GetPropertiesCommand', function () {
         });
         return cmd.execute().then(function (properties) {
             expect(Object.keys(properties)).to.be.empty;
-            return done();
         });
     });
-    return it('should return a map of properties', function (done) {
+    return it('should return a map of properties', function () {
         const conn = new MockConnection();
         const cmd = new GetPropertiesCommand(conn);
         setImmediate(function () {
@@ -52,7 +49,6 @@ describe('GetPropertiesCommand', function () {
                 'ro.product.model': 'SC-04E',
                 'ro.product.name': 'SC-04E',
             });
-            return done();
         });
     });
 });

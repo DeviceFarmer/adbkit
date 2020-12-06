@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import GetFeaturesCommand from '../../../../src/adb/command/host-transport/getfeatures';
 
 describe('GetFeaturesCommand', function () {
-    it("should send 'pm list features'", function (done) {
+    it("should send 'pm list features'", function () {
         const conn = new MockConnection();
         const cmd = new GetFeaturesCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -19,11 +19,9 @@ describe('GetFeaturesCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
-    it('should return an empty object for an empty feature list', function (done) {
+    it('should return an empty object for an empty feature list', function () {
         const conn = new MockConnection();
         const cmd = new GetFeaturesCommand(conn);
         setImmediate(function () {
@@ -32,10 +30,9 @@ describe('GetFeaturesCommand', function () {
         });
         return cmd.execute().then(function (features) {
             expect(Object.keys(features)).to.be.empty;
-            return done();
         });
     });
-    return it('should return a map of features', function (done) {
+    return it('should return a map of features', function () {
         const conn = new MockConnection();
         const cmd = new GetFeaturesCommand(conn);
         setImmediate(function () {
@@ -52,7 +49,6 @@ feature:bar`);
                 foo: true,
                 bar: true,
             });
-            return done();
         });
     });
 });

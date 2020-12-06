@@ -10,7 +10,7 @@ import Parser from '../../../../src/adb/parser';
 import LogcatCommand from '../../../../src/adb/command/host-transport/logcat';
 
 describe('LogcatCommand', function () {
-    it("should send 'echo && logcat -B *:I'", function (done) {
+    it("should send 'echo && logcat -B *:I'", function () {
         const conn = new MockConnection();
         const cmd = new LogcatCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -22,11 +22,9 @@ describe('LogcatCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function (stream) {
-            return done();
-        });
+        return cmd.execute();
     });
-    it("should send 'echo && logcat -c && logcat -B *:I' if options.clear is set", function (done) {
+    it("should send 'echo && logcat -c && logcat -B *:I' if options.clear is set", function () {
         const conn = new MockConnection();
         const cmd = new LogcatCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -42,11 +40,8 @@ describe('LogcatCommand', function () {
             .execute({
                 clear: true,
             })
-            .then(function (stream) {
-                return done();
-            });
     });
-    it('should resolve with the logcat stream', function (done) {
+    it('should resolve with the logcat stream', function () {
         const conn = new MockConnection();
         const cmd = new LogcatCommand(conn);
         setImmediate(function () {
@@ -55,10 +50,9 @@ describe('LogcatCommand', function () {
         return cmd.execute().then(function (stream) {
             stream.end();
             expect(stream).to.be.an.instanceof(Stream.Readable);
-            return done();
         });
     });
-    it('should perform CRLF transformation by default', function (done) {
+    it('should perform CRLF transformation by default', function () {
         const conn = new MockConnection();
         const cmd = new LogcatCommand(conn);
         setImmediate(function () {
@@ -73,10 +67,9 @@ describe('LogcatCommand', function () {
             })
             .then(function (out) {
                 expect(out.toString()).to.equal('foo\n');
-                return done();
             });
     });
-    return it('should not perform CRLF transformation if not needed', function (done) {
+    return it('should not perform CRLF transformation if not needed', function () {
         const conn = new MockConnection();
         const cmd = new LogcatCommand(conn);
         setImmediate(function () {
@@ -91,7 +84,6 @@ describe('LogcatCommand', function () {
             })
             .then(function (out) {
                 expect(out.toString()).to.equal('foo\r\n');
-                return done();
             });
     });
 });

@@ -9,7 +9,7 @@ import Protocol from '../../../../src/adb/protocol';
 import MonkeyCommand from '../../../../src/adb/command/host-transport/monkey';
 
 describe('MonkeyCommand', function () {
-    it("should send 'monkey --port <port> -v'", function (done) {
+    it("should send 'monkey --port <port> -v'", function () {
         const conn = new MockConnection();
         const cmd = new MonkeyCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -21,11 +21,9 @@ describe('MonkeyCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeRead(':Monkey: foo\n');
         });
-        return cmd.execute(1080).then(function () {
-            return done();
-        });
+        return cmd.execute(1080);
     });
-    it('should resolve with the output stream', function (done) {
+    it('should resolve with the output stream', function () {
         const conn = new MockConnection();
         const cmd = new MonkeyCommand(conn);
         setImmediate(function () {
@@ -35,10 +33,9 @@ describe('MonkeyCommand', function () {
         return cmd.execute(1080).then(function (stream) {
             stream.end();
             expect(stream).to.be.an.instanceof(Stream.Readable);
-            return done();
         });
     });
-    return it("should resolve after a timeout if result can't be judged from output", function (done) {
+    return it("should resolve after a timeout if result can't be judged from output", function () {
         const conn = new MockConnection();
         const cmd = new MonkeyCommand(conn);
         setImmediate(function () {
@@ -47,7 +44,6 @@ describe('MonkeyCommand', function () {
         return cmd.execute(1080).then(function (stream) {
             stream.end();
             expect(stream).to.be.an.instanceof(Stream.Readable);
-            return done();
         });
     });
 });

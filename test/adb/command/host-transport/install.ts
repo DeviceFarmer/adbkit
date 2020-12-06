@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import InstallCommand from '../../../../src/adb/command/host-transport/install';
 
 describe('InstallCommand', function () {
-    it("should send 'pm install -r <apk>'", function (done) {
+    it("should send 'pm install -r <apk>'", function () {
         const conn = new MockConnection();
         const cmd = new InstallCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -18,11 +18,9 @@ describe('InstallCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
-    it("should succeed when command responds with 'Success'", function (done) {
+    it("should succeed when command responds with 'Success'", function () {
         const conn = new MockConnection();
         const cmd = new InstallCommand(conn);
         setImmediate(function () {
@@ -30,9 +28,7 @@ describe('InstallCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
     it("should reject if command responds with 'Failure [REASON]'", function (done) {
         const conn = new MockConnection();
@@ -42,8 +38,8 @@ describe('InstallCommand', function () {
             conn.getSocket().causeRead('Failure [BAR]\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').catch(function (err) {
-            return done();
+        cmd.execute('foo').catch(function (err) {
+            done();
         });
     });
     it("should give detailed reason in rejection's code property", function (done) {
@@ -54,12 +50,12 @@ describe('InstallCommand', function () {
             conn.getSocket().causeRead('Failure [ALREADY_EXISTS]\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').catch(function (err) {
+        cmd.execute('foo').catch(function (err) {
             expect(err.code).to.equal('ALREADY_EXISTS');
-            return done();
+            done();
         });
     });
-    return it('should ignore any other data', function (done) {
+    return it('should ignore any other data', function () {
         const conn = new MockConnection();
         const cmd = new InstallCommand(conn);
         setImmediate(function () {
@@ -68,8 +64,6 @@ describe('InstallCommand', function () {
             conn.getSocket().causeRead('Success\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('foo').then(function () {
-            return done();
-        });
+        return cmd.execute('foo');
     });
 });

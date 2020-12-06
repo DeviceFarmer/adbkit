@@ -34,7 +34,7 @@ describe('Tracker', function () {
         expect(spy).to.have.been.calledTwice;
         expect(spy).to.have.been.calledWith(device1);
         expect(spy).to.have.been.calledWith(device2);
-        return done();
+        done();
     });
     it("should emit 'remove' when a device is removed", function (done) {
         const spy = Sinon.spy();
@@ -51,7 +51,7 @@ describe('Tracker', function () {
         this.tracker.update([device1]);
         expect(spy).to.have.been.calledOnce;
         expect(spy).to.have.been.calledWith(device2);
-        return done();
+        done();
     });
     it("should emit 'change' when a device changes", function (done) {
         const spy = Sinon.spy();
@@ -68,7 +68,7 @@ describe('Tracker', function () {
         this.tracker.update([deviceNew]);
         expect(spy).to.have.been.calledOnce;
         expect(spy).to.have.been.calledWith(deviceNew, deviceOld);
-        return done();
+        done();
     });
     it("should emit 'changeSet' with all changes", function (done) {
         const spy = Sinon.spy();
@@ -106,15 +106,15 @@ describe('Tracker', function () {
             changed: [device3New],
             removed: [device2],
         });
-        return done();
+        done();
     });
     it("should emit 'error' and 'end' when connection ends", function (done) {
         this.tracker.on('error', () => {
             return this.tracker.on('end', function () {
-                return done();
+                done();
             });
         });
-        return this.writer.end();
+        this.writer.end();
     });
     it('should read devices from socket', function (done) {
         const spy = Sinon.spy();
@@ -161,7 +161,7 @@ d\toffline`),
                 changed: [device3New],
                 removed: [device2],
             });
-            return done();
+            done();
         }, 10);
     });
     return describe('end()', function () {
@@ -169,7 +169,7 @@ d\toffline`),
             Sinon.spy(this.conn.parser, 'end');
             this.tracker.on('end', () => {
                 expect(this.conn.parser.end).to.have.been.calledOnce;
-                return done();
+                done();
             });
             return this.tracker.end();
         });
@@ -178,7 +178,7 @@ d\toffline`),
             this.tracker.on('error', spy);
             this.tracker.on('end', function () {
                 expect(spy).to.not.have.been.called;
-                return done();
+                done();
             });
             return this.tracker.end();
         });

@@ -93,6 +93,6 @@ export default class LineTransform extends Stream.Transform {
         if (this.savedR) {
             this.push(this.savedR);
         }
-        return done();
+        done();
     }
 }

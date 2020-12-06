@@ -7,7 +7,7 @@ import Protocol from '../../../../src/adb/protocol';
 import RebootCommand from '../../../../src/adb/command/host-transport/reboot';
 
 describe('RebootCommand', function () {
-    it("should send 'reboot:'", function (done) {
+    it("should send 'reboot:'", function () {
         const conn = new MockConnection();
         const cmd = new RebootCommand(conn);
         conn.getSocket().on('write', function (chunk) {
@@ -17,11 +17,9 @@ describe('RebootCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
-    return it('should send wait for the connection to end', function (done) {
+    return it('should send wait for the connection to end', function () {
         const conn = new MockConnection();
         const cmd = new RebootCommand(conn);
         let ended = false;
@@ -37,7 +35,6 @@ describe('RebootCommand', function () {
         });
         return cmd.execute().then(function () {
             expect(ended).to.be.true;
-            return done();
         });
     });
 });

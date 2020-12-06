@@ -8,17 +8,17 @@ describe('Adb', function () {
     //it('should expose Keycode', function (done) {
     //    expect(Adb).to.have.property('Keycode');
         // expect(Adb.Keycode).to.equal(Keycode);
-    //    return done();
+    //    done();
     //});
     it('should expose util', function (done) {
         expect(Adb).to.have.property('util');
         expect(Adb.util).to.equal(util);
-        return done();
+        done();
     });
     return describe('@createClient(options)', function () {
         return it('should return a Client instance', function (done) {
             expect(Adb.createClient()).to.be.an.instanceOf(Client);
-            return done();
+            done();
         });
     });
 });

@@ -8,7 +8,7 @@ import Parser from '../../../../src/adb/parser';
 import WaitBootCompleteCommand from '../../../../src/adb/command/host-transport/waitbootcomplete';
 
 describe('WaitBootCompleteCommand', function () {
-    it('should send a while loop with boot check', function (done) {
+    it('should send a while loop with boot check', function () {
         const conn = new MockConnection();
         const cmd = new WaitBootCompleteCommand(conn);
         const want = 'shell:while getprop sys.boot_completed 2>/dev/null; do sleep 1; done';
@@ -20,9 +20,7 @@ describe('WaitBootCompleteCommand', function () {
             conn.getSocket().causeRead('1\r\n');
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute().then(function () {
-            return done();
-        });
+        return cmd.execute();
     });
     it('should reject with Parser.PrematureEOFError if connection cuts prematurely', function (done) {
         const conn = new MockConnection();
@@ -31,16 +29,16 @@ describe('WaitBootCompleteCommand', function () {
             conn.getSocket().causeRead(Protocol.OKAY);
             return conn.getSocket().causeEnd();
         });
-        return cmd
+        cmd
             .execute()
             .then(function () {
                 return done(new Error('Succeeded even though it should not'));
             })
             .catch(Parser.PrematureEOFError, function (err) {
-                return done();
+                done();
             });
     });
-    it('should not return until boot is complete', function (done) {
+    it('should not return until boot is complete', function () {
         const conn = new MockConnection();
         const cmd = new WaitBootCompleteCommand(conn);
         let sent = false;
@@ -63,7 +61,6 @@ describe('WaitBootCompleteCommand', function () {
         });
         return cmd.execute().then(function () {
             expect(sent).to.be.true;
-            return done();
         });
     });
     return it('should close connection when done', function (done) {
@@ -74,8 +71,8 @@ describe('WaitBootCompleteCommand', function () {
             return conn.getSocket().causeRead('1\r\n');
         });
         conn.getSocket().on('end', function () {
-            return done();
+            done();
         });
-        return cmd.execute();
+        cmd.execute();
     });
 });
