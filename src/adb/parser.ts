@@ -71,7 +71,7 @@ export default class Parser {
     }
 
     public readAll(): Bluebird<Buffer> {
-        let all = new Buffer(0);
+        let all = Buffer.alloc(0);
         const resolver = Bluebird.defer<Buffer>();
         const tryRead = () => {
             let chunk;
@@ -123,7 +123,7 @@ export default class Parser {
                     return resolver.reject(new Parser.PrematureEOFError(howMany));
                 }
             } else {
-                return resolver.resolve(new Buffer(0));
+                return resolver.resolve(Buffer.alloc(0));
             }
         };
         const endListener = () => {
@@ -197,7 +197,7 @@ export default class Parser {
     }
 
     public readUntil(code: number): Bluebird<Buffer> {
-        let skipped = new Buffer(0);
+        let skipped = Buffer.alloc(0);
         const read = () => {
             return this.readBytes(1).then(function (chunk) {
                 if (chunk[0] === code) {

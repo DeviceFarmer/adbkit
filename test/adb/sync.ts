@@ -13,6 +13,7 @@ import PushTransfer from '../../src/adb/sync/pushtransfer';
 import PullTransfer from '../../src/adb/sync/pulltransfer';
 import MockConnection from '../mock/connection';
 import { Client } from '../..';
+import { Device } from '../..';
 
 // This test suite is a bit special in that it requires a connected Android
 // device (or many devices). All will be tested.
@@ -26,8 +27,8 @@ describe('Sync', function () {
     const SURELY_EXISTING_PATH = '/';
     const SURELY_NONEXISTING_PATH = '/non-existing-path';
     const SURELY_WRITABLE_FILE = '/data/local/tmp/_sync.test';
-    let client: Client = null;
-    let deviceList = null;
+    let client: Client | null = null;
+    let deviceList: Device[] | null = null;
     const forEachSyncDevice = function (iterator: (sync: Sync) => any, done): Promise<Sync> {
         assert(deviceList.length > 0, 'At least one connected Android device is required');
         const promises = deviceList.map(function (device) {
@@ -96,7 +97,7 @@ describe('Sync', function () {
             return forEachSyncDevice(function (sync) {
                 return new Promise(function (resolve, reject) {
                     const stream = new Stream.PassThrough();
-                    const content = new Buffer(1000000);
+                    const content = Buffer.alloc(1000000);
                     const transfer = sync.pushStream(stream, SURELY_WRITABLE_FILE);
                     transfer.on('error', reject);
                     transfer.on('end', resolve);

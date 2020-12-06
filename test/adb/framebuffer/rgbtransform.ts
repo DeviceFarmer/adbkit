@@ -23,7 +23,7 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel = new Buffer(4);
+        const pixel = Buffer.alloc(4);
         pixel.writeUInt8(50, 0);
         pixel.writeUInt8(100, 1);
         pixel.writeUInt8(150, 2);
@@ -58,7 +58,7 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel = new Buffer(4);
+        const pixel = Buffer.alloc(4);
         pixel.writeUInt8(50, 0);
         pixel.writeUInt8(100, 1);
         pixel.writeUInt8(150, 2);
@@ -92,7 +92,7 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel = new Buffer(3);
+        const pixel = Buffer.alloc(3);
         pixel.writeUInt8(50, 0);
         pixel.writeUInt8(100, 1);
         pixel.writeUInt8(150, 2);
@@ -126,7 +126,7 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel = new Buffer(4);
+        const pixel = Buffer.alloc(4);
         pixel.writeUInt8(50, 0);
         pixel.writeUInt8(100, 1);
         pixel.writeUInt8(150, 2);
@@ -161,7 +161,7 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel = new Buffer(4);
+        const pixel = Buffer.alloc(4);
         pixel.writeUInt8(50, 0);
         pixel.writeUInt8(100, 1);
         pixel.writeUInt8(150, 2);
@@ -198,12 +198,12 @@ describe('RgbTransform', function () {
             height: 1920,
             size: 0,
         };
-        const pixel1 = new Buffer(4);
+        const pixel1 = Buffer.alloc(4);
         pixel1.writeUInt8(50, 0);
         pixel1.writeUInt8(100, 1);
         pixel1.writeUInt8(150, 2);
         pixel1.writeUInt8(200, 3);
-        const pixel2 = new Buffer(4);
+        const pixel2 = Buffer.alloc(4);
         pixel2.writeUInt8(51, 0);
         pixel2.writeUInt8(101, 1);
         pixel2.writeUInt8(151, 2);
@@ -211,7 +211,7 @@ describe('RgbTransform', function () {
         const stream = new Stream.PassThrough();
         const transform = new RgbTransform(meta);
         stream.pipe(transform);
-        let all = new Buffer('');
+        let all = Buffer.from('');
         transform.on('data', function (chunk) {
             return (all = Buffer.concat([all, chunk]));
         });

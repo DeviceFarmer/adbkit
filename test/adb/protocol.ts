@@ -50,16 +50,16 @@ describe('Protocol', function () {
     });
     return describe('@encodeData(data)', function () {
         it('should return a Buffer', function (done) {
-            expect(Protocol.encodeData(new Buffer(''))).to.be.an.instanceOf(Buffer);
+            expect(Protocol.encodeData(Buffer.from(''))).to.be.an.instanceOf(Buffer);
             done();
         });
         it('should accept a string or a Buffer', function (done) {
             expect(Protocol.encodeData('')).to.be.an.instanceOf(Buffer);
-            expect(Protocol.encodeData(new Buffer(''))).to.be.an.instanceOf(Buffer);
+            expect(Protocol.encodeData(Buffer.from(''))).to.be.an.instanceOf(Buffer);
             done();
         });
         return it('should prefix data with length', function (done) {
-            const data = Protocol.encodeData(new Buffer(0x270f));
+            const data = Protocol.encodeData(Buffer.alloc(0x270f));
             expect(data).to.have.length(0x270f + 4);
             expect(data.toString('ascii', 0, 4)).to.equal('270F');
             done();

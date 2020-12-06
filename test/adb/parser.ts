@@ -133,9 +133,9 @@ describe('Parser', function () {
             parser
                 .readByteFlow(4, target)
                 .then(function () {
-                    expect(target.read()).to.eql(new Buffer('OKAY'));
+                    expect(target.read()).to.eql(Buffer.from('OKAY'));
                     return parser.readByteFlow(2, target).then(function () {
-                        expect(target.read()).to.eql(new Buffer('FA'));
+                        expect(target.read()).to.eql(Buffer.from('FA'));
                         done();
                     });
                 })
@@ -149,14 +149,14 @@ describe('Parser', function () {
             parser
                 .readByteFlow(3, target)
                 .then(function () {
-                    expect(target.read()).to.eql(new Buffer('PIE'));
+                    expect(target.read()).to.eql(Buffer.from('PIE'));
                     done();
                 })
                 .catch(done);
-            const b1 = new Buffer('P');
-            const b2 = new Buffer('I');
-            const b3 = new Buffer('ES');
-            const b4 = new Buffer('R');
+            const b1 = Buffer.from('P');
+            const b2 = Buffer.from('I');
+            const b3 = Buffer.from('ES');
+            const b4 = Buffer.from('R');
             stream.write(b1);
             stream.write(b2);
             stream.write(b3);

@@ -25,7 +25,7 @@ export default class Packet {
 
     public static assemble(command: number, arg0: number, arg1: number, data?: Buffer): Buffer {
         if (data) {
-            const chunk = new Buffer(24 + data.length);
+            const chunk = Buffer.alloc(24 + data.length);
             chunk.writeUInt32LE(command, 0);
             chunk.writeUInt32LE(arg0, 4);
             chunk.writeUInt32LE(arg1, 8);
@@ -35,7 +35,7 @@ export default class Packet {
             data.copy(chunk, 24);
             return chunk;
         } else {
-            const chunk = new Buffer(24);
+            const chunk = Buffer.alloc(24);
             chunk.writeUInt32LE(command, 0);
             chunk.writeUInt32LE(arg0, 4);
             chunk.writeUInt32LE(arg1, 8);
@@ -47,7 +47,7 @@ export default class Packet {
     }
 
     static swap32(n: number): number {
-        const buffer = new Buffer(4);
+        const buffer = Buffer.alloc(4);
         buffer.writeUInt32LE(n, 0);
         return buffer.readUInt32BE(0);
     }

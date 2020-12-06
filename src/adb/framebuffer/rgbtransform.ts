@@ -3,7 +3,7 @@ import { Stream, TransformCallback, TransformOptions } from 'stream';
 import FramebufferMeta from '../../FramebufferMeta';
 
 class RgbTransform extends Stream.Transform {
-    private _buffer = new Buffer('');
+    private _buffer = Buffer.from('');
     private readonly _r_pos: number;
     private readonly _g_pos: number;
     private readonly _b_pos: number;
@@ -33,7 +33,7 @@ class RgbTransform extends Stream.Transform {
         sourceCursor = 0;
         targetCursor = 0;
         const target =
-            this._pixel_bytes === 3 ? this._buffer : new Buffer(Math.max(4, (chunk.length / this._pixel_bytes) * 3));
+            this._pixel_bytes === 3 ? this._buffer : Buffer.alloc(Math.max(4, (chunk.length / this._pixel_bytes) * 3));
         while (this._buffer.length - sourceCursor >= this._pixel_bytes) {
             r = this._buffer[sourceCursor + this._r_pos];
             g = this._buffer[sourceCursor + this._g_pos];
