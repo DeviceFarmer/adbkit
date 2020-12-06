@@ -2,26 +2,25 @@ import Command from '../../command';
 import Protocol from '../../protocol';
 
 export default class ForwardCommand extends Command<boolean> {
-    execute(serial: string, local: string, remote: string): Promise<boolean> {
+    async execute(serial: string, local: string, remote: string): Promise<boolean> {
         this._send(`host-serial:${serial}:forward:${local};${remote}`);
-        return this.parser.readAscii(4).then((reply) => {
-            switch (reply) {
-                case Protocol.OKAY:
-                    return this.parser.readAscii(4).then((reply) => {
-                        switch (reply) {
-                            case Protocol.OKAY:
-                                return true;
-                            case Protocol.FAIL:
-                                return this.parser.readError();
-                            default:
-                                return this.parser.unexpected(reply, 'OKAY or FAIL');
-                        }
-                    });
-                case Protocol.FAIL:
-                    return this.parser.readError();
-                default:
-                    return this.parser.unexpected(reply, 'OKAY or FAIL');
-            }
-        });
+        const reply = await this.parser.readAscii(4);
+        switch (reply) {
+            case Protocol.OKAY:
+                return this.parser.readAscii(4).then((reply_1) => {
+                    switch (reply_1) {
+                        case Protocol.OKAY:
+                            return true;
+                        case Protocol.FAIL:
+                            return this.parser.readError();
+                        default:
+                            return this.parser.unexpected(reply_1, 'OKAY or FAIL');
+                    }
+                });
+            case Protocol.FAIL:
+                return this.parser.readError();
+            default:
+                return this.parser.unexpected(reply, 'OKAY or FAIL');
+        }
     }
 }
