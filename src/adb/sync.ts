@@ -34,7 +34,7 @@ export default class Sync extends EventEmitter {
     constructor(private connection: Connection) {
         super();
         // this.connection = connection;
-        this.parser = this.connection.parser;
+        this.parser = this.connection.parser as Parser;
     }
 
     public stat(path: string, callback?: Callback<Stats>): Bluebird<Stats> {

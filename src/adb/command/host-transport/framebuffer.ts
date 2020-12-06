@@ -60,7 +60,9 @@ export default class FrameBufferCommand extends Command<any> {
             `${meta.format}:-`,
             `${format}:-`,
         ]);
-        raw.pipe(proc.stdin);
+        if (raw) {
+            raw.pipe(proc.stdin);
+        }
         return proc.stdout;
     }
 

@@ -11,14 +11,16 @@ import { ClientOptions } from '../ClientOptions';
 const debug = d('adb:connection');
 
 export default class Connection extends EventEmitter {
-    public socket: Socket;
-    public parser: Parser;
+    public socket?: Socket;
+    public parser?: Parser;
     private triedStarting: boolean;
+    public options: ClientOptions;
 
-    constructor(public options?: ClientOptions) {
+    constructor(options?: ClientOptions) {
         super();
-        this.socket = null;
-        this.parser = null;
+        this.options = options || { port: 0 };
+        // this.socket = null;
+        // this.parser = null;
         this.triedStarting = false;
     }
 
@@ -32,8 +34,10 @@ export default class Connection extends EventEmitter {
         this.socket.on('timeout', () => this.emit('timeout'));
         this.socket.on('close', (hadError) => this.emit('close', hadError));
         return new Bluebird((resolve, reject) => {
-            this.socket.once('connect', resolve);
-            return this.socket.once('error', reject);
+            if (this.socket) {
+                this.socket.once('connect', resolve);
+                this.socket.once('error', reject);
+            }
         })
             .catch((err) => {
                 if (err.code === 'ECONNREFUSED' && !this.triedStarting) {
@@ -50,11 +54,13 @@ export default class Connection extends EventEmitter {
             .then(() => {
                 // Emit unhandled error events, so that they can be handled on the client.
                 // Without this, they would just crash node unavoidably.
-                this.socket.on('error', (err) => {
-                    if (this.socket.listenerCount('error') === 1) {
-                        return this.emit('error', err);
-                    }
-                });
+                if (this.socket) {
+                    this.socket.on('error', (err) => {
+                        if (this.socket && this.socket.listenerCount('error') === 1) {
+                            this.emit('error', err);
+                        }
+                    });
+                }
                 return this;
             });
     }
@@ -67,17 +73,21 @@ export default class Connection extends EventEmitter {
     }
 
     public end(): this {
-        this.socket.end();
+        if (this.socket) {
+            this.socket.end();
+        }
         return this;
     }
 
     public write(data: string | Uint8Array, callback?: (err?: Error) => void): this {
-        this.socket.write(dump(data), callback);
+        if (this.socket) {
+            this.socket.write(dump(data), callback);
+        }
         return this;
     }
 
     public startServer(): Bluebird<ChildProcess> {
-        let port: number;
+        let port = 0;
         if ('port' in this.options) {
             port = this.options.port;
         }
@@ -93,7 +103,7 @@ export default class Connection extends EventEmitter {
             string,
             ReadonlyArray<string>,
             ({ encoding?: string | null } & ExecFileOptions) | undefined | null
-        >(execFile)(this.options.bin, args, options);
+        >(execFile)(this.options.bin as string, args, options);
     }
 
     // _handleError(err) {}

@@ -21,17 +21,13 @@ export default class ListReversesCommand extends Command<Reverse[]> {
     }
 
     private _parseReverses(value: Buffer): Reverse[] {
-        let i, len, local, remote;
-        const reverses = [];
+        const reverses: Reverse[] = [];
         const ref = value.toString().split('\n');
-        for (i = 0, len = ref.length; i < len; i++) {
+        for (let i = 0, len = ref.length; i < len; i++) {
             const reverse = ref[i];
             if (reverse) {
-                [, remote, local] = reverse.split(/\s+/);
-                reverses.push({
-                    remote: remote,
-                    local: local,
-                });
+                const [, remote, local] = reverse.split(/\s+/);
+                reverses.push({ remote, local });
             }
         }
         return reverses;

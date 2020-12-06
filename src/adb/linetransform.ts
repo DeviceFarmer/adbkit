@@ -5,14 +5,14 @@ interface LineTransformOptions extends TransformOptions {
 }
 
 export default class LineTransform extends Stream.Transform {
-    private savedR: Buffer;
+    private savedR?: Buffer;
     private autoDetect: boolean;
     private transformNeeded: boolean;
     private skipBytes: number;
 
     constructor(options: LineTransformOptions = {}) {
         super(options);
-        this.savedR = null;
+        // this.savedR = null;
         this.autoDetect = options.autoDetect || false;
         this.transformNeeded = true;
         this.skipBytes = 0;
@@ -67,7 +67,7 @@ export default class LineTransform extends Stream.Transform {
             if (chunk[0] !== 0x0a) {
                 this.push(this.savedR);
             }
-            this.savedR = null;
+            this.savedR = undefined;
         }
         const last = chunk.length - 1;
         while (hi <= last) {

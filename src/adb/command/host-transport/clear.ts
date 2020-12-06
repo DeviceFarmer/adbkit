@@ -5,7 +5,7 @@ import Bluebird from 'bluebird';
 export default class ClearCommand extends Command<boolean> {
     execute(pkg: string): Bluebird<boolean> {
         this._send(`shell:pm clear ${pkg}`);
-        return this.parser.readAscii(4).then((reply) => {
+        return this.parser.readAscii(4).then((reply: string) => {
             switch (reply) {
                 case Protocol.OKAY:
                     return this.parser
@@ -22,11 +22,12 @@ export default class ClearCommand extends Command<boolean> {
                                     // have to kill the connection.
                                     throw new Error(`Package '${pkg}' could not be cleared`);
                             }
+                            return false;
                         });
                 case Protocol.FAIL:
-                    return this.parser.readError();
+                    return this.parser.readError() as Promise<boolean>;
                 default:
-                    return this.parser.unexpected(reply, 'OKAY or FAIL');
+                    return this.parser.unexpected(reply, 'OKAY or FAIL') as Promise<boolean>;
             }
         });
     }

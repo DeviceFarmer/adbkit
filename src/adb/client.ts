@@ -315,7 +315,7 @@ export default class Client extends EventEmitter {
             callback = format;
             f = 'raw';
         } else {
-            f = format;
+            f = format || 'raw';
         }
         return this.transport(serial)
             .then((transport) => new FrameBufferCommand(transport).execute(f))
@@ -374,7 +374,7 @@ export default class Client extends EventEmitter {
         } else {
             p = port;
         }
-        const tryConnect = (times: number) => {
+        const tryConnect = (times: number): Promise<Duplex> => {
             return this.openTcp(serial, p)
                 .then((stream) => Monkey.connectStream(stream))
                 .catch((err) => {
@@ -407,7 +407,7 @@ export default class Client extends EventEmitter {
             callback = options;
             opts = {};
         } else {
-            opts = options;
+            opts = options || {};
         }
         return this.transport(serial)
             .then((transport) => new LogcatCommand(transport).execute(opts))
@@ -479,7 +479,7 @@ export default class Client extends EventEmitter {
         return this.transport(serial)
             .then((transport) => new StartActivityCommand(transport).execute(options))
             .catch(NoUserOptionError, () => {
-                options.user = null;
+                options.user = undefined;
                 return this.startActivity(serial, options);
             })
             .nodeify(callback);
@@ -494,7 +494,7 @@ export default class Client extends EventEmitter {
                 return new StartServiceCommand(transport).execute(options);
             })
             .catch(NoUserOptionError, () => {
-                options.user = null;
+                options.user = undefined;
                 return this.startService(serial, options);
             })
             .nodeify(callback);

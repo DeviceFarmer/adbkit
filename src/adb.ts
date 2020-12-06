@@ -17,10 +17,10 @@ export default class Adb {
         const opts: ClientOptions = {
             bin: options.bin,
             host: options.host || process.env.ADB_HOST,
-            port: options.port,
+            port: options.port || 5037,
         };
         if (!opts.port) {
-            const port = parseInt(process.env.ADB_PORT, 10);
+            const port = parseInt(process.env.ADB_PORT || '5037', 10);
             if (!isNaN(port)) {
                 opts.port = port;
             }
