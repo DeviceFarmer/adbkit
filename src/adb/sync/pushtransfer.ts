@@ -16,7 +16,9 @@ class PushTransfer extends EventEmitter {
 
     public pop(): boolean {
         const byteCount = this._stack.pop();
-        this.stats.bytesTransferred += byteCount;
+        if (byteCount) {
+            this.stats.bytesTransferred += byteCount;
+        }
         return this.emit('progress', this.stats);
     }
 

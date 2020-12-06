@@ -58,7 +58,7 @@ class StartActivityCommand extends Command<boolean> {
     }
 
     protected _intentArgs(options: StartActivityOptions): Array<string | number> {
-        const args = [];
+        const args: Array<string | number> = [];
         if (options.extras) {
             args.push(...this._formatExtras(options.extras));
         }
@@ -105,9 +105,10 @@ class StartActivityCommand extends Command<boolean> {
     }
 
     private _formatShortExtra(key: string, value: ExtraValue): Array<string | number> {
-        let sugared;
-        sugared = {
+        let sugared = {
             key: key,
+            type: '' as string,
+            value: undefined as any,
         };
         if (value === null) {
             sugared.type = 'null';
@@ -130,7 +131,7 @@ class StartActivityCommand extends Command<boolean> {
                     sugared.value = value;
                     break;
                 case 'object':
-                    sugared = value;
+                    sugared = value as any;
                     sugared.key = key;
             }
         }
@@ -138,7 +139,7 @@ class StartActivityCommand extends Command<boolean> {
     }
 
     private _formatLongExtra(extra): Array<string | number> {
-        const args = [];
+        const args: Array<string | number> = [];
         if (!extra.type) {
             extra.type = 'string';
         }

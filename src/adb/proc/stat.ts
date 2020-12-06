@@ -23,7 +23,7 @@ class ProcStat extends EventEmitter {
     private readonly _ignore;
     private readonly _timer;
 
-    constructor(private sync: Sync) {
+    constructor(private sync?: Sync) {
         super();
 
         this.stats = this._emptyStats();
@@ -34,13 +34,18 @@ class ProcStat extends EventEmitter {
         this.update();
     }
 
-    public end(): Sync {
+    public end(): void {
         clearInterval(this._timer);
-        this.sync.end();
-        return (this.sync = null);
+        if (this.sync) {
+            this.sync.end();
+            this.sync = undefined;
+        }
     }
 
     public update(): Bluebird<Stats> {
+        if (!this.sync) {
+            throw Error('Closed');
+        }
         return new Parser(this.sync.pull('/proc/stat'))
             .readAll()
             .then((out) => {

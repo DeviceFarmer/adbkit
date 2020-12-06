@@ -16,7 +16,7 @@ export default abstract class Command<T> {
 
     constructor(connection: Connection) {
         this.connection = connection;
-        this.parser = this.connection.parser;
+        this.parser = this.connection.parser as Parser;
         this.protocol = Protocol;
     }
 

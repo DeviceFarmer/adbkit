@@ -2,8 +2,6 @@ import Command from '../../command';
 import Protocol from '../../protocol';
 import Bluebird from 'bluebird';
 
-const RE_PACKAGE = /^package:(.*?)\r?$/gm;
-
 export default class GetPackagesCommand extends Command<string[]> {
     execute(): Bluebird<string[]> {
         this._send('shell:pm list packages 2>/dev/null');
@@ -21,11 +19,16 @@ export default class GetPackagesCommand extends Command<string[]> {
         });
     }
 
-    private _parsePackages(value): string[] {
-        const packages = [];
-        let match;
-        while ((match = RE_PACKAGE.exec(value))) {
-            packages.push(match[1]);
+    private _parsePackages(value: string): string[] {
+        const packages: string[] = [];
+        const RE_PACKAGE = /^package:(.*?)\r?$/gm;
+        while (true) {
+            const match = RE_PACKAGE.exec(value);
+            if (match) {
+                packages.push((match as any)[1]);
+            } else {
+                break;
+            }
         }
         return packages;
     }
