@@ -161,7 +161,7 @@ export default class Socket extends EventEmitter {
                 }
                 debug('O:A_AUTH');
                 const b = this.write(Packet.assemble(Packet.A_AUTH, AUTH_TOKEN, 0, this.token));
-                return Promise.resolve(b);
+                return Bluebird.resolve(b);
             case AUTH_RSAPUBLICKEY:
                 if (!this.signature) {
                     throw new Socket.AuthError('Public key sent before signature');

@@ -1,5 +1,5 @@
 import Stream from 'stream';
-Promise = require('bluebird');
+import Bluebird from 'bluebird';
 import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
@@ -7,12 +7,12 @@ import util from '../../src/adb/util';
 
 describe('util', function () {
     return describe('readAll(stream)', function () {
-        it('should return a cancellable Promise', function (done) {
+        it('should return a cancellable Bluebird Promise', function (done) {
             const stream = new Stream.PassThrough();
             const promise = util.readAll(stream);
-            expect(promise).to.be.an.instanceOf(Promise);
+            expect(promise).to.be.an.instanceOf(Bluebird);
             expect(promise.isCancellable()).to.be.true;
-            promise.catch(Promise.CancellationError, function () {
+            promise.catch(Bluebird.CancellationError, function () {
                 done();
             });
             promise.cancel();
