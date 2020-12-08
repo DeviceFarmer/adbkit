@@ -1,7 +1,6 @@
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import StartServiceCommand from '../../../../src/adb/command/host-transport/startservice';
@@ -53,7 +52,7 @@ describe('StartServiceCommand', function () {
             component: 'com.dummy.component/.Main',
             user: 0,
         };
-        return cmd.execute(options)
+        return cmd.execute(options);
     });
     return it("should not send user option if not set'", function () {
         const conn = new MockConnection();

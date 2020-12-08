@@ -1,7 +1,6 @@
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import ConnectCommand from '../../../../src/adb/command/host/connect';
@@ -18,7 +17,7 @@ describe('ConnectCommand', function () {
             conn.getSocket().causeRead(Protocol.encodeData('connected to 192.168.2.2:5555'));
             return conn.getSocket().causeEnd();
         });
-        return cmd.execute('192.168.2.2', 5555)
+        return cmd.execute('192.168.2.2', 5555);
     });
     it('should resolve with the new device id if connected', function () {
         const conn = new MockConnection();

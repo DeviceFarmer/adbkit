@@ -1,8 +1,7 @@
 import Stream from 'stream';
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import LogCommand from '../../../../src/adb/command/host-transport/log';

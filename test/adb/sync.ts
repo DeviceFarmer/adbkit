@@ -12,8 +12,8 @@ import Entry from '../../src/adb/sync/entry';
 import PushTransfer from '../../src/adb/sync/pushtransfer';
 import PullTransfer from '../../src/adb/sync/pulltransfer';
 import MockConnection from '../mock/connection';
-import { Client } from '../..';
-import { Device } from '../..';
+import Client from '../../src/adb/client';
+import Device from '../../src/Device';
 
 // This test suite is a bit special in that it requires a connected Android
 // device (or many devices). All will be tested.
@@ -27,17 +27,21 @@ describe('Sync', function () {
     const SURELY_EXISTING_PATH = '/';
     const SURELY_NONEXISTING_PATH = '/non-existing-path';
     const SURELY_WRITABLE_FILE = '/data/local/tmp/_sync.test';
-    let client: Client | null = null;
+    let client!: Client;
     let deviceList: Device[] | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const forEachSyncDevice = function (iterator: (sync: Sync) => any, done): Promise<Sync> {
         assert(deviceList.length > 0, 'At least one connected Android device is required');
         const promises = deviceList.map(function (device) {
-            return client.syncService(device.id).then(function (sync: Sync) {
-                expect(sync).to.be.an.instanceof(Sync);
-                return Promise.cast(iterator(sync)).finally(function () {
-                    return sync.end();
+            return client
+                .getDevice(device.id)
+                .syncService()
+                .then(function (sync: Sync) {
+                    expect(sync).to.be.an.instanceof(Sync);
+                    return Promise.cast(iterator(sync)).finally(function () {
+                        return sync.end();
+                    });
                 });
-            });
         });
         return Promise.all(promises)
             .then(() => done())

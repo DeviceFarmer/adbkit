@@ -1,7 +1,6 @@
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import StartActivityCommand from '../../../../src/adb/command/host-transport/startactivity';
@@ -19,7 +18,7 @@ describe('StartActivityCommand', function () {
         const options = {
             component: 'com.dummy.component/.Main',
         };
-        return cmd.execute(options)
+        return cmd.execute(options);
     });
     it("should fail when 'Error' returned", function (done) {
         const conn = new MockConnection();
@@ -513,6 +512,7 @@ describe('StartActivityCommand', function () {
     return it('should map short extras to long extras', function (done) {
         const conn = new MockConnection();
         const cmd = new StartActivityCommand(conn);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const short = (cmd as any)._formatExtras({
             someString: 'bar',
             someInt: 5,
@@ -526,6 +526,7 @@ describe('StartActivityCommand', function () {
             },
             someNull: null,
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const long = (cmd as any)._formatExtras([
             {
                 key: 'someString',

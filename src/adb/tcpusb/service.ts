@@ -92,7 +92,8 @@ export default class Service extends EventEmitter {
     private _handleOpenPacket(packet): Bluebird<boolean> {
         debug('I:A_OPEN', packet);
         return this.client
-            .transport(this.serial)
+            .getDevice(this.serial)
+            .transport()
             .then((transport) => {
                 this.transport = transport;
                 if (this.ended) {

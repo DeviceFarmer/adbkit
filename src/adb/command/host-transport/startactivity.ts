@@ -3,7 +3,7 @@ import Parser from '../../parser';
 import Command from '../../command';
 import StartActivityOptions from '../../../StartActivityOptions';
 import Bluebird from 'bluebird';
-import { ExtraValue } from '../../../StartServiceOptions';
+import { Extra, ExtraObject, ExtraValue } from '../../../StartServiceOptions';
 
 const RE_ERROR = /^Error: (.*)$/;
 
@@ -89,7 +89,8 @@ class StartActivityCommand extends Command<boolean> {
         return args;
     }
 
-    private _formatExtras(extras: StartActivityOptions['extras']): Array<number | string> {
+    // StartActivityOptions['extras']
+    private _formatExtras(extras: Extra[] | ExtraObject): Array<number | string> {
         if (!extras) {
             return [];
         }
