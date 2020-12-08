@@ -5,7 +5,7 @@
  */
 import Bench from 'bench';
 import { spawn } from 'child_process';
-import Adb from '../..';
+import Adb from '../../src/adb';
 
 const deviceId = process.env.DEVICE_ID;
 
@@ -18,10 +18,13 @@ module.exports = {
         },
         'pull /dev/graphics/fb0 using client.pull()'(done) {
             const client = Adb.createClient();
-            return client.pull(deviceId, '/dev/graphics/fb0', function (err, stream) {
-                stream.resume();
-                return stream.on('end', done);
-            });
+            return client
+                .getDevice(deviceId)
+                .pull('/dev/graphics/fb0')
+                .then((stream) => {
+                    stream.resume();
+                    return stream.on('end', done);
+                });
         },
     },
 };

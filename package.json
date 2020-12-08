@@ -21,6 +21,12 @@
         "email": "contact@openstf.io",
         "url": "https://devicefarmer.github.io/"
     },
+    "contributors": [
+        {
+            "name": "uriel chemouni",
+            "email": "uchemouni@gmail.com"
+        }
+    ],
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "repository": {

@@ -1,7 +1,6 @@
-import Chai from 'chai';
+import Chai, { expect } from 'chai';
 import simonChai from 'sinon-chai';
 Chai.use(simonChai);
-const { expect } = Chai;
 import MockConnection from '../../../mock/connection';
 import Protocol from '../../../../src/adb/protocol';
 import GetPackagesCommand from '../../../../src/adb/command/host-transport/getpackages';

@@ -263,17 +263,20 @@ export default class Socket extends EventEmitter {
 
     private _deviceId(): Bluebird<Buffer> {
         debug('Loading device properties to form a standard device ID');
-        return this.client.getProperties(this.serial).then(function (properties) {
-            const id = (function () {
-                const ref = ['ro.product.name', 'ro.product.model', 'ro.product.device'];
-                const results = [];
-                for (let i = 0, len = ref.length; i < len; i++) {
-                    const prop = ref[i];
-                    results.push(`${prop}=${properties[prop]};`);
-                }
-                return results;
-            })().join('');
-            return Buffer.from(`device::${id}\x00`);
-        });
+        return this.client
+            .getDevice(this.serial)
+            .getProperties()
+            .then(function (properties) {
+                const id = (function () {
+                    const ref = ['ro.product.name', 'ro.product.model', 'ro.product.device'];
+                    const results = [];
+                    for (let i = 0, len = ref.length; i < len; i++) {
+                        const prop = ref[i];
+                        results.push(`${prop}=${properties[prop]};`);
+                    }
+                    return results;
+                })().join('');
+                return Buffer.from(`device::${id}\x00`);
+            });
     }
 }
