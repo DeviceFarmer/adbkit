@@ -29,17 +29,14 @@ export default class JdwpTracker extends EventEmitter {
     }
 
     read(): Bluebird<JdwpTracker> {
-        return this.command.parser
-            .readValue()
-            .cancellable()
-            .then((list) => {
-                const pids = list.toString().split('\n');
-                const maybeEmpty = pids.pop();
-                if (maybeEmpty) {
-                    pids.push(maybeEmpty);
-                }
-                return this.update(pids);
-            });
+        return this.command.parser.readValue().then((list) => {
+            const pids = list.toString().split('\n');
+            const maybeEmpty = pids.pop();
+            if (maybeEmpty) {
+                pids.push(maybeEmpty);
+            }
+            return this.update(pids);
+        });
     }
 
     update(newList: string[]): JdwpTracker {

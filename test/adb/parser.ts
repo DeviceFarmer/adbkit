@@ -24,11 +24,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readAll();
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should read all remaining content until the stream ends', function (done) {
             const stream = new Stream.PassThrough();
@@ -59,11 +57,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readBytes(1);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should read as many bytes as requested', function (done) {
             const stream = new Stream.PassThrough();
@@ -120,11 +116,9 @@ describe('Parser', function () {
             const target = new Stream.PassThrough();
             const promise = parser.readByteFlow(1, target);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should read as many bytes as requested', function (done) {
             const stream = new Stream.PassThrough();
@@ -169,9 +163,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readAscii(1);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, () => done());
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should read as many ascii characters as requested', function (done) {
             const stream = new Stream.PassThrough();
@@ -200,11 +194,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readValue();
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should read a protocol value as a Buffer', function (done) {
             const stream = new Stream.PassThrough();
@@ -243,11 +235,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readError();
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should reject with Parser.FailError using the value', function (done) {
             const stream = new Stream.PassThrough();
@@ -274,11 +264,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.searchLine(/foo/);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should return the re.exec match of the matching line', function (done) {
             const stream = new Stream.PassThrough();
@@ -307,11 +295,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readLine();
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should skip a line terminated by \\n', function (done) {
             const stream = new Stream.PassThrough();
@@ -358,11 +344,9 @@ describe('Parser', function () {
             const parser = new Parser(stream);
             const promise = parser.readUntil(0xa0);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         it('should return any characters before given value', function (done) {
             const stream = new Stream.PassThrough();

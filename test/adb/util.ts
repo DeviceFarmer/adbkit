@@ -11,11 +11,12 @@ describe('util', function () {
             const stream = new Stream.PassThrough();
             const promise = util.readAll(stream);
             expect(promise).to.be.an.instanceOf(Bluebird);
-            expect(promise.isCancellable()).to.be.true;
-            promise.catch(Bluebird.CancellationError, function () {
-                done();
-            });
+            // expect(promise.isCancellable()).to.be.true;
+            // promise.catch(Bluebird.CancellationError, function () {
+            //});
             promise.cancel();
+            expect(promise.isCancelled()).to.be.true;
+            done();
         });
         return it('should read all remaining content until the stream ends', function (done) {
             const stream = new Stream.PassThrough();

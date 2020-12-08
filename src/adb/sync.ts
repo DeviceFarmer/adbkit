@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import * as Fs from 'fs';
 import * as Path from 'path';
 import Bluebird from 'bluebird';
@@ -131,35 +132,34 @@ export default class Sync extends EventEmitter {
         return Sync.temp(path);
     }
 
-    private _writeData(stream: Readable, timeStamp): PushTransfer {
+    private _writeData(stream: Readable, timeStamp: number): PushTransfer {
         const transfer = new PushTransfer();
         const writeData = () => {
-            let connErrorListener, endListener, errorListener, readableListener, resolver;
-            resolver = Bluebird.defer();
-            const writer = Bluebird.resolve().cancellable();
-            stream.on(
-                'end',
-                (endListener = () => {
-                    return writer.then(() => {
-                        this._sendCommandWithLength(Protocol.DONE, timeStamp);
-                        return resolver.resolve();
-                    });
-                }),
-            );
+            let readableListener: () => void;
+            let connErrorListener: (err: Error) => void;
+            let endListener: () => void;
+            let errorListener: (err: Error) => void;
+
+            let resolver = Bluebird.defer();
+            const writer = Bluebird.resolve();
+            endListener = () => {
+                writer.then(() => {
+                    this._sendCommandWithLength(Protocol.DONE, timeStamp);
+                    return resolver.resolve();
+                });
+            };
+            stream.on('end', endListener);
             const waitForDrain = () => {
-                let drainListener;
                 resolver = Bluebird.defer();
-                this.connection.on(
-                    'drain',
-                    (drainListener = function () {
-                        return resolver.resolve();
-                    }),
-                );
+                const drainListener = () => {
+                    resolver.resolve();
+                };
+                this.connection.on('drain', drainListener);
                 return resolver.promise.finally(() => {
                     return this.connection.removeListener('drain', drainListener);
                 });
             };
-            const track = function () {
+            const track = () => {
                 return transfer.pop();
             };
             const writeNext = () => {
@@ -176,26 +176,20 @@ export default class Sync extends EventEmitter {
                     return Bluebird.resolve();
                 }
             };
-            stream.on(
-                'readable',
-                (readableListener = function () {
-                    return writer.then(writeNext);
-                }),
-            );
-            stream.on(
-                'error',
-                (errorListener = function (err) {
-                    return resolver.reject(err);
-                }),
-            );
-            this.connection.on(
-                'error',
-                (connErrorListener = (err) => {
-                    stream.destroy(err);
-                    this.connection.end();
-                    return resolver.reject(err);
-                }),
-            );
+            readableListener = () => {
+                writer.then(writeNext);
+            };
+            stream.on('readable', readableListener);
+            errorListener = function (err) {
+                resolver.reject(err);
+            };
+            stream.on('error', errorListener);
+            connErrorListener = (err: Error) => {
+                stream.destroy(err);
+                this.connection.end();
+                resolver.reject(err);
+            };
+            this.connection.on('error', connErrorListener);
             return resolver.promise.finally(() => {
                 stream.removeListener('end', endListener);
                 stream.removeListener('readable', readableListener);
@@ -223,7 +217,7 @@ export default class Sync extends EventEmitter {
         // that the code is correct and it may or may not have some failing
         // edge cases. Refactor pending.
         const writer = writeData()
-            .cancellable()
+            // .cancellable()
             .catch(Bluebird.CancellationError, () => {
                 return this.connection.end();
             })
@@ -232,7 +226,6 @@ export default class Sync extends EventEmitter {
                 return reader.cancel();
             });
         const reader = readReply()
-            .cancellable()
             .catch(Bluebird.CancellationError, () => {
                 return true;
             })
@@ -245,62 +238,57 @@ export default class Sync extends EventEmitter {
             });
         transfer.on('cancel', () => {
             writer.cancel();
-            return reader.cancel();
+            reader.cancel();
         });
         return transfer;
     }
 
     private _readData(): PullTransfer {
-        let cancelListener;
         const transfer = new PullTransfer();
         const readNext = () => {
-            return this.parser
-                .readAscii(4)
-                .cancellable()
-                .then((reply) => {
-                    switch (reply) {
-                        case Protocol.DATA:
-                            return this.parser.readBytes(4).then((lengthData) => {
-                                const length = lengthData.readUInt32LE(0);
-                                return this.parser.readByteFlow(length, transfer).then(readNext);
-                            });
-                        case Protocol.DONE:
-                            return this.parser.readBytes(4).then(function () {
-                                return true;
-                            });
-                        case Protocol.FAIL:
-                            return this._readError();
-                        default:
-                            return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
-                    }
-                });
+            return this.parser.readAscii(4).then((reply) => {
+                switch (reply) {
+                    case Protocol.DATA:
+                        return this.parser.readBytes(4).then((lengthData) => {
+                            const length = lengthData.readUInt32LE(0);
+                            return this.parser.readByteFlow(length, transfer).then(readNext);
+                        });
+                    case Protocol.DONE:
+                        return this.parser.readBytes(4).then(function () {
+                            return true;
+                        });
+                    case Protocol.FAIL:
+                        return this._readError();
+                    default:
+                        return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+                }
+            });
         };
         const reader = readNext()
             .catch(Bluebird.CancellationError, () => {
                 return this.connection.end();
             })
-            .catch(function (err) {
+            .catch(function (err: Error) {
                 return transfer.emit('error', err);
             })
             .finally(function () {
                 transfer.removeListener('cancel', cancelListener);
                 return transfer.end();
             });
-        transfer.on(
-            'cancel',
-            (cancelListener = function () {
-                return reader.cancel();
-            }),
-        );
+        const cancelListener = function () {
+            reader.cancel();
+        };
+        transfer.on('cancel', cancelListener);
         return transfer;
     }
 
-    private _readError(): Bluebird<never> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _readError(): Bluebird<any> {
         return this.parser
             .readBytes(4)
             .then((length) => {
                 return this.parser.readBytes(length.readUInt32LE(0)).then(function (buf) {
-                    return Bluebird.reject<never>(new Parser.FailError(buf.toString()));
+                    return Bluebird.reject(new Parser.FailError(buf.toString()));
                 });
             })
             .finally(() => {
@@ -331,11 +319,12 @@ export default class Sync extends EventEmitter {
         return this.connection.write(payload);
     }
 
-    private _enoent(path: string): Bluebird<never> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _enoent(path: string): Bluebird<any> {
         const err: ENOENT = new Error(`ENOENT, no such file or directory '${path}'`) as ENOENT;
         err.errno = 34;
         err.code = 'ENOENT';
         err.path = path;
-        return Bluebird.reject<never>(err);
+        return Bluebird.reject(err);
     }
 }
