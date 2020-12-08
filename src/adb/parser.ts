@@ -31,38 +31,60 @@ class UnexpectedDataError extends Error {
     }
 }
 
+Bluebird.config({
+    // Enable warnings
+    // warnings: true,
+    // Enable long stack traces
+    // longStackTraces: true,
+    // Enable cancellation
+    cancellation: true,
+    // Enable monitoring
+    // monitoring: true,
+});
+
 export default class Parser {
     public static FailError = FailError;
     public static PrematureEOFError = PrematureEOFError;
     public static UnexpectedDataError = UnexpectedDataError;
     private ended = false;
 
-    constructor(public stream: Duplex) {}
+    constructor(public stream: Duplex) {
+        // empty
+    }
 
     public end(): Bluebird<boolean> {
         if (this.ended) {
             return Bluebird.resolve<boolean>(true);
         }
-        const resolver = Bluebird.defer<boolean>();
-        const tryRead = () => {
-            while (this.stream.read()) {}
-        };
-        const errorListener = function (err) {
-            return resolver.reject(err);
-        };
-        const endListener = () => {
-            this.ended = true;
-            return resolver.resolve(true);
-        };
-        this.stream.on('readable', tryRead);
-        this.stream.on('error', errorListener);
-        this.stream.on('end', endListener);
-        this.stream.read(0);
-        this.stream.end();
-        return resolver.promise.cancellable().finally(() => {
+        let tryRead: () => void;
+        let errorListener: (error: Error) => void;
+        let endListener: () => void;
+        return new Bluebird<boolean>((resolve, reject, onCancel) => {
+            tryRead = () => {
+                while (this.stream.read()) {
+                    // ignore
+                }
+            };
+            errorListener = function (err) {
+                return reject(err);
+            };
+            endListener = () => {
+                this.ended = true;
+                return resolve(true);
+            };
+            this.stream.on('readable', tryRead);
+            this.stream.on('error', errorListener);
+            this.stream.on('end', endListener);
+            this.stream.read(0);
+            this.stream.end();
+            onCancel(() => {
+                // console.log('1-onCanceled');
+            });
+        }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);
-            return this.stream.removeListener('end', endListener);
+            this.stream.removeListener('end', endListener);
+            // return r;
         });
     }
 
@@ -72,114 +94,132 @@ export default class Parser {
 
     public readAll(): Bluebird<Buffer> {
         let all = Buffer.alloc(0);
-        const resolver = Bluebird.defer<Buffer>();
-        const tryRead = () => {
-            let chunk;
-            while ((chunk = this.stream.read())) {
-                all = Buffer.concat([all, chunk]);
-            }
-            if (this.ended) {
-                return resolver.resolve(all);
-            }
-        };
-        const errorListener = function (err) {
-            return resolver.reject(err);
-        };
-        const endListener = () => {
-            this.ended = true;
-            return resolver.resolve(all);
-        };
-        this.stream.on('readable', tryRead);
-        this.stream.on('error', errorListener);
-        this.stream.on('end', endListener);
-        tryRead();
-        return resolver.promise.cancellable().finally(() => {
+
+        let tryRead: () => void;
+        let errorListener: (error: Error) => void;
+        let endListener: () => void;
+
+        return new Bluebird<Buffer>((resolve, reject, onCancel) => {
+            tryRead = () => {
+                let chunk;
+                while ((chunk = this.stream.read())) {
+                    all = Buffer.concat([all, chunk]);
+                }
+                if (this.ended) {
+                    return resolve(all);
+                }
+            };
+            errorListener = function (err) {
+                return reject(err);
+            };
+            endListener = () => {
+                this.ended = true;
+                return resolve(all);
+            };
+            this.stream.on('readable', tryRead);
+            this.stream.on('error', errorListener);
+            this.stream.on('end', endListener);
+            tryRead();
+            onCancel(() => {
+                // console.log('2-onCanceled');
+            });
+        }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);
-            return this.stream.removeListener('end', endListener);
+            this.stream.removeListener('end', endListener);
         });
     }
 
     public readAscii(howMany: number): Bluebird<string> {
-        return this.readBytes(howMany).then(function (chunk) {
-            return chunk.toString('ascii');
-        });
+        return this.readBytes(howMany).then((chunk) => chunk.toString('ascii'));
     }
 
     public readBytes(howMany: number): Bluebird<Buffer> {
-        const resolver = Bluebird.defer<Buffer>();
-        const tryRead = () => {
-            if (howMany) {
-                const chunk = this.stream.read(howMany);
-                if (chunk) {
-                    // If the stream ends while still having unread bytes, the read call
-                    // will ignore the limit and just return what it's got.
-                    howMany -= chunk.length;
-                    if (howMany === 0) {
-                        return resolver.resolve(chunk);
+        let tryRead: () => void;
+        let errorListener: (error: Error) => void;
+        let endListener: () => void;
+        return new Bluebird<Buffer>((resolve, reject, onCancel) => {
+            tryRead = () => {
+                if (howMany) {
+                    const chunk = this.stream.read(howMany);
+                    if (chunk) {
+                        // If the stream ends while still having unread bytes, the read call
+                        // will ignore the limit and just return what it's got.
+                        howMany -= chunk.length;
+                        if (howMany === 0) {
+                            return resolve(chunk);
+                        }
                     }
+                    if (this.ended) {
+                        return reject(new Parser.PrematureEOFError(howMany));
+                    }
+                } else {
+                    return resolve(Buffer.alloc(0));
                 }
-                if (this.ended) {
-                    return resolver.reject(new Parser.PrematureEOFError(howMany));
-                }
-            } else {
-                return resolver.resolve(Buffer.alloc(0));
-            }
-        };
-        const endListener = () => {
-            this.ended = true;
-            return resolver.reject(new Parser.PrematureEOFError(howMany));
-        };
-        const errorListener = function (err) {
-            return resolver.reject(err);
-        };
-        this.stream.on('readable', tryRead);
-        this.stream.on('error', errorListener);
-        this.stream.on('end', endListener);
-        tryRead();
-        return resolver.promise.cancellable().finally(() => {
+            };
+            endListener = () => {
+                this.ended = true;
+                return reject(new Parser.PrematureEOFError(howMany));
+            };
+            errorListener = function (err) {
+                return reject(err);
+            };
+            this.stream.on('readable', tryRead);
+            this.stream.on('error', errorListener);
+            this.stream.on('end', endListener);
+            tryRead();
+            onCancel(() => {
+                // console.log('3-onCancel');
+            });
+        }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);
-            return this.stream.removeListener('end', endListener);
+            this.stream.removeListener('end', endListener);
         });
     }
 
     public readByteFlow(howMany: number, targetStream: Duplex): Bluebird<void> {
-        const resolver = Bluebird.defer<void>();
-        const tryRead = () => {
-            if (howMany) {
-                const chunk = this.stream.read(howMany);
-                // Try to get the exact amount we need first. If unsuccessful, take
-                // whatever is available, which will be less than the needed amount.
-                while (chunk || this.stream.read()) {
-                    howMany -= chunk.length;
-                    targetStream.write(chunk);
-                    if (howMany === 0) {
-                        return resolver.resolve();
+        let tryRead: () => void;
+        let errorListener: (error: Error) => void;
+        let endListener: () => void;
+        return new Bluebird<void>((resolve, reject, onCancel) => {
+            tryRead = () => {
+                if (howMany) {
+                    const chunk = this.stream.read(howMany);
+                    // Try to get the exact amount we need first. If unsuccessful, take
+                    // whatever is available, which will be less than the needed amount.
+                    while (chunk || this.stream.read()) {
+                        howMany -= chunk.length;
+                        targetStream.write(chunk);
+                        if (howMany === 0) {
+                            return resolve();
+                        }
                     }
+                    if (this.ended) {
+                        return reject(new Parser.PrematureEOFError(howMany));
+                    }
+                } else {
+                    return resolve();
                 }
-                if (this.ended) {
-                    return resolver.reject(new Parser.PrematureEOFError(howMany));
-                }
-            } else {
-                return resolver.resolve();
-            }
-        };
-        const endListener = () => {
-            this.ended = true;
-            return resolver.reject(new Parser.PrematureEOFError(howMany));
-        };
-        const errorListener = function (err) {
-            return resolver.reject(err);
-        };
-        this.stream.on('readable', tryRead);
-        this.stream.on('error', errorListener);
-        this.stream.on('end', endListener);
-        tryRead();
-        return resolver.promise.cancellable().finally(() => {
+            };
+            endListener = () => {
+                this.ended = true;
+                return reject(new Parser.PrematureEOFError(howMany));
+            };
+            errorListener = function (err) {
+                return reject(err);
+            };
+            this.stream.on('readable', tryRead);
+            this.stream.on('error', errorListener);
+            this.stream.on('end', endListener);
+            tryRead();
+            onCancel(() => {
+                // console.log('4-onCancel');
+            });
+        }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);
-            return this.stream.removeListener('end', endListener);
+            this.stream.removeListener('end', endListener);
         });
     }
 
@@ -234,7 +274,8 @@ export default class Parser {
         });
     }
 
-    public unexpected(data: string, expected: string): Bluebird<never> {
-        return Bluebird.reject<never>(new Parser.UnexpectedDataError(data, expected));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public unexpected(data: string, expected: string): Bluebird<any> {
+        return Bluebird.reject(new Parser.UnexpectedDataError(data, expected));
     }
 }

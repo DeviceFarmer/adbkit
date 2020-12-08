@@ -374,7 +374,7 @@ export default class Client extends EventEmitter {
         } else {
             p = port;
         }
-        const tryConnect = (times: number): Promise<Duplex> => {
+        const tryConnect = (times: number): Bluebird<Duplex> => {
             return this.openTcp(serial, p)
                 .then((stream) => Monkey.connectStream(stream))
                 .catch((err) => {
@@ -431,17 +431,16 @@ export default class Client extends EventEmitter {
         const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
         return this.push(serial, apk, temp)
             .then((transfer) => {
-                let endListener, errorListener;
-                const resolver = Bluebird.defer<boolean>();
-                transfer.on('error', (errorListener = (err: Error) => resolver.reject(err)));
-                transfer.on(
-                    'end',
-                    (endListener = () =>
-                        this.installRemote(serial, temp).then((value: boolean) => resolver.resolve(value))),
-                );
-                return resolver.promise.finally(() => {
+                let endListener: () => void;
+                let errorListener: (err: Error) => void;
+                return new Bluebird<boolean>((resolve, reject) => {
+                    errorListener = (err: Error) => reject(err);
+                    endListener = () => this.installRemote(serial, temp).then((value: boolean) => resolve(value));
+                    transfer.on('error', errorListener);
+                    transfer.on('end', endListener);
+                }).finally(() => {
                     transfer.removeListener('error', errorListener);
-                    return transfer.removeListener('end', endListener);
+                    transfer.removeListener('end', endListener);
                 });
             })
             .nodeify(callback);
