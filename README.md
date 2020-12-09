@@ -22,7 +22,7 @@ Alternatively, you may want to consider using the Chrome [ADB][chrome-adb] exten
 Install via NPM:
 
 ```bash
-npm install --save adbkit
+npm install --save @devicefarmer/adbkit
 ```
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
@@ -35,7 +35,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 
 ```js
 var Promise = require('bluebird')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.listDevices()
@@ -59,7 +59,7 @@ client.listDevices()
 
 ```js
 var Promise = require('bluebird')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 var apk = 'vendor/app.apk'
 
@@ -80,7 +80,7 @@ client.listDevices()
 #### Tracking devices
 
 ```js
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.trackDevices()
@@ -105,7 +105,7 @@ client.trackDevices()
 ```js
 var Promise = require('bluebird')
 var fs = require('fs')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.listDevices()
@@ -142,7 +142,7 @@ client.listDevices()
 
 ```js
 var Promise = require('bluebird')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.listDevices()
@@ -177,7 +177,7 @@ client.listDevices()
 
 ```js
 var Promise = require('bluebird')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.listDevices()
@@ -272,7 +272,7 @@ Note: be careful with using `client.listDevices()` together with `client.tcpip()
 
 ```javascript
 var Promise = require('bluebird')
-var client = require('adbkit').createClient()
+var client = require('@devicefarmer/adbkit').createClient()
 
 client.listDevices()
   .then(function(devices) {
@@ -458,7 +458,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```javascript
-var client = require('adbkit').createClient()
+var client = require('@devicefarmer/adbkit').createClient()
 var request = require('request')
 var Readable = require('stream').Readable
 
@@ -759,7 +759,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 
 ```js
 var Promise = require('bluebird')
-var adb = require('adbkit')
+var adb = require('@devicefarmer/adbkit')
 var client = adb.createClient()
 
 client.listDevices()
