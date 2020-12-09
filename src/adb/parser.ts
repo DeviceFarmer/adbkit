@@ -138,7 +138,7 @@ export default class Parser {
         let tryRead: () => void;
         let errorListener: (error: Error) => void;
         let endListener: () => void;
-        return new Bluebird<Buffer>((resolve, reject, onCancel) => {
+        return new Bluebird<Buffer>((resolve, reject /*, onCancel*/) => {
             tryRead = () => {
                 if (howMany) {
                     const chunk = this.stream.read(howMany);
@@ -178,7 +178,7 @@ export default class Parser {
         let tryRead: () => void;
         let errorListener: (error: Error) => void;
         let endListener: () => void;
-        return new Bluebird<void>((resolve, reject, onCancel) => {
+        return new Bluebird<void>((resolve, reject /*, onCancel*/) => {
             tryRead = () => {
                 if (howMany) {
                     const chunk = this.stream.read(howMany);
@@ -209,9 +209,7 @@ export default class Parser {
             this.stream.on('error', errorListener);
             this.stream.on('end', endListener);
             tryRead();
-            onCancel(() => {
-                // console.log('4-onCancel');
-            });
+            // onCancel(() => {});
         }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);

@@ -10,12 +10,8 @@ export default class WaitBootCompleteCommand extends Command<boolean> {
                 case Protocol.OKAY:
                     return this.parser
                         .searchLine(/^1$/)
-                        .finally(() => {
-                            return this.parser.end();
-                        })
-                        .then(function () {
-                            return true;
-                        });
+                        .finally(() => this.parser.end())
+                        .then(() => true);
                 case Protocol.FAIL:
                     return this.parser.readError();
                 default:

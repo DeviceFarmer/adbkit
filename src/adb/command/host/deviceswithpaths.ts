@@ -23,17 +23,14 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
     }
 
     private _parseDevices(value: Buffer): DeviceWithPath[] {
-        const devices: DeviceWithPath[] = [];
-        if (!value.length) {
-            return devices;
-        }
-        const ref = value.toString('ascii').split('\n');
-        for (let i = 0, len = ref.length; i < len; i++) {
-            const line = ref[i];
-            if (line) {
+        return value
+            .toString('ascii')
+            .split('\n')
+            .filter((e) => e)
+            .map((line) => {
                 // For some reason, the columns are separated by spaces instead of tabs
                 const [id, type, path, product, model, device, transportId] = line.split(/\s+/);
-                devices.push({
+                return {
                     id,
                     type: type as 'emulator' | 'device' | 'offline',
                     path,
@@ -41,9 +38,7 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
                     model,
                     device,
                     transportId,
-                });
-            }
-        }
-        return devices;
+                };
+            });
     }
 }

@@ -26,7 +26,7 @@ export default class HostDevicesCommand extends Command<Device[]> {
         return value
             .toString('ascii')
             .split('\n')
-            .filter((a) => a)
+            .filter((e) => e)
             .map((line) => {
                 const [id, type] = line.split('\t');
                 return {

@@ -1,6 +1,6 @@
 import * as Fs from 'fs';
 
-class Stats extends Fs.Stats {
+export default class Stats extends Fs.Stats {
     // The following constant were extracted from `man 2 stat` on Ubuntu 12.10.
     public static S_IFMT = 0o170000; // bit mask for the file type bit fields
 
@@ -43,5 +43,3 @@ class Stats extends Fs.Stats {
         this.mtime = new Date(mtime * 1000);
     }
 }
-
-export = Stats;

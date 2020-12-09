@@ -116,9 +116,7 @@ export default class Service extends EventEmitter {
             .then(() => {
                 return new Bluebird<boolean>((resolve, reject) => {
                     this.transport.socket
-                        .on('readable', () => {
-                            return this._tryPush();
-                        })
+                        .on('readable', () => this._tryPush())
                         .on('end', resolve)
                         .on('error', reject);
                     return this._tryPush();

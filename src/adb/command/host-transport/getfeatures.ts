@@ -22,7 +22,7 @@ export default class GetFeaturesCommand extends Command<Features> {
         });
     }
 
-    private _parseFeatures(value): Features {
+    private _parseFeatures(value: string): Features {
         const features = {};
         let match;
         while ((match = RE_FEATURE.exec(value))) {

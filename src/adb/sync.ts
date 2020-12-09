@@ -159,11 +159,9 @@ export default class Sync extends EventEmitter {
                     return this.connection.removeListener('drain', drainListener);
                 });
             };
-            const track = () => {
-                return transfer.pop();
-            };
+            const track = () => transfer.pop();
             const writeNext = () => {
-                let chunk;
+                let chunk: Buffer;
                 if ((chunk = stream.read(DATA_MAX_LENGTH) || stream.read())) {
                     this._sendCommandWithLength(Protocol.DATA, chunk.length);
                     transfer.push(chunk.length);
@@ -176,13 +174,9 @@ export default class Sync extends EventEmitter {
                     return Bluebird.resolve();
                 }
             };
-            readableListener = () => {
-                writer.then(writeNext);
-            };
+            readableListener = () => writer.then(writeNext);
             stream.on('readable', readableListener);
-            errorListener = function (err) {
-                resolver.reject(err);
-            };
+            errorListener = (err) => resolver.reject(err);
             stream.on('error', errorListener);
             connErrorListener = (err: Error) => {
                 stream.destroy(err);
@@ -226,9 +220,7 @@ export default class Sync extends EventEmitter {
                 return reader.cancel();
             });
         const reader = readReply()
-            .catch(Bluebird.CancellationError, () => {
-                return true;
-            })
+            .catch(Bluebird.CancellationError, () => true)
             .catch((err) => {
                 transfer.emit('error', err);
                 return writer.cancel();
@@ -265,19 +257,13 @@ export default class Sync extends EventEmitter {
             });
         };
         const reader = readNext()
-            .catch(Bluebird.CancellationError, () => {
-                return this.connection.end();
-            })
-            .catch(function (err: Error) {
-                return transfer.emit('error', err);
-            })
+            .catch(Bluebird.CancellationError, () => this.connection.end())
+            .catch((err: Error) => transfer.emit('error', err))
             .finally(function () {
                 transfer.removeListener('cancel', cancelListener);
                 return transfer.end();
             });
-        const cancelListener = function () {
-            reader.cancel();
-        };
+        const cancelListener = () => reader.cancel();
         transfer.on('cancel', cancelListener);
         return transfer;
     }
@@ -286,8 +272,8 @@ export default class Sync extends EventEmitter {
     private _readError(): Bluebird<any> {
         return this.parser
             .readBytes(4)
-            .then((length) => {
-                return this.parser.readBytes(length.readUInt32LE(0)).then(function (buf) {
+            .then((length: Buffer) => {
+                return this.parser.readBytes(length.readUInt32LE(0)).then((buf: Buffer) => {
                     return Bluebird.reject(new Parser.FailError(buf.toString()));
                 });
             })

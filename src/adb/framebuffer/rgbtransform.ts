@@ -24,20 +24,19 @@ class RgbTransform extends Stream.Transform {
     }
 
     _transform(chunk: Buffer, encoding: string, done: TransformCallback): void {
-        let b, g, r, sourceCursor, targetCursor;
         if (this._buffer.length) {
             this._buffer = Buffer.concat([this._buffer, chunk], this._buffer.length + chunk.length);
         } else {
             this._buffer = chunk;
         }
-        sourceCursor = 0;
-        targetCursor = 0;
+        let sourceCursor = 0;
+        let targetCursor = 0;
         const target =
             this._pixel_bytes === 3 ? this._buffer : Buffer.alloc(Math.max(4, (chunk.length / this._pixel_bytes) * 3));
         while (this._buffer.length - sourceCursor >= this._pixel_bytes) {
-            r = this._buffer[sourceCursor + this._r_pos];
-            g = this._buffer[sourceCursor + this._g_pos];
-            b = this._buffer[sourceCursor + this._b_pos];
+            const r = this._buffer[sourceCursor + this._r_pos];
+            const g = this._buffer[sourceCursor + this._g_pos];
+            const b = this._buffer[sourceCursor + this._b_pos];
             target[targetCursor + 0] = r;
             target[targetCursor + 1] = g;
             target[targetCursor + 2] = b;
