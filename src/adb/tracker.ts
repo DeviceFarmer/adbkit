@@ -25,15 +25,10 @@ export default class Tracker extends EventEmitter {
     }
 
     public read(): Bluebird<Device[]> {
-        return (
-            this.command
-                ._readDevices()
-                // .cancellable()
-                .then((list) => {
-                    this.update(list);
-                    return this.read();
-                })
-        );
+        return this.command._readDevices().then((list) => {
+            this.update(list);
+            return this.read();
+        });
     }
 
     public update(newList: Device[]): Tracker {

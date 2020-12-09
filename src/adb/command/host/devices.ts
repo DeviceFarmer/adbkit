@@ -19,27 +19,20 @@ export default class HostDevicesCommand extends Command<Device[]> {
     }
 
     public _readDevices(): Bluebird<Device[]> {
-        return this.parser.readValue().then((value) => {
-            return this._parseDevices(value);
-        });
+        return this.parser.readValue().then(this._parseDevices);
     }
 
     _parseDevices(value: Buffer): Device[] {
-        const devices: Device[] = [];
-        if (!value.length) {
-            return devices;
-        }
-        const ref = value.toString('ascii').split('\n');
-        for (let i = 0, len = ref.length; i < len; i++) {
-            const line = ref[i];
-            if (line) {
+        return value
+            .toString('ascii')
+            .split('\n')
+            .filter((a) => a)
+            .map((line) => {
                 const [id, type] = line.split('\t');
-                devices.push({
-                    id: id,
+                return {
+                    id,
                     type: type as 'emulator' | 'device' | 'offline',
-                });
-            }
-        }
-        return devices;
+                };
+            });
     }
 }

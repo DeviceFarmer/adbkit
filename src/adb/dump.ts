@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
-let func;
+let func: (chunk: Buffer) => Buffer;
+
 if (process.env.ADBKIT_DUMP) {
     const out = fs.createWriteStream('adbkit.dump');
     func = function (chunk: Buffer): Buffer {
@@ -8,9 +9,7 @@ if (process.env.ADBKIT_DUMP) {
         return chunk;
     };
 } else {
-    func = function (chunk: Buffer): Buffer {
-        return chunk;
-    };
+    func = (chunk: Buffer): Buffer => chunk;
 }
 
 export = func;

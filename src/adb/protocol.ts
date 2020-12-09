@@ -15,13 +15,14 @@ export default class Protocol {
     }
 
     static encodeLength(length: number): string {
-        return ('0000' + length.toString(16)).slice(-4).toUpperCase();
+        return length.toString(16).padStart(4, '0').toUpperCase();
     }
 
     static encodeData(data: Buffer | string): Buffer {
         if (!Buffer.isBuffer(data)) {
             data = Buffer.from(data);
         }
-        return Buffer.concat([Buffer.from(Protocol.encodeLength(data.length)), data]);
+        const len = Protocol.encodeLength(data.length);
+        return Buffer.concat([Buffer.from(len), data]);
     }
 }

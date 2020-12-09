@@ -9,7 +9,7 @@ export default class ListForwardsCommand extends Command<Forward[]> {
         return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
                 case Protocol.OKAY:
-                    return this.parser.readValue().then((value) => this._parseForwards(value));
+                    return this.parser.readValue().then(this._parseForwards);
                 case Protocol.FAIL:
                     return this.parser.readError();
                 default:
@@ -18,21 +18,14 @@ export default class ListForwardsCommand extends Command<Forward[]> {
         });
     }
 
-    private _parseForwards(value): Forward[] {
-        let forward, i, len, local, remote, serial;
-        const forwards: Forward[] = [];
-        const ref = value.toString().split('\n');
-        for (i = 0, len = ref.length; i < len; i++) {
-            forward = ref[i];
-            if (forward) {
-                [serial, local, remote] = forward.split(/\s+/);
-                forwards.push({
-                    serial: serial,
-                    local: local,
-                    remote: remote,
-                });
-            }
-        }
-        return forwards;
+    private _parseForwards(value: Buffer): Forward[] {
+        return value
+            .toString()
+            .split('\n')
+            .filter((e) => e)
+            .map((forward) => {
+                const [serial, local, remote] = forward.split(/\s+/);
+                return { serial, local, remote };
+            });
     }
 }
