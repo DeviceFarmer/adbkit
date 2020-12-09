@@ -30,7 +30,6 @@ export default class LineTransform extends Stream.Transform {
     // or something similar. On the up side, it really does do this for all line
     // feeds, so a simple transform works fine.
     _transform(chunk: Buffer, encoding: string, done: TransformCallback): void {
-        let hi, lo, skip;
         // If auto detection is enabled, check the first byte. The first two
         // bytes must be either 0x0a .. or 0x0d 0x0a. This causes a need to skip
         // either one or two bytes. The autodetection runs only once.
@@ -47,7 +46,7 @@ export default class LineTransform extends Stream.Transform {
         // in two separate chunks. That's why the autodetect bytes are skipped
         // here, separately.
         if (this.skipBytes) {
-            skip = Math.min(chunk.length, this.skipBytes);
+            const skip = Math.min(chunk.length, this.skipBytes);
             chunk = chunk.slice(skip);
             this.skipBytes -= skip;
         }
@@ -61,8 +60,8 @@ export default class LineTransform extends Stream.Transform {
             return this._nullTransform(chunk, encoding, done);
         }
         // Ok looks like we're transforming.
-        lo = 0;
-        hi = 0;
+        let lo = 0;
+        let hi = 0;
         if (this.savedR) {
             if (chunk[0] !== 0x0a) {
                 this.push(this.savedR);

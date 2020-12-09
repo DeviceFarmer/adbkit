@@ -40,7 +40,7 @@ program
     .command('usb-device-to-tcp <serial>')
     .option('-p, --port <port>', 'port number', (value: string) => String(value), '6174')
     .description('Provides an USB device over TCP using a translating proxy.')
-    .action((serial, options) => {
+    .action((serial: string, options) => {
         const adb = Adb.createClient();
         const server = adb
             .createTcpUsbBridge(serial, {
@@ -54,7 +54,7 @@ program
 program
     .command('parse-tcp-packets <file>')
     .description('Parses ADB TCP packets from the given file.')
-    .action((file) => {
+    .action((file: string) => {
         const reader = new PacketReader(fs.createReadStream(file));
         reader.on('packet', (packet) => console.log(packet.toString()));
     });

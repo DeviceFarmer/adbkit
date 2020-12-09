@@ -58,17 +58,17 @@ class ProcStat extends EventEmitter {
     }
 
     private _parse(out: string): Stats {
-        let cols, i, len, match, total, type, val;
+        let match, val;
         const stats = this._emptyStats();
         while ((match = RE_CPULINE.exec(out))) {
             const line: string = match[0];
-            cols = line.split(RE_COLSEP);
-            type = cols.shift();
+            const cols = line.split(RE_COLSEP);
+            const type = cols.shift();
             if (this._ignore[type] === line) {
                 continue;
             }
-            total = 0;
-            for (i = 0, len = cols.length; i < len; i++) {
+            let total = 0;
+            for (let i = 0, len = cols.length; i < len; i++) {
                 val = cols[i];
                 total += +val;
             }
@@ -91,22 +91,21 @@ class ProcStat extends EventEmitter {
     }
 
     private _set(stats: Stats): Stats {
-        let cur, found, id, m, old, ticks;
         const loads: Loads = {};
-        found = false;
+        let found = false;
         const ref = stats.cpus;
-        for (id in ref) {
-            cur = ref[id];
-            old = this.stats.cpus[id];
+        for (const id in ref) {
+            const cur = ref[id];
+            const old = this.stats.cpus[id];
             if (!old) {
                 continue;
             }
-            ticks = cur.total - old.total;
+            const ticks = cur.total - old.total;
             if (ticks > 0) {
                 found = true;
                 // Calculate percentages for everything. For ease of formatting,
                 // let's do `x / y * 100` as `100 / y * x`.
-                m = 100 / ticks;
+                const m = 100 / ticks;
                 loads[id] = {
                     user: Math.floor(m * (cur.user - old.user)),
                     nice: Math.floor(m * (cur.nice - old.nice)),
@@ -137,7 +136,7 @@ class ProcStat extends EventEmitter {
         return (this.stats = stats);
     }
 
-    private _error(err): boolean {
+    private _error(err: Error): boolean {
         return this.emit('error', err);
     }
 

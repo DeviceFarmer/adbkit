@@ -5,10 +5,9 @@ export default class ServiceMap {
     public count = 0;
 
     public end(): void {
-        let remote, remoteId;
         const ref = this.remotes;
-        for (remoteId in ref) {
-            remote = ref[remoteId];
+        for (const remoteId in ref) {
+            const remote = ref[remoteId];
             remote.end();
         }
         this.remotes = Object.create(null);
@@ -29,7 +28,7 @@ export default class ServiceMap {
     }
 
     public remove(remoteId: number): Service | null {
-        let remote;
+        let remote: Service;
         if ((remote = this.remotes[remoteId])) {
             delete this.remotes[remoteId];
             this.count -= 1;

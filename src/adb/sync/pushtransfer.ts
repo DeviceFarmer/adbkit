@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-class PushTransfer extends EventEmitter {
+export default class PushTransfer extends EventEmitter {
     private _stack: number[] = [];
     public stats = {
         bytesTransferred: 0,
@@ -26,5 +26,3 @@ class PushTransfer extends EventEmitter {
         return this.emit('end');
     }
 }
-
-export = PushTransfer;

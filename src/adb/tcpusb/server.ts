@@ -19,15 +19,9 @@ export default class Server extends EventEmitter {
         this.server = Net.createServer({
             allowHalfOpen: true,
         });
-        this.server.on('error', (err) => {
-            return this.emit('error', err);
-        });
-        this.server.on('listening', () => {
-            return this.emit('listening');
-        });
-        this.server.on('close', () => {
-            return this.emit('close');
-        });
+        this.server.on('error', (err) => this.emit('error', err));
+        this.server.on('listening', () => this.emit('listening'));
+        this.server.on('close', () => this.emit('close'));
         this.server.on('connection', (conn) => {
             const socket = new Socket(this.client, this.serial, conn, this.options);
             this.connections.push(socket);
