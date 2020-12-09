@@ -9,10 +9,9 @@ export default class ScreencapCommand extends Command<Duplex> {
     execute(): Bluebird<Duplex> {
         this._send('shell:echo && screencap -p 2>/dev/null');
         return this.parser.readAscii(4).then((reply) => {
-            let transform;
             switch (reply) {
                 case Protocol.OKAY:
-                    transform = new LineTransform();
+                    let transform = new LineTransform();
                     return this.parser
                         .readBytes(1)
                         .then((chunk) => {
@@ -20,8 +19,8 @@ export default class ScreencapCommand extends Command<Duplex> {
                             transform.write(chunk);
                             return this.parser.raw().pipe(transform);
                         })
-                        .catch(Parser.PrematureEOFError, function () {
-                            throw new Error('No support for the screencap command');
+                        .catch(Parser.PrematureEOFError, () => {
+                            throw Error('No support for the screencap command');
                         });
                 case Protocol.FAIL:
                     return this.parser.readError();

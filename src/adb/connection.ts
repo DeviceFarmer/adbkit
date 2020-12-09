@@ -11,8 +11,8 @@ import { ClientOptions } from '../ClientOptions';
 const debug = d('adb:connection');
 
 export default class Connection extends EventEmitter {
-    public socket?: Socket;
-    public parser?: Parser;
+    public socket!: Socket;
+    public parser!: Parser;
     private triedStarting: boolean;
     public options: ClientOptions;
 
@@ -32,12 +32,11 @@ export default class Connection extends EventEmitter {
         this.socket.on('end', () => this.emit('end'));
         this.socket.on('drain', () => this.emit('drain'));
         this.socket.on('timeout', () => this.emit('timeout'));
-        this.socket.on('close', (hadError) => this.emit('close', hadError));
+        this.socket.on('close', (hadError: boolean) => this.emit('close', hadError));
+
         return new Bluebird((resolve, reject) => {
-            if (this.socket) {
-                this.socket.once('connect', resolve);
-                this.socket.once('error', reject);
-            }
+            this.socket.once('connect', resolve);
+            this.socket.once('error', reject);
         })
             .catch((err) => {
                 if (err.code === 'ECONNREFUSED' && !this.triedStarting) {
@@ -79,10 +78,8 @@ export default class Connection extends EventEmitter {
         return this;
     }
 
-    public write(data: string | Uint8Array, callback?: (err?: Error) => void): this {
-        if (this.socket) {
-            this.socket.write(dump(data), callback);
-        }
+    public write(data: Buffer, callback?: (err?: Error) => void): this {
+        this.socket.write(dump(data), callback);
         return this;
     }
 

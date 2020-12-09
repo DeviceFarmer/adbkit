@@ -16,7 +16,7 @@ export default abstract class Command<T> {
 
     constructor(connection: Connection) {
         this.connection = connection;
-        this.parser = this.connection.parser as Parser;
+        this.parser = this.connection.parser;
         this.protocol = Protocol;
     }
 
@@ -26,7 +26,9 @@ export default abstract class Command<T> {
 
     public _send(data: string | Buffer): Command<T> {
         const encoded = Protocol.encodeData(data);
-        debug("Send '" + encoded + "'");
+        if (debug.enabled) {
+            debug(`Send '${encoded}'`);
+        }
         this.connection.write(encoded);
         return this;
     }

@@ -19,9 +19,7 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
     }
 
     public _readDevices(): Bluebird<DeviceWithPath[]> {
-        return this.parser.readValue().then((value) => {
-            return this._parseDevices(value);
-        });
+        return this.parser.readValue().then(this._parseDevices);
     }
 
     private _parseDevices(value: Buffer): DeviceWithPath[] {

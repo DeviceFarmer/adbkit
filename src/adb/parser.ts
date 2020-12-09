@@ -161,16 +161,12 @@ export default class Parser {
                 this.ended = true;
                 return reject(new Parser.PrematureEOFError(howMany));
             };
-            errorListener = function (err) {
-                return reject(err);
-            };
+            errorListener = (err) => reject(err);
             this.stream.on('readable', tryRead);
             this.stream.on('error', errorListener);
             this.stream.on('end', endListener);
             tryRead();
-            onCancel(() => {
-                // console.log('3-onCancel');
-            });
+            // onCancel(() => {});
         }).finally(() => {
             this.stream.removeListener('readable', tryRead);
             this.stream.removeListener('error', errorListener);
