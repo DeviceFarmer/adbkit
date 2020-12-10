@@ -41,8 +41,8 @@
         "compile2": "tsc -p tsconfig-dist.json",
         "lint": "eslint ./ --ext .ts",
         "format": "eslint ./ --fix --ext .ts",
-        "test": "mocha --reporter spec --colors dist/test/**/*.js",
-        "testTS": "mocha -r ts-node/register --reporter spec --colors test/**/*.ts"
+        "testJS": "mocha --reporter spec --colors dist/test/**/*.js",
+        "test": "mocha -r ts-node/register --reporter spec --colors test/**/*.ts"
     },
     "dependencies": {
         "@devicefarmer/adbkit-logcat": "^1.1.0",
