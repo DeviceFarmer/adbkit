@@ -396,11 +396,18 @@ Retrieves the features of the device identified by the given serial number. This
 * Returns: `Promise`
 * Resolves with: `features` (see callback)
 
-#### client.getPackages(serial[, callback])
+#### client.getPackages(serial[, flag, callback])
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
 
 * **serial** The serial number of the device. Corresponds to the device ID in `client.listDevices()`.
+* **flag** Optional. Flag to pass to the `pm list packages` command to filter the list
+  ```
+  -d: filter to only show disabled packages
+  -e: filter to only show enabled packages
+  -s: filter to only show system packages
+  -3: filter to only show third party packages
+  ```
 * **callback(err, packages)** Optional. Use this or the returned `Promise`.
     - **err** `null` when successful, `Error` otherwise.
     - **packages** An array of package names.

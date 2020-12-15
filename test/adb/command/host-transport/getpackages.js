@@ -32,6 +32,21 @@ describe('GetPackagesCommand', function() {
       return done();
     });
   });
+  it("should send 'pm list packages' with flag", function(done) {
+    var cmd, conn;
+    conn = new MockConnection();
+    cmd = new GetPackagesCommand(conn);
+    conn.socket.on('write', function(chunk) {
+      return expect(chunk.toString()).to.equal(Protocol.encodeData('shell:pm list packages -3 2>/dev/null').toString());
+    });
+    setImmediate(function() {
+      conn.socket.causeRead(Protocol.OKAY);
+      return conn.socket.causeEnd();
+    });
+    return cmd.execute('-3').then(function() {
+      return done();
+    });
+  });
   it("should return an empty array for an empty package list", function(done) {
     var cmd, conn;
     conn = new MockConnection();
