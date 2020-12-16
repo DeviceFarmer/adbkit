@@ -236,7 +236,15 @@ class Client extends EventEmitter {
 	public getPackages(serial: string, callback?: Callback<string[]>): Bluebird<string[]> {
 		return this.transport(serial)
 			.then(function (transport) {
-				return new GetPackagesCommand(transport).execute();
+				return new GetPackagesCommand(transport).execute(null);
+			})
+			.nodeify(callback);
+	}
+
+	public getPackagesWithFlags(serial: string, flags: string, callback?: Callback<string[]>): Bluebird<string[]> {
+		return this.transport(serial)
+			.then(function (transport) {
+				return new GetPackagesCommand(transport).execute(flags);
 			})
 			.nodeify(callback);
 	}
