@@ -5,9 +5,9 @@ import Bluebird from 'bluebird';
 const RE_PACKAGE = /^package:(.*?)\r?$/gm;
 
 class GetPackagesCommand extends Command<string[]> {
-	execute(flag = ''): Bluebird<string[]> {
-		if (flag !== '' && flag !== null) {
-			this._send('shell:pm list packages ' + flag + ' 2>/dev/null');
+	execute(flags = ''): Bluebird<string[]> {
+		if (flags !== '' && flags !== null) {
+			this._send('shell:pm list packages ' + flags + ' 2>/dev/null');
 		} else {
 			this._send('shell:pm list packages 2>/dev/null');
 		}
