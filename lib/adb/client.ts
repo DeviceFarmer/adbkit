@@ -241,6 +241,14 @@ class Client extends EventEmitter {
 			.nodeify(callback);
 	}
 
+	public getPackagesWithFlags(serial: string, flags?: string, callback?: Callback<string[]>): Bluebird<string[]> {
+		return this.transport(serial)
+			.then(function (transport) {
+				return new GetPackagesCommand(transport).execute(flags);
+			})
+			.nodeify(callback);
+	}
+
 	public getDHCPIpAddress(
 		serial: string,
 		iface?: string | typeof callback,
