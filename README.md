@@ -396,18 +396,7 @@ Retrieves the features of the device identified by the given serial number. This
 * Returns: `Promise`
 * Resolves with: `features` (see callback)
 
-#### client.getPackages(serial[, callback])
-
-Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
-
-* **serial** The serial number of the device. Corresponds to the device ID in `client.listDevices()`.
-* **callback(err, packages)** Optional. Use this or the returned `Promise`.
-    - **err** `null` when successful, `Error` otherwise.
-    - **packages** An array of package names.
-* Returns: `Promise`
-* Resolves with: `packages` (see callback)
-
-#### client.getPackagesWithFlags(serial, flags[, callback])
+#### client.getPackages(serial[, flags]&#91;, callback])
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
 
@@ -812,7 +801,7 @@ client.listDevices()
   .then(function(devices) {
     return Promise.map(devices, function(device) {
       return client.shell(device.id, 'logcat') // logcat just for illustration,
-                                               // prefer client.openLogcat in real use 
+                                               // prefer client.openLogcat in real use
         .then(function(conn) {
           var line = 0
           conn.on('data', function(data) {
@@ -821,8 +810,8 @@ client.listDevices()
             line += 1
             // close the stream and the running process
             // on the device will be gone, gracefully
-            if (line > 100) conn.end()
-          });
+            if (line > 100) conn.end()
+          })
           conn.on('close', function() {
             // here `ps` on the device shows the logcat process is gone
             console.log('100 lines read already, bye')
