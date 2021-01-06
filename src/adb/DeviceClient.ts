@@ -98,7 +98,7 @@ export default class DeviceClient {
 
     public getDHCPIpAddress(iface = 'wlan0'): Bluebird<string> {
         return this.getProperties().then((properties) => {
-            const ip = properties['dhcp.' + iface + '.ipaddress'];
+            const ip = properties[`dhcp.${iface}.ipaddress`];
             if (ip) {
                 return ip;
             }

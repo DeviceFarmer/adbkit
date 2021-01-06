@@ -59,7 +59,7 @@ export default class Client extends EventEmitter {
         return this.connection().then((conn) => new HostConnectCommand(conn).execute(host, port));
     }
 
-    public disconnect(host: string, port = 5555): Bluebird<string> {
+    public disconnect(host: string, port = 5555): Bluebird<DeviceClient> {
         if (host.indexOf(':') !== -1) {
             const [h, portString] = host.split(':', 2);
             host = h;
@@ -68,7 +68,9 @@ export default class Client extends EventEmitter {
                 port = parsed;
             }
         }
-        return this.connection().then((conn) => new HostDisconnectCommand(conn).execute(host, port));
+        return this.connection()
+            .then((conn) => new HostDisconnectCommand(conn).execute(host, port))
+            .then((deviceId) => new DeviceClient(this, deviceId));
     }
 
     public listDevices(): Bluebird<Device[]> {
