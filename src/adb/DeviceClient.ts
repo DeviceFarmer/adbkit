@@ -92,8 +92,8 @@ export default class DeviceClient {
         return this.transport().then((transport) => new GetFeaturesCommand(transport).execute());
     }
 
-    public getPackages(): Bluebird<string[]> {
-        return this.transport().then((transport) => new GetPackagesCommand(transport).execute());
+    public getPackages(flags?: string): Bluebird<string[]> {
+        return this.transport().then((transport) => new GetPackagesCommand(transport).execute(flags));
     }
 
     public getDHCPIpAddress(iface = 'wlan0'): Bluebird<string> {
