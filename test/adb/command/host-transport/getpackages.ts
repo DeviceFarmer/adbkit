@@ -20,6 +20,19 @@ describe('GetPackagesCommand', function () {
         });
         return cmd.execute();
     });
+    it("should send 'pm list packages' with flag", function() {
+        const conn = new MockConnection();
+        const cmd = new GetPackagesCommand(conn);
+        conn.socket.on('write', function(chunk) {
+          return expect(chunk.toString()).to.equal(Protocol.encodeData('shell:pm list packages -3 2>/dev/null').toString());
+        });
+        setImmediate(function() {
+            conn.getSocket().causeRead(Protocol.OKAY);
+            return conn.getSocket().causeEnd();
+        });
+        return cmd.execute('-3');
+      });
+
     it('should return an empty array for an empty package list', function () {
         const conn = new MockConnection();
         const cmd = new GetPackagesCommand(conn);

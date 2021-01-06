@@ -286,7 +286,7 @@ Disconnects from the given device, which should have been connected via `client.
 -   Returns: `Promise`
 -   Resolves with: `id` (see callback)
 
-#### client.forward(serial, local, remote[, callback])
+#### client.forward(local, remote[, callback])
 
 Forwards socket connections from the ADB server host (local) to the device (remote). This is analogous to `adb forward <local> <remote>`. It's important to note that if you are connected to a remote ADB server, the forward will be created on that host.
 
@@ -305,7 +305,7 @@ Forwards socket connections from the ADB server host (local) to the device (remo
 -   Returns: `Promise`
 -   Resolves with: `true`
 
-#### client.framebuffer(serial[, format]&#91;, callback])
+#### client.framebuffer([format])
 
 Fetches the current **raw** framebuffer (i.e. what is visible on the screen) from the device, and optionally converts it into something more usable by using [GraphicsMagick][graphicsmagick]'s `gm` command, which must be available in `$PATH` if conversion is desired. Note that we don't bother supporting really old framebuffer formats such as RGB_565. If for some mysterious reason you happen to run into a `>=2.3` device that uses RGB_565, let us know.
 
@@ -333,7 +333,7 @@ Note that high-resolution devices can have quite massive framebuffers. For examp
 -   Returns: `Promise`
 -   Resolves with: `framebuffer` (see callback)
 
-#### client.getDevicePath(serial[, callback])
+#### client.getDevicePath()
 
 Gets the device path of the device identified by the given serial number.
 
@@ -344,7 +344,7 @@ Gets the device path of the device identified by the given serial number.
 -   Returns: `Promise`
 -   Resolves with: `path` (see callback)
 
-#### client.getDHCPIpAddress(serial[, iface]&#91;, callback])
+#### client.getDHCPIpAddress([iface])
 
 Attemps to retrieve the IP address of the device. Roughly analogous to `adb shell getprop dhcp.<iface>.ipaddress`.
 
@@ -356,18 +356,24 @@ Attemps to retrieve the IP address of the device. Roughly analogous to `adb shel
 -   Returns: `Promise`
 -   Resolves with: `ip` (see callback)
 
-#### client.getFeatures(serial[, callback])
+#### client.getFeatures([flags])
 
 Retrieves the features of the device identified by the given serial number. This is analogous to `adb shell pm list features`. Useful for checking whether hardware features such as NFC are available (you'd check for `'android.hardware.nfc'`).
 
--   **serial** The serial number of the device. Corresponds to the device ID in `client.listDevices()`.
+**flags** Flags to pass to the `pm list packages` command to filter the list
+  ```
+  -d: filter to only show disabled packages
+  -e: filter to only show enabled packages
+  -s: filter to only show system packages
+  -3: filter to only show third party packages
+  ```
 -   **callback(err, features)** Optional. Use this or the returned `Promise`.
     -   **err** `null` when successful, `Error` otherwise.
     -   **features** An object of device features. Each key corresponds to a device feature, with the value being either `true` for a boolean feature, or the feature value as a string (e.g. `'0x20000'` for `reqGlEsVersion`).
 -   Returns: `Promise`
 -   Resolves with: `features` (see callback)
 
-#### client.getPackages(serial[, callback])
+#### client.getPackages(serial)
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
 
@@ -378,6 +384,7 @@ Retrieves the list of packages present on the device. This is analogous to `adb 
 -   Returns: `Promise`
 -   Resolves with: `packages` (see callback)
 
+<<<<<<< HEAD
 #### client.getPackagesWithFlags(serial, flags[, callback])
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
@@ -397,6 +404,9 @@ Retrieves the list of packages present on the device. This is analogous to `adb 
 * Resolves with: `packages` (see callback)
 
 #### client.getProperties(serial[, callback])
+=======
+#### client.getProperties()
+>>>>>>> add flag argument to client.getPackages #56
 
 Retrieves the properties of the device identified by the given serial number. This is analogous to `adb shell getprop`.
 
@@ -407,7 +417,7 @@ Retrieves the properties of the device identified by the given serial number. Th
 -   Returns: `Promise`
 -   Resolves with: `properties` (see callback)
 
-#### client.getSerialNo(serial[, callback])
+#### client.getSerialNo()
 
 Gets the serial number of the device identified by the given serial number. With our API this doesn't really make much sense, but it has been implemented for completeness. _FYI: in the raw ADB protocol you can specify a device in other ways, too._
 
@@ -418,7 +428,7 @@ Gets the serial number of the device identified by the given serial number. With
 -   Returns: `Promise`
 -   Resolves with: `serial` (see callback)
 
-#### client.getState(serial[, callback])
+#### client.getState()
 
 Gets the state of the device identified by the given serial number.
 
@@ -429,7 +439,7 @@ Gets the state of the device identified by the given serial number.
 -   Returns: `Promise`
 -   Resolves with: `state` (see callback)
 
-#### client.install(serial, apk[, callback])
+#### client.install(apk[, callback])
 
 Installs the APK on the device, replacing any previously installed version. This is roughly analogous to `adb install -r <apk>`.
 
