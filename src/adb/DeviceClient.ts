@@ -280,21 +280,7 @@ export default class DeviceClient {
      *
      * @param format The desired output format. Any output format supported by [GraphicsMagick][graphicsmagick] (such as `'png'`) is supported. Defaults to `'raw'` for raw framebuffer data.
      *
-     * @returns The possibly converted framebuffer stream. The stream also has a `meta` property with the following values:
-     *   -   **version** The framebuffer version. Useful for patching possible backwards-compatibility issues.
-     *   -   **bpp** Bits per pixel (i.e. color depth).
-     *   -   **size** The raw byte size of the framebuffer.
-     *   -   **width** The horizontal resolution of the framebuffer. This SHOULD always be the same as screen width. We have not encountered any device with incorrect framebuffer metadata, but according to rumors there might be some.
-     *   -   **height** The vertical resolution of the framebuffer. This SHOULD always be the same as screen height.
-     *   -   **red_offset** The bit offset of the red color in a pixel.
-     *   -   **red_length** The bit length of the red color in a pixel.
-     *   -   **blue_offset** The bit offset of the blue color in a pixel.
-     *   -   **blue_length** The bit length of the blue color in a pixel.
-     *   -   **green_offset** The bit offset of the green color in a pixel.
-     *   -   **green_length** The bit length of the green color in a pixel.
-     *   -   **alpha_offset** The bit offset of alpha in a pixel.
-     *   -   **alpha_length** The bit length of alpha in a pixel. `0` when not available.
-     *   -   **format** The framebuffer format for convenience. This can be one of `'bgr'`, `'bgra'`, `'rgb'`, `'rgba'`.
+     * @returns The possibly converted framebuffer stream. The stream also has a `meta`.:
      */
     public framebuffer(format = 'raw'): Bluebird<FramebufferStreamWithMeta> {
         return this.transport().then((transport) => new FrameBufferCommand(transport).execute(format));
