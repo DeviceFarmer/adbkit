@@ -4,7 +4,7 @@ import RgbTransform from '../../framebuffer/rgbtransform';
 import Protocol from '../../protocol';
 import Command from '../../command';
 import { Readable } from 'stream';
-import FramebufferMeta from '../../../FramebufferMeta';
+import FramebufferMeta, { ColorFormat } from '../../../FramebufferMeta';
 import FramebufferStreamWithMeta from '../../../FramebufferStreamWithMeta';
 import Bluebird from 'bluebird';
 
@@ -96,7 +96,7 @@ export default class FrameBufferCommand extends Command<any> {
         const alpha_offset = header.readUInt32LE(offset);
         offset += 4;
         const alpha_length = header.readUInt32LE(offset);
-        let format = blue_offset === 0 ? 'bgr' : 'rgb';
+        let format: ColorFormat = blue_offset === 0 ? 'bgr' : 'rgb';
         if (bpp === 32 || alpha_length) {
             format += 'a';
         }
@@ -114,7 +114,7 @@ export default class FrameBufferCommand extends Command<any> {
             green_length,
             alpha_offset,
             alpha_length,
-            format,
+            format: format as ColorFormat,
         };
     }
 }
