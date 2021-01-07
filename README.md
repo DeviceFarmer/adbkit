@@ -428,7 +428,7 @@ Attemps to retrieve the IP address of the device. Roughly analogous to `adb shel
 -   Returns: `Promise`
 -   Resolves with: `ip` (see callback)
 
-#### device.getFeatures([flags])
+#### device.getFeatures()
 
 Retrieves the features of the device identified by the given serial number. This is analogous to `adb shell pm list features`. Useful for checking whether hardware features such as NFC are available (you'd check for `'android.hardware.nfc'`).
 
