@@ -17,6 +17,9 @@ When targeting a remote host, starting the server is entirely your responsibilit
 
 Alternatively, you may want to consider using the Chrome [ADB][chrome-adb] extension, as it includes the ADB server and can be started/stopped quite easily.
 
+For Linux users, adb need `plugdev` group acess, So you may need to add your current user to `plugdev` group.
+`sudo usermod -a -G plugdev $USER`
+
 ## Getting started
 
 Install via NPM:
