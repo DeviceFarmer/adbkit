@@ -295,37 +295,24 @@ Disconnects from the given device, which should have been connected via `client.
 #### client.kill()
 
 This kills the ADB server. Note that the next connection will attempt to start the server again when it's unable to connect.
-
--   **callback(err)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise.
--   Returns: `Promise`
+-   Returns: `Promise<true>`
 -   Resolves with: `true`
 
 
 #### client.listDevices()
 
 Gets the list of currently connected devices and emulators.
-
--   **callback(err, devices)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise.
-    -   **devices** An array of device objects. The device objects are plain JavaScript objects with two properties: `id` and `type`.
-        -   **id** The ID of the device. For real devices, this is usually the USB identifier.
-        -   **type** The device type. Values include `'emulator'` for emulators, `'device'` for devices, and `'offline'` for offline devices. `'offline'` can occur for example during boot, in low-battery conditions or when the ADB connection has not yet been approved on the device.
--   Returns: `Promise`
--   Resolves with: `devices` (see callback)
+-   Returns: `Promise<devices>` An array of device objects. The device objects are plain JavaScript objects with two properties: `id` and `type`.
+     -   **id** The ID of the device. For real devices, this is usually the USB identifier.
+    -   **type** The device type. Values include `'emulator'` for emulators, `'device'` for devices, and `'offline'` for offline devices. `'offline'` can occur for example during boot, in low-battery conditions or when the ADB connection has not yet been approved on the device.-   Resolves with: `devices` (see callback)
 
 #### client.listDevicesWithPaths()
 
 Like `client.listDevices()`, but includes the "path" of every device.
-
--   **callback(err, devices)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise.
-    -   **devices** An array of device objects. The device objects are plain JavaScript objects with the following properties:
-        -   **id** See `client.listDevices()`.
-        -   **type** See `client.listDevices()`.
-        -   **path** The device path. This can be something like `usb:FD120000` for real devices.
--   Returns: `Promise`
--   Resolves with: `devices` (see callback)
+-   Returns: `Promise<devices>` An array of device objects. The device objects are plain JavaScript objects with the following properties:
+    -   **id** See `client.listDevices()`.
+    -   **type** See `client.listDevices()`.
+    -   **path** The device path. This can be something like `usb:FD120000` for real devices.
 
 
 #### client.trackDevices()
