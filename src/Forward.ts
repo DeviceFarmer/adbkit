@@ -1,5 +1,5 @@
 export default interface Forward {
-    serial: string;
-    local: string;
-    remote: string;
+  serial: string;
+  local: string;
+  remote: string;
 }

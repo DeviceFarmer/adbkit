@@ -25,7 +25,8 @@
     "contributors": [
         {
             "name": "uriel chemouni",
-            "email": "uchemouni@gmail.com"
+            "email": "uchemouni@gmail.com",
+            "url": "https://urielch.github.io/urielch/"
         }
     ],
     "main": "./dist/index.js",
@@ -38,10 +39,10 @@
         "clean": "rimraf dist index.d.ts index.js",
         "keycode": "node tasks/keycode.js",
         "prepublish": "npm run clean && npm run compile && npm run test",
-        "compile": "tsc -p .",
+        "compile": "tsc  -p .",
         "compile2": "tsc -p tsconfig-dist.json",
-        "lint": "eslint ./ --ext .ts",
-        "format": "eslint ./ --fix --ext .ts",
+        "lint": "eslint   ./ --ext .ts",
+        "format": "eslint ./ --ext .ts --fix",
         "testJS": "mocha --reporter spec --colors dist/test/**/*.js",
         "test": "mocha -r ts-node/register --reporter spec --colors test/**/*.ts"
     },

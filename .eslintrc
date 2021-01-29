@@ -11,7 +11,9 @@
         "sourceType": "module"
     },
     "rules": {
-        "progress/activate": 1
+        "progress/activate": 1,
+        "indent": ["error", 2, {"SwitchCase": 1}]
     },
-    "overrides": []
+    "overrides": [
+    ]
 }
