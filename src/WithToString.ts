@@ -1,3 +1,3 @@
 export default interface WithToString {
-    toString: () => string;
+  toString: () => string;
 }

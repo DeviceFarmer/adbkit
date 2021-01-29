@@ -1,4 +1,4 @@
 export default interface Reverse {
-    remote: string;
-    local: string;
+  remote: string;
+  local: string;
 }

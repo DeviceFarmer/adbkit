@@ -6,14 +6,11 @@ import Bluebird from 'bluebird';
 import { Duplex } from 'stream';
 
 export default class Util {
-    public static readAll(stream: Duplex, callback?: Callback<Buffer>): Bluebird<Buffer> {
-        return new Parser(stream).readAll().nodeify(callback);
-    }
+  public static readAll(stream: Duplex, callback?: Callback<Buffer>): Bluebird<Buffer> {
+    return new Parser(stream).readAll().nodeify(callback);
+  }
 
-    public static parsePublicKey(
-        keyString: string,
-        callback?: Callback<ExtendedPublicKey>,
-    ): Bluebird<ExtendedPublicKey> {
-        return Auth.parsePublicKey(keyString).nodeify(callback);
-    }
+  public static parsePublicKey(keyString: string, callback?: Callback<ExtendedPublicKey>): Bluebird<ExtendedPublicKey> {
+    return Auth.parsePublicKey(keyString).nodeify(callback);
+  }
 }
