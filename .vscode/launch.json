@@ -5,9 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "cwd": "${workspaceFolder}",
             "args": [
+                "-r",
+                "ts-node/register",
+                "--project",
+                "tsconfig.json",
+                "--no-timeouts",
                 "--colors",
-                "${workspaceFolder}/dist/test/**/*.js"
+                "${workspaceFolder}/test/**/*.ts"
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "name": "Mocha Tests",
