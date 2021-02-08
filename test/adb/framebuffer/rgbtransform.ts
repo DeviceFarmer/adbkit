@@ -7,7 +7,7 @@ import { FramebufferMeta } from '../../..';
 
 describe('RgbTransform', function () {
     it('should transform BGRA into RGB', function (done) {
-        const meta = {
+        const meta: FramebufferMeta = {
             bpp: 32,
             red_offset: 16,
             red_length: 8,
@@ -18,7 +18,7 @@ describe('RgbTransform', function () {
             alpha_offset: 24,
             alpha_length: 8,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,
@@ -42,7 +42,7 @@ describe('RgbTransform', function () {
         stream.end();
     });
     it('should transform BGR into RGB', function (done) {
-        const meta = {
+        const meta: FramebufferMeta = {
             bpp: 32,
             red_offset: 16,
             red_length: 8,
@@ -53,7 +53,7 @@ describe('RgbTransform', function () {
             alpha_offset: 0,
             alpha_length: 0,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,
@@ -76,7 +76,7 @@ describe('RgbTransform', function () {
         stream.end();
     });
     it('should transform RGB into RGB', function (done) {
-        const meta = {
+        const meta: FramebufferMeta = {
             bpp: 24,
             red_offset: 0,
             red_length: 8,
@@ -87,7 +87,7 @@ describe('RgbTransform', function () {
             alpha_offset: 0,
             alpha_length: 0,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,
@@ -110,7 +110,7 @@ describe('RgbTransform', function () {
         stream.end();
     });
     it('should transform RGBA into RGB', function (done) {
-        const meta = {
+        const meta: FramebufferMeta = {
             bpp: 32,
             red_offset: 0,
             red_length: 8,
@@ -121,7 +121,7 @@ describe('RgbTransform', function () {
             alpha_offset: 24,
             alpha_length: 8,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,
@@ -156,7 +156,7 @@ describe('RgbTransform', function () {
             alpha_offset: 24,
             alpha_length: 8,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,
@@ -182,7 +182,7 @@ describe('RgbTransform', function () {
         stream.end();
     });
     return it('should transform a stream of multiple pixels', function (done) {
-        const meta = {
+        const meta: FramebufferMeta = {
             bpp: 32,
             red_offset: 16,
             red_length: 8,
@@ -193,7 +193,7 @@ describe('RgbTransform', function () {
             alpha_offset: 24,
             alpha_length: 8,
             version: 1,
-            format: 'RGB',
+            format: 'rgb',
             width: 1080,
             height: 1920,
             size: 0,

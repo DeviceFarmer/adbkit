@@ -23,8 +23,8 @@ describe('GetPackagesCommand', function () {
     it("should send 'pm list packages' with flag", function() {
         const conn = new MockConnection();
         const cmd = new GetPackagesCommand(conn);
-        conn.socket.on('write', function(chunk) {
-          return expect(chunk.toString()).to.equal(Protocol.encodeData('shell:pm list packages -3 2>/dev/null').toString());
+        conn.getSocket().on('write', function(chunk) {
+            return expect(chunk.toString()).to.equal(Protocol.encodeData('shell:pm list packages -3 2>/dev/null').toString());
         });
         setImmediate(function() {
             conn.getSocket().causeRead(Protocol.OKAY);
