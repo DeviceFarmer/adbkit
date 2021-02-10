@@ -112,24 +112,24 @@ class Client extends EventEmitter {
 	}
 
 	public connect(host: string, port: number | typeof callback = 5555, callback?: Callback<string>): Bluebird<string> {
-		let p: number;
+		let _port: number;
 		if (typeof port === 'function') {
 			callback = port;
-			p = 5555;
+			_port = 5555;
 		} else {
-			p = port;
+			_port = port;
 		}
 		if (host.indexOf(':') !== -1) {
 			const [h, portString] = host.split(':', 2);
 			host = h;
 			const parsed = parseInt(portString, 10);
 			if (!isNaN(parsed)) {
-				p = parsed;
+				_port = parsed;
 			}
 		}
 		return this.connection()
 			.then(function (conn) {
-				return new HostConnectCommand(conn).execute(host, p);
+				return new HostConnectCommand(conn).execute(host, _port);
 			})
 			.nodeify(callback);
 	}
@@ -139,24 +139,24 @@ class Client extends EventEmitter {
 		port: number | typeof callback = 5555,
 		callback?: Callback<string>,
 	): Bluebird<string> {
-		let p: number;
+		let _port: number;
 		if (typeof port === 'function') {
 			callback = port;
-			p = 5555;
+			_port = 5555;
 		} else {
-			p = port;
+			_port = port;
 		}
 		if (host.indexOf(':') !== -1) {
-			const [h, portString] = host.split(':', 2);
-			host = h;
+			const [_host, portString] = host.split(':', 2);
+			host = _host;
 			const parsed = parseInt(portString, 10);
 			if (!isNaN(parsed)) {
-				p = parsed;
+				_port = parsed;
 			}
 		}
 		return this.connection()
 			.then(function (conn) {
-				return new HostDisconnectCommand(conn).execute(host, p);
+				return new HostDisconnectCommand(conn).execute(host, _port);
 			})
 			.nodeify(callback);
 	}
@@ -233,18 +233,21 @@ class Client extends EventEmitter {
 			.nodeify(callback);
 	}
 
-	public getPackages(serial: string, callback?: Callback<string[]>): Bluebird<string[]> {
+	public getPackages(
+		serial: string,
+		flags: string | typeof callback,
+		callback?: Callback<string[]>,
+	): Bluebird<string[]> {
+		let _flags: string;
+		if (typeof flags === 'function') {
+			callback = flags;
+			_flags = null;
+		} else {
+			_flags = flags;
+		}
 		return this.transport(serial)
 			.then(function (transport) {
-				return new GetPackagesCommand(transport).execute(null);
-			})
-			.nodeify(callback);
-	}
-
-	public getPackagesWithFlags(serial: string, flags: string, callback?: Callback<string[]>): Bluebird<string[]> {
-		return this.transport(serial)
-			.then(function (transport) {
-				return new GetPackagesCommand(transport).execute(flags);
+				return new GetPackagesCommand(transport).execute(_flags);
 			})
 			.nodeify(callback);
 	}
@@ -356,16 +359,16 @@ class Client extends EventEmitter {
 		format?: string | typeof callback,
 		callback?: Callback<FramebufferStreamWithMeta>,
 	): Bluebird<FramebufferStreamWithMeta> {
-		let f: string;
+		let _format: string;
 		if (typeof format === 'function') {
 			callback = format;
-			f = 'raw';
+			_format = 'raw';
 		} else {
-			f = format;
+			_format = format;
 		}
 		return this.transport(serial)
 			.then(function (transport) {
-				return new FrameBufferCommand(transport).execute(f);
+				return new FrameBufferCommand(transport).execute(_format);
 			})
 			.nodeify(callback);
 	}
@@ -403,15 +406,15 @@ class Client extends EventEmitter {
 		host?: string | typeof callback,
 		callback?: Callback<Duplex>,
 	): Bluebird<Duplex> {
-		let h: string | undefined;
+		let _host: string | undefined;
 		if (typeof host === 'function') {
 			callback = host;
 		} else {
-			h = host;
+			_host = host;
 		}
 		return this.transport(serial)
 			.then(function (transport) {
-				return new TcpCommand(transport).execute(port, h);
+				return new TcpCommand(transport).execute(port, _host);
 			})
 			.nodeify(callback);
 	}
@@ -421,15 +424,15 @@ class Client extends EventEmitter {
 		port: number | typeof callback = 1080,
 		callback?: Callback<Duplex>,
 	): Bluebird<Duplex> {
-		let p: number;
+		let _port: number;
 		if (typeof port === 'function') {
 			callback = port;
-			p = 1080;
+			_port = 1080;
 		} else {
-			p = port;
+			_port = port;
 		}
 		const tryConnect = (times) => {
-			return this.openTcp(serial, p)
+			return this.openTcp(serial, _port)
 				.then(function (stream) {
 					return Monkey.connectStream(stream);
 				})
@@ -448,7 +451,7 @@ class Client extends EventEmitter {
 			.catch(() => {
 				return this.transport(serial)
 					.then(function (transport) {
-						return new MonkeyCommand(transport).execute(p);
+						return new MonkeyCommand(transport).execute(_port);
 					})
 					.then(function (out) {
 						return tryConnect(20).then(function (monkey) {
@@ -466,16 +469,16 @@ class Client extends EventEmitter {
 		options?: { clear?: boolean } | typeof callback,
 		callback?: Callback<Logcat>,
 	): Bluebird<Logcat> {
-		let opts: { clear?: boolean };
+		let _options: { clear?: boolean };
 		if (typeof options === 'function') {
 			callback = options;
-			opts = {};
+			_options = {};
 		} else {
-			opts = options;
+			_options = options;
 		}
 		return this.transport(serial)
 			.then(function (transport) {
-				return new LogcatCommand(transport).execute(opts);
+				return new LogcatCommand(transport).execute(_options);
 			})
 			.then(function (stream) {
 				return Logcat.readStream(stream, {
@@ -635,15 +638,15 @@ class Client extends EventEmitter {
 		mode?: number | typeof callback,
 		callback?: Callback<PushTransfer>,
 	): Bluebird<PushTransfer> {
-		let m: number | undefined;
+		let _mode: number | undefined;
 		if (typeof mode === 'function') {
 			callback = mode;
 		} else {
-			m = mode;
+			_mode = mode;
 		}
 		return this.syncService(serial)
 			.then(function (sync) {
-				return sync.push(contents, path, m).on('end', function () {
+				return sync.push(contents, path, _mode).on('end', function () {
 					return sync.end();
 				});
 			})
@@ -651,16 +654,16 @@ class Client extends EventEmitter {
 	}
 
 	public tcpip(serial: string, port: number | typeof callback = 5555, callback?: Callback<number>): Bluebird<number> {
-		let p: number;
+		let _port: number;
 		if (typeof port === 'function') {
 			callback = port;
-			p = 5555;
+			_port = 5555;
 		} else {
-			p = port;
+			_port = port;
 		}
 		return this.transport(serial)
 			.then(function (transport) {
-				return new TcpIpCommand(transport).execute(p);
+				return new TcpIpCommand(transport).execute(_port);
 			})
 			.nodeify(callback);
 	}
