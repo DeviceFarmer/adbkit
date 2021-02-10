@@ -435,6 +435,7 @@ Retrieves the features of the device identified by the given serial number. This
 -   Returns: `Promise`
 -   Resolves with: `features` (see callback)
 
+<<<<<<< HEAD
 #### device.getPackages()
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
@@ -448,6 +449,9 @@ Retrieves the list of packages present on the device. This is analogous to `adb 
 <<<<<<< HEAD
 <<<<<<< HEAD
 #### client.getPackagesWithFlags(serial, flags[, callback])
+=======
+#### client.getPackages(serial[, flags]&#91;, callback])
+>>>>>>> Extend original `getPackages` method, keep compatibility (#61)
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
 
@@ -814,10 +818,16 @@ import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 client.listDevices()
   .then(function(devices) {
+<<<<<<< HEAD
     return Bluebird.map(devices, function(device) {
       const device = client.getDevice(device.id);
       return device.shell('logcat') // logcat just for illustration,
                                     // prefer client.openLogcat in real use 
+=======
+    return Promise.map(devices, function(device) {
+      return client.shell(device.id, 'logcat') // logcat just for illustration,
+                                               // prefer client.openLogcat in real use
+>>>>>>> Extend original `getPackages` method, keep compatibility (#61)
         .then(function(conn) {
           var line = 0
           conn.on('data', function(data) {
@@ -827,7 +837,11 @@ client.listDevices()
             // close the stream and the running process
             // on the device will be gone, gracefully
             if (line > 100) conn.end()
+<<<<<<< HEAD
           });
+=======
+          })
+>>>>>>> Extend original `getPackages` method, keep compatibility (#61)
           conn.on('close', function() {
             // here `ps` on the device shows the logcat process is gone
             console.log('100 lines read already, bye')
