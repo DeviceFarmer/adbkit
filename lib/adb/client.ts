@@ -21,6 +21,7 @@ import GetPropertiesCommand from './command/host-transport/getproperties';
 import InstallCommand from './command/host-transport/install';
 import IsInstalledCommand from './command/host-transport/isinstalled';
 import ListReversesCommand from './command/host-transport/listreverses';
+import KillForwardCommand from './command/host-serial/killforward';
 import LocalCommand from './command/host-transport/local';
 import LogcatCommand from './command/host-transport/logcat';
 import LogCommand from './command/host-transport/log';
@@ -276,6 +277,14 @@ class Client extends EventEmitter {
 		return this.connection()
 			.then(function (conn) {
 				return new ForwardCommand(conn).execute(serial, local, remote);
+			})
+			.nodeify(callback);
+	}
+
+	public removeForward(serial: string, local: string, callback?: Callback<boolean>): Bluebird<boolean> {
+		return this.connection()
+			.then(function (conn) {
+				return new KillForwardCommand(conn).execute(serial, local);
 			})
 			.nodeify(callback);
 	}

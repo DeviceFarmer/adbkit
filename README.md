@@ -334,6 +334,22 @@ Forwards socket connections from the ADB server host (local) to the device (remo
 * Returns: `Promise`
 * Resolves with: `true`
 
+#### client.removeForward(serial, local[, callback])
+
+Remove the port forward at ADB server host (local). This is analogous to `adb forward --remove <local>`. It's important to note that if you are connected to a remote ADB server, the forward on that host will be removed.
+
+* **serial** The serial number of the device. Corresponds to the device ID in `client.listDevices()`.
+* **local** A string representing the local endpoint on the ADB host. At time of writing, can be one of:
+    - `tcp:<port>`
+    - `localabstract:<unix domain socket name>`
+    - `localreserved:<unix domain socket name>`
+    - `localfilesystem:<unix domain socket name>`
+    - `dev:<character device name>`
+* **callback(err)** Optional. Use this or the returned `Promise`.
+    - **err** `null` when successful, `Error` otherwise.
+* Returns: `Promise`
+* Resolves with: `true`
+
 #### client.framebuffer(serial[, format]&#91;, callback])
 
 Fetches the current **raw** framebuffer (i.e. what is visible on the screen) from the device, and optionally converts it into something more usable by using [GraphicsMagick][graphicsmagick]'s `gm` command, which must be available in `$PATH` if conversion is desired. Note that we don't bother supporting really old framebuffer formats such as RGB_565. If for some mysterious reason you happen to run into a `>=2.3` device that uses RGB_565, let us know.
