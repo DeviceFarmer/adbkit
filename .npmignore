@@ -11,3 +11,5 @@ dist/bench/
 .vscode
 .eslintignore
 .eslintrc
+tsconfig.json
+tsconfig-dist.json
