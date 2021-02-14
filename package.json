@@ -1,7 +1,7 @@
 {
-    "name": "@devicefarmer/adbkit",
+    "name": "@u4/adbkit",
     "version": "3.0.0",
-    "description": "A pure Node.js client for the Android Debug Bridge.",
+    "description": "A Typescript client for the Android Debug Bridge.",
     "keywords": [
         "adb",
         "adbkit",
@@ -14,13 +14,13 @@
         "adbkit": "./bin/adbkit"
     },
     "bugs": {
-        "url": "https://github.com/DeviceFarmer/adbkit/issues"
+        "url": "https://github.com/UrielCh/adbkit/issues"
     },
     "license": "Apache-2.0",
     "author": {
         "name": "Device Farmer",
         "email": "contact@openstf.io",
-        "url": "https://devicefarmer.github.io/"
+        "url": "https://urielch.github.io/"
     },
     "contributors": [
         {
@@ -33,7 +33,7 @@
     "types": "./dist/index.d.ts",
     "repository": {
         "type": "git",
-        "url": "https://github.com/DeviceFarmer/adbkit.git"
+        "url": "https://github.com/UrielCh/adbkit.git"
     },
     "scripts": {
         "clean": "rimraf dist index.d.ts index.js",
