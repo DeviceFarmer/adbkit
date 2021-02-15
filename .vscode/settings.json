@@ -1,0 +1,8 @@
+{
+    "files.exclude": {
+        "lib/**/*.js": true,
+        "lib/**/*.d.ts": true,
+        "lib/**/*.map": true
+    },
+    "eslint.format.enable": true
+}
