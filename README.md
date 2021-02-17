@@ -26,10 +26,14 @@ Install via NPM:
 
 ```bash
 <<<<<<< HEAD
+<<<<<<< HEAD
 npm install --save @devicefarmer/adbkit
 =======
 npm install --save @devicefarmer/adbkit-ts
 >>>>>>> Update README.md
+=======
+npm install --save @devicefarmer/adbkit
+>>>>>>> fix merge error
 ```
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
