@@ -6,11 +6,11 @@ import Protocol from '../../../../src/adb/protocol';
 import { WaitForDeviceCommand } from '../../../../src/adb/command/host-serial';
 
 describe('WaitForDeviceCommand', function () {
-    it("should send 'host-serial:<serial>:wait-for-any'", function () {
+    it("should send 'host-serial:<serial>:wait-for-any-device'", function () {
         const conn = new MockConnection();
         const cmd = new WaitForDeviceCommand(conn);
         conn.getSocket().on('write', function (chunk) {
-            return expect(chunk.toString()).to.equal(Protocol.encodeData('host-serial:abba:wait-for-any').toString());
+            return expect(chunk.toString()).to.equal(Protocol.encodeData('host-serial:abba:wait-for-any-device').toString());
         });
         setImmediate(function () {
             conn.getSocket().causeRead(Protocol.OKAY);
