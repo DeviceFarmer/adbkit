@@ -17,12 +17,12 @@ Protocol = require('../../../../lib/adb/protocol');
 WaitForDeviceCommand = require('../../../../lib/adb/command/host-serial/waitfordevice');
 
 describe('WaitForDeviceCommand', function() {
-  it("should send 'host-serial:<serial>:wait-for-any'", function(done) {
+  it("should send 'host-serial:<serial>:wait-for-any-device'", function(done) {
     var cmd, conn;
     conn = new MockConnection();
     cmd = new WaitForDeviceCommand(conn);
     conn.socket.on('write', function(chunk) {
-      return expect(chunk.toString()).to.equal(Protocol.encodeData('host-serial:abba:wait-for-any').toString());
+      return expect(chunk.toString()).to.equal(Protocol.encodeData('host-serial:abba:wait-for-any-device').toString());
     });
     setImmediate(function() {
       conn.socket.causeRead(Protocol.OKAY);
