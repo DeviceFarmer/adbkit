@@ -25,7 +25,7 @@ For Linux users, adb need `plugdev` group acess, So you may need to add your cur
 Install via NPM:
 
 ```bash
-npm install --save @devicefarmer/adbkit
+npm install --save @u4/adbkit-ts
 ```
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
@@ -38,7 +38,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 
 const client = Adb.createClient();
 
@@ -60,7 +60,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 
 const client = Adb.createClient();
 const apk = 'vendor/app.apk';
@@ -79,7 +79,7 @@ const test = async () => {
 #### Tracking devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 
 const client = Adb.createClient();
 const test = async () => {
@@ -99,7 +99,7 @@ const test = async () => {
 ```typescript
 import Bluebird from 'bluebird';
 import fs from 'fs';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -131,7 +131,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -161,7 +161,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -254,7 +254,7 @@ Note: be careful with using `client.listDevices()` together with `client.tcpip()
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -435,7 +435,6 @@ Retrieves the features of the device identified by the given serial number. This
 -   Returns: `Promise`
 -   Resolves with: `features` (see callback)
 
-<<<<<<< HEAD
 #### device.getPackages()
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
@@ -446,36 +445,7 @@ Retrieves the list of packages present on the device. This is analogous to `adb 
 -   Returns: `Promise`
 -   Resolves with: `packages` (see callback)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-#### client.getPackagesWithFlags(serial, flags[, callback])
-=======
-#### client.getPackages(serial[, flags]&#91;, callback])
->>>>>>> Extend original `getPackages` method, keep compatibility (#61)
-
-Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
-
-* **serial** The serial number of the device. Corresponds to the device ID in `client.listDevices()`.
-* **flags** Flags to pass to the `pm list packages` command to filter the list
-  ```
-  -d: filter to only show disabled packages
-  -e: filter to only show enabled packages
-  -s: filter to only show system packages
-  -3: filter to only show third party packages
-  ```
-* **callback(err, packages)** Optional. Use this or the returned `Promise`.
-    - **err** `null` when successful, `Error` otherwise.
-    - **packages** An array of package names.
-* Returns: `Promise`
-* Resolves with: `packages` (see callback)
-
-#### client.getProperties(serial[, callback])
-=======
-#### client.getProperties()
->>>>>>> add flag argument to client.getPackages #56
-=======
 #### device.getProperties()
->>>>>>> add showcase long-running shell commands (#59)
 
 Retrieves the properties of the device identified by the given serial number. This is analogous to `adb shell getprop`.
 
@@ -522,7 +492,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 import request from 'request';
 import { Readable } from 'stream';
 
@@ -780,7 +750,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 * Read the output of an instantaneous command
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 
 const client = Adb.createClient();
 
@@ -813,21 +783,15 @@ client
 * Progressively read the output of a long-running command and terminate it
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@devicefarmer/adbkit';
+import Adb from '@u4/adbkit';
 
 const client = Adb.createClient();
 client.listDevices()
   .then(function(devices) {
-<<<<<<< HEAD
     return Bluebird.map(devices, function(device) {
       const device = client.getDevice(device.id);
       return device.shell('logcat') // logcat just for illustration,
                                     // prefer client.openLogcat in real use 
-=======
-    return Promise.map(devices, function(device) {
-      return client.shell(device.id, 'logcat') // logcat just for illustration,
-                                               // prefer client.openLogcat in real use
->>>>>>> Extend original `getPackages` method, keep compatibility (#61)
         .then(function(conn) {
           var line = 0
           conn.on('data', function(data) {
@@ -837,11 +801,7 @@ client.listDevices()
             // close the stream and the running process
             // on the device will be gone, gracefully
             if (line > 100) conn.end()
-<<<<<<< HEAD
           });
-=======
-          })
->>>>>>> Extend original `getPackages` method, keep compatibility (#61)
           conn.on('close', function() {
             // here `ps` on the device shows the logcat process is gone
             console.log('100 lines read already, bye')
