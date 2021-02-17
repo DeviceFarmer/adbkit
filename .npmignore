@@ -1,0 +1,15 @@
+index.ts
+src/
+test/
+dist/test/
+tasks/
+bench/
+dist/bench/
+.prettierrc
+.editorconfig
+.semaphore
+.vscode
+.eslintignore
+.eslintrc
+tsconfig.json
+tsconfig-dist.json
