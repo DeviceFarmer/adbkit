@@ -1,3 +1,5 @@
+dist/**/*
 test/**/*.js
 *.js
-/lib/**/*.d.ts
+lib/**/*.d.ts
+test/**/*.ts
