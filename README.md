@@ -25,7 +25,7 @@ For Linux users, adb need `plugdev` group acess, So you may need to add your cur
 Install via NPM:
 
 ```bash
-npm install --save @u4/adbkit-ts
+npm install --save @devicefarmer/adbkit-ts
 ```
 
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
@@ -38,7 +38,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -60,7 +60,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const apk = 'vendor/app.apk';
@@ -79,7 +79,7 @@ const test = async () => {
 #### Tracking devices
 
 ```typescript
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const test = async () => {
@@ -99,7 +99,7 @@ const test = async () => {
 ```typescript
 import Bluebird from 'bluebird';
 import fs from 'fs';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -131,7 +131,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -161,7 +161,7 @@ const test = async () => {
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -254,7 +254,7 @@ Note: be careful with using `client.listDevices()` together with `client.tcpip()
 
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -492,7 +492,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```typescript
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 import request from 'request';
 import { Readable } from 'stream';
 
@@ -750,7 +750,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 * Read the output of an instantaneous command
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -783,7 +783,7 @@ client
 * Progressively read the output of a long-running command and terminate it
 ```typescript
 import Bluebird from 'bluebird';
-import Adb from '@u4/adbkit';
+import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 client.listDevices()
