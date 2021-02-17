@@ -1,27 +1,27 @@
 version: v1.0
 name: NPM Test
 agent:
-  machine:
-    type: e1-standard-2
-    os_image: ubuntu1804
+    machine:
+        type: e1-standard-2
+        os_image: ubuntu1804
 blocks:
-  - name: Test
-    task:
-      jobs:
-        - name: Test
-          commands:
-            - checkout
-            - 'wget https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O ~/platform-tools-latest-linux.zip'
-            - unzip ~/platform-tools-latest-linux.zip -d ~
-            - 'export PATH=$PATH:~/platform-tools'
-            - sem-version node 12
-            - cache restore
-            - npm install
-            - cache store
-            - npm run build --if-present
-            - npm test
+    - name: Test
+      task:
+          jobs:
+              - name: Test
+                commands:
+                    - checkout
+                    - 'wget https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O ~/platform-tools-latest-linux.zip'
+                    - unzip ~/platform-tools-latest-linux.zip -d ~
+                    - 'export PATH=$PATH:~/platform-tools'
+                    - sem-version node 12
+                    - cache restore
+                    - npm install
+                    - cache store
+                    - npm run build --if-present
+                    - npm test
 promotions:
-  - name: NPM publish
-    pipeline_file: publish.yml
-    auto_promote:
-      when: (branch = 'master' OR tag =~ '.*') AND result = 'passed'
+    - name: NPM publish
+      pipeline_file: publish.yml
+      auto_promote:
+          when: (branch = 'master' OR tag =~ '.*') AND result = 'passed'
