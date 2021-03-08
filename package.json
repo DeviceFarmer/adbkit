@@ -1,6 +1,6 @@
 {
     "name": "@devicefarmer/adbkit",
-    "version": "3.0.0",
+    "version": "3.2.0",
     "description": "A Typescript client for the Android Debug Bridge.",
     "keywords": [
         "adb",
@@ -14,13 +14,13 @@
         "adbkit": "./bin/adbkit"
     },
     "bugs": {
-        "url": "https://github.com/UrielCh/adbkit/issues"
+        "url": "https://github.com/devicefarmer/adbkit/issues"
     },
     "license": "Apache-2.0",
     "author": {
         "name": "Device Farmer",
-        "email": "contact@openstf.io",
-        "url": "https://urielch.github.io/"
+        "email": "contact@devicefarmer.com",
+        "url": "https://devicefarmer.com/"
     },
     "contributors": [
         {
@@ -33,7 +33,7 @@
     "types": "./dist/index.d.ts",
     "repository": {
         "type": "git",
-        "url": "https://github.com/UrielCh/adbkit.git"
+        "url": "https://github.com/devicefarmer/adbkit.git"
     },
     "scripts": {
         "clean": "rimraf dist index.d.ts index.js",
@@ -47,8 +47,8 @@
         "test": "mocha -r ts-node/register --reporter spec --colors test/**/*.ts"
     },
     "dependencies": {
-        "@devicefarmer/adbkit-logcat": "^1.1.0",
-        "@devicefarmer/adbkit-monkey": "~1.0.1",
+        "@devicefarmer/adbkit-logcat": "^2.1.0",
+        "@devicefarmer/adbkit-monkey": "~1.1.0",
         "bluebird": "~3.7",
         "commander": "^6.2.1",
         "debug": "~4.3.1",
