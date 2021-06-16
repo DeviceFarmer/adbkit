@@ -183,6 +183,7 @@ export default class Parser {
         if (howMany) {
           // Try to get the exact amount we need first. If unsuccessful, take
           // whatever is available, which will be less than the needed amount.
+		  // avoid chunk is undefined
           let chunk;
           while (chunk = this.stream.read(howMany) || this.stream.read()) {
             howMany -= chunk.length;
