@@ -48,7 +48,7 @@
 },
 "dependencies": {
 "@devicefarmer/adbkit-logcat": "^2.1.1",
-"@devicefarmer/adbkit-monkey": "~1.1.0",
+"@devicefarmer/adbkit-monkey": "~1.2.0",
 "bluebird": "~3.7",
 "commander": "^6.2.1",
 "debug": "~4.3.1",
