@@ -2,7 +2,7 @@ import Stats from './stats';
 
 class Entry extends Stats {
   constructor(public name: string, mode: number, size: number, mtime: number) {
-    super(mode, size, mtime);
+    super(mode, BigInt(size), mtime);
   }
 
   public toString(): string {

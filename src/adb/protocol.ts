@@ -2,6 +2,7 @@ export default class Protocol {
   public static OKAY = 'OKAY';
   public static FAIL = 'FAIL';
   public static STAT = 'STAT';
+  public static STA2 = 'STA2';
   public static LIST = 'LIST';
   public static DENT = 'DENT';
   public static RECV = 'RECV';
