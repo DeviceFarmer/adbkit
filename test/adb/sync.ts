@@ -198,7 +198,7 @@ describe('Sync', function () {
         });
         describe('Stats', function () {
             it('should implement Fs.Stats', function (done) {
-                expect(new Stats(0, 0, 0)).to.be.an.instanceof(Fs.Stats);
+                expect(new Stats(0, BigInt(0), 0)).to.be.an.instanceof(Fs.Stats);
                 done();
             });
             dt('should set the `.mode` property for isFile() etc', function (done) {
