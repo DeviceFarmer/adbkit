@@ -63,7 +63,7 @@ export default class Packet {
   ) {}
 
   public verifyChecksum(): boolean {
-    return this.check === Packet.checksum(this.data);
+    return this.check === 0 ? true : this.check === Packet.checksum(this.data);
   }
 
   public verifyMagic(): boolean {

@@ -1,6 +1,7 @@
 export { default } from './src/adb';
 export { default as Adb } from './src/adb';
 
+export { default as Parser } from './src/adb/parser';
 export { Callback } from './src/Callback';
 export { ClientOptions } from './src/ClientOptions';
 export { CpuStats, Loads } from './src/CpuStats';

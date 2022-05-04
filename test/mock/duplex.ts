@@ -23,8 +23,8 @@ export default class MockDuplex extends Stream.Duplex {
         this.push(null);
     }
 
-    end(...args: any[]): this {
+    end(cb?: () => void): this {
         this.causeEnd(); // In order to better emulate socket streams
-        return (Stream.Duplex.prototype.end as any).apply(this, args);
+        return (Stream.Duplex.prototype.end as any).apply(this, cb);
     }
 }
