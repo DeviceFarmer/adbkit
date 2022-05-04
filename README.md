@@ -194,7 +194,7 @@ Creates a client instance with the provided options. Note that this will not aut
 
 -   **options** An object compatible with [Net.connect][net-connect]'s options:
     -   **port** The port where the ADB server is listening. Defaults to `5037`.
-    -   **host** The host of the ADB server. Defaults to `'localhost'`.
+    -   **host** The host of the ADB server. Defaults to `'127.0.0.1'`.
     -   **bin** As the sole exception, this option provides the path to the `adb` binary, used for starting the server locally if initial connection fails. Defaults to `'adb'`.
 -   Returns: The client instance.
 

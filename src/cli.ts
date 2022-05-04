@@ -1,11 +1,13 @@
 import fs from 'fs';
-import program from 'commander';
+import { Command } from 'commander';
 import forge from 'node-forge';
 import * as pkg from '../package.json';
 import Adb from './adb';
 import Auth from './adb/auth';
 import PacketReader from './adb/tcpusb/packetreader';
 import Bluebird from 'bluebird';
+
+const program = new Command();
 
 program.version(pkg.version);
 
