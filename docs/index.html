@@ -1,0 +1,1176 @@
+<!DOCTYPE html><html class="default"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>@devicefarmer/adbkit</title><meta name="description" content="Documentation for @devicefarmer/adbkit"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script async src="assets/search.js" id="search-script"></script></head><body><script>document.body.classList.add(localStorage.getItem("tsd-theme") || "os")</script><header><div class="tsd-page-toolbar"><div class="container"><div class="table-wrap"><div class="table-cell" id="tsd-search" data-base="."><div class="field"><label for="tsd-search-field" class="tsd-widget search no-caption">Search</label><input type="text" id="tsd-search-field"/></div><ul class="results"><li class="state loading">Preparing search index...</li><li class="state failure">The search index is not available</li></ul><a href="index.html" class="title">@devicefarmer/adbkit</a></div><div class="table-cell" id="tsd-widgets"><div id="tsd-filter"><a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a><div class="tsd-filter-group"><div class="tsd-select" id="tsd-filter-visibility"><span class="tsd-select-label">All</span><ul class="tsd-select-list"><li data-value="public">Public</li><li data-value="protected">Public/Protected</li><li data-value="private" class="selected">All</li></ul></div> <input type="checkbox" id="tsd-filter-inherited" checked/><label class="tsd-widget" for="tsd-filter-inherited">Inherited</label><input type="checkbox" id="tsd-filter-externals" checked/><label class="tsd-widget" for="tsd-filter-externals">Externals</label></div></div><a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a></div></div></div></div><div class="tsd-page-title"><div class="container"><h1>@devicefarmer/adbkit </h1></div></div></header><div class="container container-main"><div class="row"><div class="col-8 col-content"><div class="tsd-panel tsd-typography">
+<a href="#adbkit" id="adbkit" style="color: inherit; text-decoration: none;">
+  <h1>adbkit</h1>
+</a>
+<p><strong>adbkit</strong> is a pure <a href="http://nodejs.org/">Node.js</a> client for the <a href="http://developer.android.com/tools/help/adb.html">Android Debug Bridge</a> server. It can be used either as a library in your own application, or simply as a convenient utility for playing with your device.</p>
+<p>Most of the <code>adb</code> command line tool&#39;s functionality is supported (including pushing/pulling files, installing APKs and processing logs), with some added functionality such as being able to generate touch/key events and take screenshots. Some shims are provided for older devices, but we have not and will not test anything below Android 2.3.</p>
+<p>Internally, we use this library to drive a multitude of Android devices from a variety of manufacturers, so we can say with a fairly high degree of confidence that it will most likely work with your device(s), too.</p>
+
+<a href="#requirements" id="requirements" style="color: inherit; text-decoration: none;">
+  <h2>Requirements</h2>
+</a>
+<ul>
+<li><a href="http://nodejs.org/">Node.js</a> &gt;= 0.10</li>
+<li>The <code>adb</code> command line tool</li>
+</ul>
+<p>Please note that although it may happen at some point, <strong>this project is NOT an implementation of the ADB <em>server</em></strong>. The target host (where the devices are connected) must still have ADB installed and either already running (e.g. via <code>adb start-server</code>) or available in <code>$PATH</code>. An attempt will be made to start the server locally via the aforementioned command if the initial connection fails. This is the only case where we fall back to the <code>adb</code> binary.</p>
+<p>When targeting a remote host, starting the server is entirely your responsibility.</p>
+<p>Alternatively, you may want to consider using the Chrome <a href="https://chrome.google.com/webstore/detail/adb/dpngiggdglpdnjdoaefidgiigpemgage">ADB</a> extension, as it includes the ADB server and can be started/stopped quite easily.</p>
+<p>For Linux users, adb need <code>plugdev</code> group acess, So you may need to add your current user to <code>plugdev</code> group.
+<code>sudo usermod -a -G plugdev $USER</code></p>
+
+<a href="#getting-started" id="getting-started" style="color: inherit; text-decoration: none;">
+  <h2>Getting started</h2>
+</a>
+<p>Install via NPM:</p>
+<pre><code class="language-bash"><span class="hl-0">npm install --save @devicefarmer/adbkit</span>
+</code></pre>
+<p>We use <a href="https://npmjs.org/package/debug">debug</a>, and our debug namespace is <code>adb</code>. Some of the dependencies may provide debug output of their own. To see the debug output, set the <code>DEBUG</code> environment variable. For example, run your program with <code>DEBUG=adb:* node app.js</code>.</p>
+
+<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+  <h3>Examples</h3>
+</a>
+<p>The examples may be a bit verbose, but that&#39;s because we&#39;re trying to keep them as close to real-life code as possible, with flow control and error handling taken care of.</p>
+
+<a href="#checking-for-nfc-support" id="checking-for-nfc-support" style="color: inherit; text-decoration: none;">
+  <h4>Checking for NFC support</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">supportedDevices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">filter</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, </span><span class="hl-4">async</span><span class="hl-0"> (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">features</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">getFeatures</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-1">return</span><span class="hl-0"> </span><span class="hl-2">features</span><span class="hl-0">[</span><span class="hl-3">&#39;android.hardware.nfc&#39;</span><span class="hl-0">];</span><br/><span class="hl-0">        });</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;The following devices support NFC:&#39;</span><span class="hl-0">, </span><span class="hl-2">supportedDevices</span><span class="hl-0">);</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#installing-an-apk" id="installing-an-apk" style="color: inherit; text-decoration: none;">
+  <h4>Installing an APK</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">apk</span><span class="hl-0"> = </span><span class="hl-3">&#39;vendor/app.apk&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">map</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">install</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">, </span><span class="hl-2">apk</span><span class="hl-0">));</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`Installed </span><span class="hl-4">${</span><span class="hl-2">apk</span><span class="hl-4">}</span><span class="hl-3"> on all connected devices`</span><span class="hl-0">);</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#tracking-devices" id="tracking-devices" style="color: inherit; text-decoration: none;">
+  <h4>Tracking devices</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">tracker</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">trackDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-2">tracker</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;add&#39;</span><span class="hl-0">, (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Device %s was plugged in&#39;</span><span class="hl-0">, </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">));</span><br/><span class="hl-0">        </span><span class="hl-2">tracker</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;remove&#39;</span><span class="hl-0">, (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Device %s was unplugged&#39;</span><span class="hl-0">, </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">));</span><br/><span class="hl-0">        </span><span class="hl-2">tracker</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;end&#39;</span><span class="hl-0">, () </span><span class="hl-4">=&gt;</span><span class="hl-0"> </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Tracking stopped&#39;</span><span class="hl-0">));</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#pulling-a-file-from-all-connected-devices" id="pulling-a-file-from-all-connected-devices" style="color: inherit; text-decoration: none;">
+  <h4>Pulling a file from all connected devices</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">fs</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;fs&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">map</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, </span><span class="hl-4">async</span><span class="hl-0"> (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">transfer</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">pull</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">, </span><span class="hl-3">&#39;/system/build.prop&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">fn</span><span class="hl-0"> = </span><span class="hl-3">`/tmp/</span><span class="hl-4">${</span><span class="hl-2">device</span><span class="hl-7">.</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">.build.prop`</span><span class="hl-0">;</span><br/><span class="hl-0">            </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-4">new</span><span class="hl-0"> </span><span class="hl-6">Bluebird</span><span class="hl-0">((</span><span class="hl-2">resolve</span><span class="hl-0">, </span><span class="hl-2">reject</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;progress&#39;</span><span class="hl-0">, (</span><span class="hl-2">stats</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><br/><span class="hl-0">                    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`[</span><span class="hl-4">${</span><span class="hl-2">device</span><span class="hl-7">.</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">] Pulled </span><span class="hl-4">${</span><span class="hl-2">stats</span><span class="hl-7">.</span><span class="hl-2">bytesTransferred</span><span class="hl-4">}</span><span class="hl-3"> bytes so far`</span><span class="hl-0">),</span><br/><span class="hl-0">                );</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;end&#39;</span><span class="hl-0">, () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`[</span><span class="hl-4">${</span><span class="hl-2">device</span><span class="hl-7">.</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">] Pull complete`</span><span class="hl-0">);</span><br/><span class="hl-0">                    </span><span class="hl-6">resolve</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">);</span><br/><span class="hl-0">                });</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;error&#39;</span><span class="hl-0">, </span><span class="hl-2">reject</span><span class="hl-0">);</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">pipe</span><span class="hl-0">(</span><span class="hl-2">fs</span><span class="hl-0">.</span><span class="hl-6">createWriteStream</span><span class="hl-0">(</span><span class="hl-2">fn</span><span class="hl-0">));</span><br/><span class="hl-0">            });</span><br/><span class="hl-0">        });</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Done pulling /system/build.prop from all connected devices&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#pushing-a-file-to-all-connected-devices" id="pushing-a-file-to-all-connected-devices" style="color: inherit; text-decoration: none;">
+  <h4>Pushing a file to all connected devices</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">map</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, </span><span class="hl-4">async</span><span class="hl-0"> (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">transfer</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">push</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">, </span><span class="hl-3">&#39;temp/foo.txt&#39;</span><span class="hl-0">, </span><span class="hl-3">&#39;/data/local/tmp/foo.txt&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-4">new</span><span class="hl-0"> </span><span class="hl-6">Bluebird</span><span class="hl-0">(</span><span class="hl-4">function</span><span class="hl-0"> (</span><span class="hl-2">resolve</span><span class="hl-0">, </span><span class="hl-2">reject</span><span class="hl-0">) {</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;progress&#39;</span><span class="hl-0">, (</span><span class="hl-2">stats</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><br/><span class="hl-0">                    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`[</span><span class="hl-4">${</span><span class="hl-2">device</span><span class="hl-7">.</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">] Pushed </span><span class="hl-4">${</span><span class="hl-2">stats</span><span class="hl-7">.</span><span class="hl-2">bytesTransferred</span><span class="hl-4">}</span><span class="hl-3"> bytes so far`</span><span class="hl-0">),</span><br/><span class="hl-0">                );</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;end&#39;</span><span class="hl-0">, () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;[${device.id}] Push complete&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">                    </span><span class="hl-6">resolve</span><span class="hl-0">();</span><br/><span class="hl-0">                });</span><br/><span class="hl-0">                </span><span class="hl-2">transfer</span><span class="hl-0">.</span><span class="hl-6">on</span><span class="hl-0">(</span><span class="hl-3">&#39;error&#39;</span><span class="hl-0">, </span><span class="hl-2">reject</span><span class="hl-0">);</span><br/><span class="hl-0">            });</span><br/><span class="hl-0">        });</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Done pushing foo.txt to all connected devices&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#list-files-in-a-folder" id="list-files-in-a-folder" style="color: inherit; text-decoration: none;">
+  <h4>List files in a folder</h4>
+</a>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">map</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, </span><span class="hl-4">async</span><span class="hl-0"> (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">files</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">readdir</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">, </span><span class="hl-3">&#39;/sdcard&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-8">// Synchronous, so we don&#39;t have to care about returning at the</span><br/><span class="hl-0">            </span><span class="hl-8">// right time</span><br/><span class="hl-0">            </span><span class="hl-2">files</span><span class="hl-0">.</span><span class="hl-6">forEach</span><span class="hl-0">((</span><span class="hl-2">file</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                </span><span class="hl-1">if</span><span class="hl-0"> (</span><span class="hl-2">file</span><span class="hl-0">.</span><span class="hl-6">isFile</span><span class="hl-0">()) {</span><br/><span class="hl-0">                    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`[</span><span class="hl-4">${</span><span class="hl-2">device</span><span class="hl-7">.</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">] Found file &quot;</span><span class="hl-4">${</span><span class="hl-2">file</span><span class="hl-7">.</span><span class="hl-2">name</span><span class="hl-4">}</span><span class="hl-3">&quot;`</span><span class="hl-0">);</span><br/><span class="hl-0">                }</span><br/><span class="hl-0">            });</span><br/><span class="hl-0">        });</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Done checking /sdcard files on connected devices&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#api" id="api" style="color: inherit; text-decoration: none;">
+  <h2>API</h2>
+</a>
+
+<a href="#adb" id="adb" style="color: inherit; text-decoration: none;">
+  <h3>ADB</h3>
+</a>
+
+<a href="#adbcreateclientoptions" id="adbcreateclientoptions" style="color: inherit; text-decoration: none;">
+  <h4>adb.createClient([options])</h4>
+</a>
+<p>Creates a client instance with the provided options. Note that this will not automatically establish a connection, it will only be done when necessary.</p>
+<ul>
+<li><strong>options</strong> An object compatible with <a href="http://nodejs.org/api/net.html#net_net_connect_options_connectionlistener">Net.connect</a>&#39;s options:<ul>
+<li><strong>port</strong> The port where the ADB server is listening. Defaults to <code>5037</code>.</li>
+<li><strong>host</strong> The host of the ADB server. Defaults to <code>&#39;127.0.0.1&#39;</code>.</li>
+<li><strong>bin</strong> As the sole exception, this option provides the path to the <code>adb</code> binary, used for starting the server locally if initial connection fails. Defaults to <code>&#39;adb&#39;</code>.</li>
+</ul>
+</li>
+<li>Returns: The client instance.</li>
+</ul>
+
+<a href="#adbutilparsepublickeyandroidkey" id="adbutilparsepublickeyandroidkey" style="color: inherit; text-decoration: none;">
+  <h4>adb.util.parsePublicKey(androidKey)</h4>
+</a>
+<p>Parses an Android-formatted mincrypt public key (e.g. <code>~/.android/adbkey.pub</code>).</p>
+<ul>
+<li><strong>androidKey</strong> The key String or <a href="http://nodejs.org/api/buffer.html"><code>Buffer</code></a> to parse. Not a filename.</li>
+<li><strong>callback(err, output)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>key</strong> The key as a <a href="https://github.com/digitalbazaar/forge#rsa">forge.pki</a> public key. You may need <a href="https://github.com/digitalbazaar/forge">node-forge</a> for complicated operations. Additionally the following properties are present:<ul>
+<li><strong>fingerprint</strong> The key fingerprint, like it would display on a device. Note that this is different than the one you&#39;d get from <code>forge.ssh.getPublicKeyFingerprint(key)</code>, because the device fingerprint is based on the original format.</li>
+<li><strong>comment</strong> The key comment, if any.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>key</code> (see callback)</li>
+</ul>
+
+<a href="#adbutilreadallstream" id="adbutilreadallstream" style="color: inherit; text-decoration: none;">
+  <h4>adb.util.readAll(stream)</h4>
+</a>
+<p>Takes a <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a> and reads everything it outputs until the stream ends. Then it resolves with the collected output. Convenient with <code>client.shell()</code>.</p>
+<ul>
+<li><strong>stream</strong> The <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a> to read.</li>
+<li><strong>callback(err, output)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>output</strong> All the output as a <a href="http://nodejs.org/api/buffer.html"><code>Buffer</code></a>. Use <code>output.toString(&#39;utf-8&#39;)</code> to get a readable string from it.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>output</code> (see callback)</li>
+</ul>
+
+<a href="#client" id="client" style="color: inherit; text-decoration: none;">
+  <h3>Client</h3>
+</a>
+
+<a href="#clientversion" id="clientversion" style="color: inherit; text-decoration: none;">
+  <h4>client.version()</h4>
+</a>
+<p>Queries the ADB server for its version. This is mainly useful for backwards-compatibility purposes.</p>
+<ul>
+<li><strong>callback(err, version)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>version</strong> The version of the ADB server.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>version</code> (see callback)</li>
+</ul>
+
+<a href="#clientconnecthost-port" id="clientconnecthost-port" style="color: inherit; text-decoration: none;">
+  <h4>client.connect(host[, port])</h4>
+</a>
+<p>Connects to the given device, which must have its ADB daemon running in tcp mode (see <code>client.tcpip()</code>) and be accessible on the same network. Same as <code>adb connect &lt;host&gt;:&lt;port&gt;</code>.</p>
+<ul>
+<li><strong>host</strong> The target host. Can also contain the port, in which case the port argument is not used and can be skipped.</li>
+<li><strong>port</strong> Optional. The target port. Defaults to <code>5555</code>.</li>
+<li><strong>callback(err, id)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>id</strong> The connected device ID. Can be used as <code>serial</code> in other commands.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>id</code> (see callback)</li>
+</ul>
+
+<a href="#example---switch-to-tcp-mode-and-set-up-a-forward-for-chrome-devtools" id="example---switch-to-tcp-mode-and-set-up-a-forward-for-chrome-devtools" style="color: inherit; text-decoration: none;">
+  <h5>Example - switch to TCP mode and set up a forward for Chrome devtools</h5>
+</a>
+<p>Note: be careful with using <code>client.listDevices()</code> together with <code>client.tcpip()</code> and other similar methods that modify the connection with ADB. You might have the same device twice in your device list (i.e. one device connected via both USB and TCP), which can cause havoc if run simultaneously.</p>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;bluebird&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">devices</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">listDevices</span><span class="hl-0">();</span><br/><span class="hl-0">        </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">Bluebird</span><span class="hl-0">.</span><span class="hl-6">map</span><span class="hl-0">(</span><span class="hl-2">devices</span><span class="hl-0">, </span><span class="hl-4">async</span><span class="hl-0"> (</span><span class="hl-2">device</span><span class="hl-0">) </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">device</span><span class="hl-0"> = </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">getDevice</span><span class="hl-0">(</span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-2">id</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">port</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-6">tcpip</span><span class="hl-0">();</span><br/><span class="hl-0">            </span><span class="hl-8">// Switching to TCP mode causes ADB to lose the device for a</span><br/><span class="hl-0">            </span><span class="hl-8">// moment, so let&#39;s just wait till we get it back.</span><br/><span class="hl-0">            </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-6">waitForDevice</span><span class="hl-0">();</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">ip</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-6">getDHCPIpAddress</span><span class="hl-0">();</span><br/><span class="hl-0">            </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">deviceTCP</span><span class="hl-0"> = </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">connect</span><span class="hl-0">(</span><span class="hl-2">ip</span><span class="hl-0">, </span><span class="hl-2">port</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-8">// It can take a moment for the connection to happen.</span><br/><span class="hl-0">            </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">deviceTCP</span><span class="hl-0">.</span><span class="hl-6">waitForDevice</span><span class="hl-0">();</span><br/><span class="hl-0">            </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">deviceTCP</span><span class="hl-0">.</span><span class="hl-6">forward</span><span class="hl-0">(</span><span class="hl-3">&#39;tcp:9222&#39;</span><span class="hl-0">, </span><span class="hl-3">&#39;localabstract:chrome_devtools_remote&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">            </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">`Setup devtools on &quot;</span><span class="hl-4">${</span><span class="hl-2">id</span><span class="hl-4">}</span><span class="hl-3">&quot;`</span><span class="hl-0">);</span><br/><span class="hl-0">        });</span><br/><span class="hl-0">    } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">        </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">);</span><br/><span class="hl-0">    }</span><br/><span class="hl-0">};</span>
+</code></pre>
+
+<a href="#clientdisconnecthost-port" id="clientdisconnecthost-port" style="color: inherit; text-decoration: none;">
+  <h4>client.disconnect(host[, port])</h4>
+</a>
+<p>Disconnects from the given device, which should have been connected via <code>client.connect()</code> or just <code>adb connect &lt;host&gt;:&lt;port&gt;</code>.</p>
+<ul>
+<li><strong>host</strong> The target host. Can also contain the port, in which case the port argument is not used and can be skipped. In other words you can just put the <code>id</code> you got from <code>client.connect()</code> here and it will be fine.</li>
+<li><strong>port</strong> Optional. The target port. Defaults to <code>5555</code>.</li>
+<li><strong>callback(err, id)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>id</strong> The disconnected device ID. Will no longer be usable as a <code>serial</code> in other commands until you&#39;ve connected again.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>id</code> (see callback)</li>
+</ul>
+
+<a href="#clientkill" id="clientkill" style="color: inherit; text-decoration: none;">
+  <h4>client.kill()</h4>
+</a>
+<p>This kills the ADB server. Note that the next connection will attempt to start the server again when it&#39;s unable to connect.</p>
+<ul>
+<li>Returns: <code>Promise&lt;true&gt;</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#clientlistdevices" id="clientlistdevices" style="color: inherit; text-decoration: none;">
+  <h4>client.listDevices()</h4>
+</a>
+<p>Gets the list of currently connected devices and emulators.</p>
+<ul>
+<li>Returns: <code>Promise&lt;devices&gt;</code> An array of device objects. The device objects are plain JavaScript objects with two properties: <code>id</code> and <code>type</code>.<ul>
+<li><strong>id</strong> The ID of the device. For real devices, this is usually the USB identifier.</li>
+<li><strong>type</strong> The device type. Values include <code>&#39;emulator&#39;</code> for emulators, <code>&#39;device&#39;</code> for devices, and <code>&#39;offline&#39;</code> for offline devices. <code>&#39;offline&#39;</code> can occur for example during boot, in low-battery conditions or when the ADB connection has not yet been approved on the device.-   Resolves with: <code>devices</code> (see callback)</li>
+</ul>
+</li>
+</ul>
+
+<a href="#clientlistdeviceswithpaths" id="clientlistdeviceswithpaths" style="color: inherit; text-decoration: none;">
+  <h4>client.listDevicesWithPaths()</h4>
+</a>
+<p>Like <code>client.listDevices()</code>, but includes the &quot;path&quot; of every device.</p>
+<ul>
+<li>Returns: <code>Promise&lt;devices&gt;</code> An array of device objects. The device objects are plain JavaScript objects with the following properties:<ul>
+<li><strong>id</strong> See <code>client.listDevices()</code>.</li>
+<li><strong>type</strong> See <code>client.listDevices()</code>.</li>
+<li><strong>path</strong> The device path. This can be something like <code>usb:FD120000</code> for real devices.</li>
+</ul>
+</li>
+</ul>
+
+<a href="#clienttrackdevices" id="clienttrackdevices" style="color: inherit; text-decoration: none;">
+  <h4>client.trackDevices()</h4>
+</a>
+<p>Gets a device tracker. Events will be emitted when devices are added, removed, or their type changes (i.e. to/from <code>offline</code>). Note that the same events will be emitted for the initially connected devices also, so that you don&#39;t need to use both <code>client.listDevices()</code> and <code>client.trackDevices()</code>.</p>
+<p>Note that as the tracker will keep a connection open, you must call <code>tracker.end()</code> if you wish to stop tracking devices.</p>
+<ul>
+<li><strong>callback(err, tracker)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>tracker</strong> The device tracker, which is an <a href="http://nodejs.org/api/events.html"><code>EventEmitter</code></a>. The following events are available:<ul>
+<li><strong>add</strong> <strong>(device)</strong> Emitted when a new device is connected, once per device. See <code>client.listDevices()</code> for details on the device object.</li>
+<li><strong>remove</strong> <strong>(device)</strong> Emitted when a device is unplugged, once per device. This does not include <code>offline</code> devices, those devices are connected but unavailable to ADB. See <code>client.listDevices()</code> for details on the device object.</li>
+<li><strong>change</strong> <strong>(device)</strong> Emitted when the <code>type</code> property of a device changes, once per device. The current value of <code>type</code> is the new value. This event usually occurs the type changes from <code>&#39;device&#39;</code> to <code>&#39;offline&#39;</code> or the other way around. See <code>client.listDevices()</code> for details on the device object and the <code>&#39;offline&#39;</code> type.</li>
+<li><strong>changeSet</strong> <strong>(changes)</strong> Emitted once for all changes reported by ADB in a single run. Multiple changes can occur when, for example, a USB hub is connected/unplugged and the device list changes quickly. If you wish to process all changes at once, use this event instead of the once-per-device ones. Keep in mind that the other events will still be emitted, though.<ul>
+<li><strong>changes</strong> An object with the following properties always present:<ul>
+<li><strong>added</strong> An array of added device objects, each one as in the <code>add</code> event. Empty if none.</li>
+<li><strong>removed</strong> An array of removed device objects, each one as in the <code>remove</code> event. Empty if none.</li>
+<li><strong>changed</strong> An array of changed device objects, each one as in the <code>change</code> event. Empty if none.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>end</strong> Emitted when the underlying connection ends.</li>
+<li><strong>error</strong> <strong>(err)</strong> Emitted if there&#39;s an error.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>tracker</code> (see callback)</li>
+</ul>
+
+<a href="#deviceclient" id="deviceclient" style="color: inherit; text-decoration: none;">
+  <h3>DeviceClient</h3>
+</a>
+
+<a href="#deviceclearpkg" id="deviceclearpkg" style="color: inherit; text-decoration: none;">
+  <h4>device.clear(pkg)</h4>
+</a>
+<p>Deletes all data associated with a package from the device. This is roughly analogous to <code>adb shell pm clear &lt;pkg&gt;</code>.</p>
+<ul>
+<li><strong>pkg</strong> The package name. This is NOT the APK.</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceforwardlocal-remote" id="deviceforwardlocal-remote" style="color: inherit; text-decoration: none;">
+  <h4>device.forward(local, remote)</h4>
+</a>
+<p>Forwards socket connections from the ADB server host (local) to the device (remote). This is analogous to <code>adb forward &lt;local&gt; &lt;remote&gt;</code>. It&#39;s important to note that if you are connected to a remote ADB server, the forward will be created on that host.</p>
+<ul>
+<li><strong>local</strong> A string representing the local endpoint on the ADB host. At time of writing, can be one of:<ul>
+<li><code>tcp:&lt;port&gt;</code></li>
+<li><code>localabstract:&lt;unix domain socket name&gt;</code></li>
+<li><code>localreserved:&lt;unix domain socket name&gt;</code></li>
+<li><code>localfilesystem:&lt;unix domain socket name&gt;</code></li>
+<li><code>dev:&lt;character device name&gt;</code></li>
+</ul>
+</li>
+<li><strong>remote</strong> A string representing the remote endpoint on the device. At time of writing, can be one of:<ul>
+<li>Any value accepted by the <code>local</code> argument</li>
+<li><code>jdwp:&lt;process pid&gt;</code></li>
+</ul>
+</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceframebufferformat" id="deviceframebufferformat" style="color: inherit; text-decoration: none;">
+  <h4>device.framebuffer([format])</h4>
+</a>
+<p>Fetches the current <strong>raw</strong> framebuffer (i.e. what is visible on the screen) from the device, and optionally converts it into something more usable by using <a href="http://www.graphicsmagick.org/">GraphicsMagick</a>&#39;s <code>gm</code> command, which must be available in <code>$PATH</code> if conversion is desired. Note that we don&#39;t bother supporting really old framebuffer formats such as RGB_565. If for some mysterious reason you happen to run into a <code>&gt;=2.3</code> device that uses RGB_565, let us know.</p>
+<p>Note that high-resolution devices can have quite massive framebuffers. For example, a device with a resolution of 1920x1080 and 32 bit colors would have a roughly 8MB (<code>1920*1080*4</code> byte) RGBA framebuffer. Empirical tests point to about 5MB/s bandwidth limit for the ADB USB connection, which means that it can take ~1.6 seconds for the raw data to arrive, or even more if the USB connection is already congested. Using a conversion will further slow down completion.</p>
+<ul>
+<li><strong>format</strong> The desired output format. Any output format supported by <a href="http://www.graphicsmagick.org/">GraphicsMagick</a> (such as <code>&#39;png&#39;</code>) is supported. Defaults to <code>&#39;raw&#39;</code> for raw framebuffer data.</li>
+<li><strong>callback(err, framebuffer)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>framebuffer</strong> The possibly converted framebuffer stream. The stream also has a <code>meta</code> property with the following values:<ul>
+<li><strong>version</strong> The framebuffer version. Useful for patching possible backwards-compatibility issues.</li>
+<li><strong>bpp</strong> Bits per pixel (i.e. color depth).</li>
+<li><strong>size</strong> The raw byte size of the framebuffer.</li>
+<li><strong>width</strong> The horizontal resolution of the framebuffer. This SHOULD always be the same as screen width. We have not encountered any device with incorrect framebuffer metadata, but according to rumors there might be some.</li>
+<li><strong>height</strong> The vertical resolution of the framebuffer. This SHOULD always be the same as screen height.</li>
+<li><strong>red_offset</strong> The bit offset of the red color in a pixel.</li>
+<li><strong>red_length</strong> The bit length of the red color in a pixel.</li>
+<li><strong>blue_offset</strong> The bit offset of the blue color in a pixel.</li>
+<li><strong>blue_length</strong> The bit length of the blue color in a pixel.</li>
+<li><strong>green_offset</strong> The bit offset of the green color in a pixel.</li>
+<li><strong>green_length</strong> The bit length of the green color in a pixel.</li>
+<li><strong>alpha_offset</strong> The bit offset of alpha in a pixel.</li>
+<li><strong>alpha_length</strong> The bit length of alpha in a pixel. <code>0</code> when not available.</li>
+<li><strong>format</strong> The framebuffer format for convenience. This can be one of <code>&#39;bgr&#39;</code>, <code>&#39;bgra&#39;</code>, <code>&#39;rgb&#39;</code>, <code>&#39;rgba&#39;</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>framebuffer</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetdevicepath" id="devicegetdevicepath" style="color: inherit; text-decoration: none;">
+  <h4>device.getDevicePath()</h4>
+</a>
+<p>Gets the device path of the device identified by the given serial number.</p>
+<ul>
+<li><strong>callback(err, path)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>path</strong> The device path. This corresponds to the device path in <code>client.listDevicesWithPaths()</code>.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>path</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetdhcpipaddressiface" id="devicegetdhcpipaddressiface" style="color: inherit; text-decoration: none;">
+  <h4>device.getDHCPIpAddress([iface])</h4>
+</a>
+<p>Attemps to retrieve the IP address of the device. Roughly analogous to <code>adb shell getprop dhcp.&lt;iface&gt;.ipaddress</code>.</p>
+<ul>
+<li><strong>iface</strong> Optional. The network interface. Defaults to <code>&#39;wlan0&#39;</code>.</li>
+<li><strong>callback(err, ip)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>ip</strong> The IP address as a <code>String</code>.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>ip</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetfeatures" id="devicegetfeatures" style="color: inherit; text-decoration: none;">
+  <h4>device.getFeatures()</h4>
+</a>
+<p>Retrieves the features of the device identified by the given serial number. This is analogous to <code>adb shell pm list features</code>. Useful for checking whether hardware features such as NFC are available (you&#39;d check for <code>&#39;android.hardware.nfc&#39;</code>).</p>
+<p><strong>flags</strong> Flags to pass to the <code>pm list packages</code> command to filter the list</p>
+<pre><code><span class="hl-0">-</span><span class="hl-9">d</span><span class="hl-0">: </span><span class="hl-2">filter</span><span class="hl-0"> </span><span class="hl-2">to</span><span class="hl-0"> </span><span class="hl-2">only</span><span class="hl-0"> </span><span class="hl-2">show</span><span class="hl-0"> </span><span class="hl-2">disabled</span><span class="hl-0"> </span><span class="hl-2">packages</span><br/><span class="hl-0">-</span><span class="hl-9">e</span><span class="hl-0">: </span><span class="hl-2">filter</span><span class="hl-0"> </span><span class="hl-2">to</span><span class="hl-0"> </span><span class="hl-2">only</span><span class="hl-0"> </span><span class="hl-2">show</span><span class="hl-0"> </span><span class="hl-2">enabled</span><span class="hl-0"> </span><span class="hl-2">packages</span><br/><span class="hl-0">-</span><span class="hl-9">s</span><span class="hl-0">: </span><span class="hl-2">filter</span><span class="hl-0"> </span><span class="hl-2">to</span><span class="hl-0"> </span><span class="hl-2">only</span><span class="hl-0"> </span><span class="hl-2">show</span><span class="hl-0"> </span><span class="hl-2">system</span><span class="hl-0"> </span><span class="hl-2">packages</span><br/><span class="hl-0">-</span><span class="hl-10">3</span><span class="hl-0">: </span><span class="hl-2">filter</span><span class="hl-0"> </span><span class="hl-2">to</span><span class="hl-0"> </span><span class="hl-2">only</span><span class="hl-0"> </span><span class="hl-2">show</span><span class="hl-0"> </span><span class="hl-2">third</span><span class="hl-0"> </span><span class="hl-2">party</span><span class="hl-0"> </span><span class="hl-2">packages</span>
+</code></pre>
+<ul>
+<li><strong>callback(err, features)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>features</strong> An object of device features. Each key corresponds to a device feature, with the value being either <code>true</code> for a boolean feature, or the feature value as a string (e.g. <code>&#39;0x20000&#39;</code> for <code>reqGlEsVersion</code>).</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>features</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetpackages" id="devicegetpackages" style="color: inherit; text-decoration: none;">
+  <h4>device.getPackages()</h4>
+</a>
+<p>Retrieves the list of packages present on the device. This is analogous to <code>adb shell pm list packages</code>. If you just want to see if something&#39;s installed, consider using <code>client.isInstalled()</code> instead.</p>
+<ul>
+<li><strong>callback(err, packages)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>packages</strong> An array of package names.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>packages</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetproperties" id="devicegetproperties" style="color: inherit; text-decoration: none;">
+  <h4>device.getProperties()</h4>
+</a>
+<p>Retrieves the properties of the device identified by the given serial number. This is analogous to <code>adb shell getprop</code>.</p>
+<ul>
+<li><strong>callback(err, properties)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>properties</strong> An object of device properties. Each key corresponds to a device property. Convenient for accessing things like <code>&#39;ro.product.model&#39;</code>.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>properties</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetserialno" id="devicegetserialno" style="color: inherit; text-decoration: none;">
+  <h4>device.getSerialNo()</h4>
+</a>
+<p>Gets the serial number of the device identified by the given serial number. With our API this doesn&#39;t really make much sense, but it has been implemented for completeness. <em>FYI: in the raw ADB protocol you can specify a device in other ways, too.</em></p>
+<ul>
+<li><strong>callback(err, serial)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>serial</strong> The serial number of the device.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>serial</code> (see callback)</li>
+</ul>
+
+<a href="#devicegetstate" id="devicegetstate" style="color: inherit; text-decoration: none;">
+  <h4>device.getState()</h4>
+</a>
+<p>Gets the state of the device identified by the given serial number.</p>
+<ul>
+<li><strong>callback(err, state)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>state</strong> The device state. This corresponds to the device type in <code>client.listDevices()</code>.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>state</code> (see callback)</li>
+</ul>
+
+<a href="#deviceinstallapk" id="deviceinstallapk" style="color: inherit; text-decoration: none;">
+  <h4>device.install(apk)</h4>
+</a>
+<p>Installs the APK on the device, replacing any previously installed version. This is roughly analogous to <code>adb install -r &lt;apk&gt;</code>.</p>
+<p>Note that if the call seems to stall, you may have to accept a dialog on the phone first.</p>
+<ul>
+<li><strong>apk</strong> When <code>String</code>, interpreted as a path to an APK file. When <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a>, installs directly from the stream, which must be a valid APK.</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise. It may have a <code>.code</code> property containing the error code reported by the device.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#example---install-an-apk-from-a-url" id="example---install-an-apk-from-a-url" style="color: inherit; text-decoration: none;">
+  <h5>Example - install an APK from a URL</h5>
+</a>
+<p>This example requires the <a href="https://www.npmjs.org/package/request">request</a> module. It also doesn&#39;t do any error handling (404 responses, timeouts, invalid URLs etc).</p>
+<pre><code class="language-typescript"><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">Adb</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;@devicefarmer/adbkit&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> </span><span class="hl-2">request</span><span class="hl-0"> </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;request&#39;</span><span class="hl-0">;</span><br/><span class="hl-1">import</span><span class="hl-0"> { </span><span class="hl-2">Readable</span><span class="hl-0"> } </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&#39;stream&#39;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">client</span><span class="hl-0"> = </span><span class="hl-2">Adb</span><span class="hl-0">.</span><span class="hl-6">createClient</span><span class="hl-0">();</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-6">test</span><span class="hl-0"> = </span><span class="hl-4">async</span><span class="hl-0"> () </span><span class="hl-4">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">  </span><span class="hl-8">// The request module implements old-style streams, so we have to wrap it.</span><br/><span class="hl-0">  </span><span class="hl-1">try</span><span class="hl-0"> {</span><br/><span class="hl-0">    </span><span class="hl-8">// request is deprecated</span><br/><span class="hl-0">    </span><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">device</span><span class="hl-0"> = </span><span class="hl-2">client</span><span class="hl-0">.</span><span class="hl-6">getClient</span><span class="hl-0">(</span><span class="hl-3">&#39;&lt;serial&gt;&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">    </span><span class="hl-1">await</span><span class="hl-0"> </span><span class="hl-2">device</span><span class="hl-0">.</span><span class="hl-6">install</span><span class="hl-0">(</span><span class="hl-4">new</span><span class="hl-0"> </span><span class="hl-6">Readable</span><span class="hl-0">().</span><span class="hl-6">wrap</span><span class="hl-0">(</span><span class="hl-6">request</span><span class="hl-0">(</span><span class="hl-3">&#39;http://example.org/app.apk&#39;</span><span class="hl-0">) </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-11">any</span><span class="hl-0">) </span><span class="hl-1">as</span><span class="hl-0"> </span><span class="hl-11">any</span><span class="hl-0">)</span><br/><span class="hl-0">    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">log</span><span class="hl-0">(</span><span class="hl-3">&#39;Installed&#39;</span><span class="hl-0">)</span><br/><span class="hl-0">  } </span><span class="hl-1">catch</span><span class="hl-0"> (</span><span class="hl-2">err</span><span class="hl-0">) {</span><br/><span class="hl-0">    </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-6">error</span><span class="hl-0">(</span><span class="hl-3">&#39;Something went wrong:&#39;</span><span class="hl-0">, </span><span class="hl-2">err</span><span class="hl-0">.</span><span class="hl-2">stack</span><span class="hl-0">)</span><br/><span class="hl-0">  }</span><br/><span class="hl-0">}</span>
+</code></pre>
+
+<a href="#deviceinstallremoteapk" id="deviceinstallremoteapk" style="color: inherit; text-decoration: none;">
+  <h4>device.installRemote(apk)</h4>
+</a>
+<p>Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you&#39;ve previously pushed the file to the device for some reason (perhaps to have direct access to <code>client.push()</code>&#39;s transfer stats). This is roughly analogous to <code>adb shell pm install -r &lt;apk&gt;</code> followed by <code>adb shell rm -f &lt;apk&gt;</code>.</p>
+<p>Note that if the call seems to stall, you may have to accept a dialog on the phone first.</p>
+<ul>
+<li><strong>apk</strong> The path to the APK file on the device. The file will be removed when the command completes.</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceisinstalledpkg" id="deviceisinstalledpkg" style="color: inherit; text-decoration: none;">
+  <h4>device.isInstalled(pkg)</h4>
+</a>
+<p>Tells you if the specific package is installed or not. This is analogous to <code>adb shell pm path &lt;pkg&gt;</code> and some output parsing.</p>
+<ul>
+<li><strong>pkg</strong> The package name. This is NOT the APK.</li>
+<li><strong>callback(err, installed)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>installed</strong> <code>true</code> if the package is installed, <code>false</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>installed</code> (see callback)</li>
+</ul>
+
+<a href="#devicelistforwards" id="devicelistforwards" style="color: inherit; text-decoration: none;">
+  <h4>device.listForwards()</h4>
+</a>
+<p>Lists forwarded connections on the device. This is analogous to <code>adb forward --list</code>.</p>
+<ul>
+<li><strong>callback(err, forwards)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>forwards</strong> An array of forward objects with the following properties:<ul>
+<li><strong>serial</strong> The device serial.</li>
+<li><strong>local</strong> The local endpoint. Same format as <code>client.forward()</code>&#39;s <code>local</code> argument.</li>
+<li><strong>remote</strong> The remote endpoint on the device. Same format as <code>client.forward()</code>&#39;s <code>remote</code> argument.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>forwards</code> (see callback)</li>
+</ul>
+
+<a href="#devicelistreverses" id="devicelistreverses" style="color: inherit; text-decoration: none;">
+  <h4>device.listReverses()</h4>
+</a>
+<p>Lists forwarded connections on the device. This is analogous to <code>adb reverse --list</code>.</p>
+<ul>
+<li><p><strong>callback(err, forwards)</strong> Optional. Use this or the returned <code>Promise</code>.</p>
+<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>reverses</strong> An array of reverse objects with the following properties:<ul>
+<li><strong>remote</strong> The remote endpoint on the device. Same format as <code>client.reverse()</code>&#39;s <code>remote</code> argument.</li>
+<li><strong>local</strong> The local endpoint on the host. Same format as <code>client.reverse()</code>&#39;s <code>local</code> argument.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Returns: <code>Promise</code></p>
+</li>
+<li><p>Resolves with: <code>reverses</code> (see callback)</p>
+</li>
+</ul>
+
+<a href="#deviceopenlocalpath" id="deviceopenlocalpath" style="color: inherit; text-decoration: none;">
+  <h4>device.openLocal(path)</h4>
+</a>
+<p>Opens a direct connection to a unix domain socket in the given path.</p>
+<ul>
+<li><strong>path</strong> The path to the socket. Prefixed with <code>&#39;localfilesystem:&#39;</code> by default, include another prefix (e.g. <code>&#39;localabstract:&#39;</code>) in the path to override.</li>
+<li><strong>callback(err, conn)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>conn</strong> The connection (i.e. <a href="http://nodejs.org/api/net.html"><code>net.Socket</code></a>). Read and write as you please. Call <code>conn.end()</code> to end the connection.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>conn</code> (see callback)</li>
+</ul>
+
+<a href="#deviceopenlogname" id="deviceopenlogname" style="color: inherit; text-decoration: none;">
+  <h4>device.openLog(name)</h4>
+</a>
+<p>Opens a direct connection to a binary log file, providing access to the raw log data. Note that it is usually much more convenient to use the <code>client.openLogcat()</code> method, described separately.</p>
+<ul>
+<li><strong>name</strong> The name of the log. Available logs include <code>&#39;main&#39;</code>, <code>&#39;system&#39;</code>, <code>&#39;radio&#39;</code> and <code>&#39;events&#39;</code>.</li>
+<li><strong>callback(err, log)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>log</strong> The binary log stream. Call <code>log.end()</code> when you wish to stop receiving data.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>log</code> (see callback)</li>
+</ul>
+
+<a href="#deviceopenlogcatoptions" id="deviceopenlogcatoptions" style="color: inherit; text-decoration: none;">
+  <h4>device.openLogcat([options])</h4>
+</a>
+<p>Calls the <code>logcat</code> utility on the device and hands off the connection to <a href="https://npmjs.org/package/adbkit-logcat">adbkit-logcat</a>, a pure Node.js Logcat client. This is analogous to <code>adb logcat -B</code>, but the event stream will be parsed for you and a separate event will be emitted for every log entry, allowing for easy processing.</p>
+<p>For more information, check out the <a href="https://npmjs.org/package/adbkit-logcat">adbkit-logcat</a> documentation.</p>
+<ul>
+<li><strong>options</strong> Optional. The following options are supported:<ul>
+<li><strong>clear</strong> When <code>true</code>, clears logcat before opening the reader. Not set by default.</li>
+</ul>
+</li>
+<li><strong>callback(err, logcat)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>logcat</strong> The Logcat client. Please see the <a href="https://npmjs.org/package/adbkit-logcat">adbkit-logcat</a> documentation for details.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>logcat</code> (see callback)</li>
+</ul>
+
+<a href="#deviceopenmonkeyport" id="deviceopenmonkeyport" style="color: inherit; text-decoration: none;">
+  <h4>device.openMonkey([port])</h4>
+</a>
+<p>Starts the built-in <code>monkey</code> utility on the device, connects to it using <code>client.openTcp()</code> and hands the connection to <a href="https://npmjs.org/package/adbkit-monkey">adbkit-monkey</a>, a pure Node.js Monkey client. This allows you to create touch and key events, among other things.</p>
+<p>For more information, check out the <a href="https://npmjs.org/package/adbkit-monkey">adbkit-monkey</a> documentation.</p>
+<ul>
+<li><strong>port</strong> Optional. The device port where you&#39;d like Monkey to run at. Defaults to <code>1080</code>.</li>
+<li><strong>callback(err, monkey)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>monkey</strong> The Monkey client. Please see the <a href="https://npmjs.org/package/adbkit-monkey">adbkit-monkey</a> documentation for details.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>monkey</code> (see callback)</li>
+</ul>
+
+<a href="#deviceopenprocstat" id="deviceopenprocstat" style="color: inherit; text-decoration: none;">
+  <h4>device.openProcStat()</h4>
+</a>
+<p>Tracks <code>/proc/stat</code> and emits useful information, such as CPU load. A single sync service instance is used to download the <code>/proc/stat</code> file for processing. While doing this does consume some resources, it is very light and should not be a problem.</p>
+<ul>
+<li><strong>callback(err, stats)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>stats</strong> The <code>/proc/stat</code> tracker, which is an <a href="http://nodejs.org/api/events.html"><code>EventEmitter</code></a>. Call <code>stat.end()</code> to stop tracking. The following events are available:<ul>
+<li><strong>load</strong> <strong>(loads)</strong> Emitted when a CPU load calculation is available.<ul>
+<li><strong>loads</strong> CPU loads of <strong>online</strong> CPUs. Each key is a CPU id (e.g. <code>&#39;cpu0&#39;</code>, <code>&#39;cpu1&#39;</code>) and the value an object with the following properties:<ul>
+<li><strong>user</strong> Percentage (0-100) of ticks spent on user programs.</li>
+<li><strong>nice</strong> Percentage (0-100) of ticks spent on <code>nice</code>d user programs.</li>
+<li><strong>system</strong> Percentage (0-100) of ticks spent on system programs.</li>
+<li><strong>idle</strong> Percentage (0-100) of ticks spent idling.</li>
+<li><strong>iowait</strong> Percentage (0-100) of ticks spent waiting for IO.</li>
+<li><strong>irq</strong> Percentage (0-100) of ticks spent on hardware interrupts.</li>
+<li><strong>softirq</strong> Percentage (0-100) of ticks spent on software interrupts.</li>
+<li><strong>steal</strong> Percentage (0-100) of ticks stolen by others.</li>
+<li><strong>guest</strong> Percentage (0-100) of ticks spent by a guest.</li>
+<li><strong>guestnice</strong> Percentage (0-100) of ticks spent by a <code>nice</code>d guest.</li>
+<li><strong>total</strong> Total. Always 100.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>stats</code> (see callback)</li>
+</ul>
+
+<a href="#deviceopentcpport-host" id="deviceopentcpport-host" style="color: inherit; text-decoration: none;">
+  <h4>device.openTcp(port[, host])</h4>
+</a>
+<p>Opens a direct TCP connection to a port on the device, without any port forwarding required.</p>
+<ul>
+<li><strong>port</strong> The port number to connect to.</li>
+<li><strong>host</strong> Optional. The host to connect to. Allegedly this is supposed to establish a connection to the given host from the device, but we have not been able to get it to work at all. Skip the host and everything works great.</li>
+<li><strong>callback(err, conn)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>conn</strong> The TCP connection (i.e. <a href="http://nodejs.org/api/net.html"><code>net.Socket</code></a>). Read and write as you please. Call <code>conn.end()</code> to end the connection.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>conn</code> (see callback)</li>
+</ul>
+
+<a href="#devicepullpath" id="devicepullpath" style="color: inherit; text-decoration: none;">
+  <h4>device.pull(path)</h4>
+</a>
+<p>A convenience shortcut for <code>sync.pull()</code>, mainly for one-off use cases. The connection cannot be reused, resulting in poorer performance over multiple calls. However, the Sync client will be closed automatically for you, so that&#39;s one less thing to worry about.</p>
+<ul>
+<li><strong>path</strong> See <code>sync.pull()</code> for details.</li>
+<li><strong>callback(err, transfer)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>transfer</strong> A <code>PullTransfer</code> instance (see below)</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>transfer</code> (see callback)</li>
+</ul>
+
+<a href="#devicepushcontents-path-mode" id="devicepushcontents-path-mode" style="color: inherit; text-decoration: none;">
+  <h4>device.push(contents, path[, mode])</h4>
+</a>
+<p>A convenience shortcut for <code>sync.push()</code>, mainly for one-off use cases. The connection cannot be reused, resulting in poorer performance over multiple calls. However, the Sync client will be closed automatically for you, so that&#39;s one less thing to worry about.</p>
+<ul>
+<li><strong>contents</strong> See <code>sync.push()</code> for details.</li>
+<li><strong>path</strong> See <code>sync.push()</code> for details.</li>
+<li><strong>mode</strong> See <code>sync.push()</code> for details.</li>
+<li><strong>callback(err, transfer)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>transfer</strong> A <code>PushTransfer</code> instance (see below)</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>transfer</code> (see callback)</li>
+</ul>
+
+<a href="#devicereaddirpath" id="devicereaddirpath" style="color: inherit; text-decoration: none;">
+  <h4>device.readdir(path)</h4>
+</a>
+<p>A convenience shortcut for <code>sync.readdir()</code>, mainly for one-off use cases. The connection cannot be reused, resulting in poorer performance over multiple calls. However, the Sync client will be closed automatically for you, so that&#39;s one less thing to worry about.</p>
+<ul>
+<li><strong>path</strong> See <code>sync.readdir()</code> for details.</li>
+<li><strong>callback(err, files)</strong> Optional. Use this or the returned <code>Promise</code>. See <code>sync.readdir()</code> for details.</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: See <code>sync.readdir()</code> for details.</li>
+</ul>
+
+<a href="#devicereboot" id="devicereboot" style="color: inherit; text-decoration: none;">
+  <h4>device.reboot()</h4>
+</a>
+<p>Reboots the device. Similar to <code>adb reboot</code>. Note that the method resolves when ADB reports that the device has been rebooted (i.e. the reboot command was successful), not when the device becomes available again.</p>
+<ul>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceremount" id="deviceremount" style="color: inherit; text-decoration: none;">
+  <h4>device.remount()</h4>
+</a>
+<p>Attempts to remount the <code>/system</code> partition in read-write mode. This will usually only work on emulators and developer devices.</p>
+<ul>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicereverseremote-local" id="devicereverseremote-local" style="color: inherit; text-decoration: none;">
+  <h4>device.reverse(remote, local)</h4>
+</a>
+<p>Reverses socket connections from the device (remote) to the ADB server host (local). This is analogous to <code>adb reverse &lt;remote&gt; &lt;local&gt;</code>. It&#39;s important to note that if you are connected to a remote ADB server, the reverse will be created on that host.</p>
+<ul>
+<li><strong>remote</strong> A string representing the remote endpoint on the device. At time of writing, can be one of:<ul>
+<li><code>tcp:&lt;port&gt;</code></li>
+<li><code>localabstract:&lt;unix domain socket name&gt;</code></li>
+<li><code>localreserved:&lt;unix domain socket name&gt;</code></li>
+<li><code>localfilesystem:&lt;unix domain socket name&gt;</code></li>
+</ul>
+</li>
+<li><strong>local</strong> A string representing the local endpoint on the ADB host. At time of writing, can be any value accepted by the <code>remote</code> argument.</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceroot" id="deviceroot" style="color: inherit; text-decoration: none;">
+  <h4>device.root()</h4>
+</a>
+<p>Puts the device into root mode which may be needed by certain shell commands. A remount is generally required after a successful root call. <strong>Note that this will only work if your device supports this feature. Production devices almost never do.</strong></p>
+<ul>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicescreencap" id="devicescreencap" style="color: inherit; text-decoration: none;">
+  <h4>device.screencap()</h4>
+</a>
+<p>Takes a screenshot in PNG format using the built-in <code>screencap</code> utility. This is analogous to <code>adb shell screencap -p</code>. Sadly, the utility is not available on most Android <code>&lt;=2.3</code> devices, but a silent fallback to the <code>client.framebuffer()</code> command in PNG mode is attempted, so you should have its dependencies installed just in case.</p>
+<p>Generating the PNG on the device naturally requires considerably more processing time on that side. However, as the data transferred over USB easily decreases by ~95%, and no conversion being required on the host, this method is usually several times faster than using the framebuffer. Naturally, this benefit does not apply if we&#39;re forced to fall back to the framebuffer.</p>
+<p>For convenience purposes, if the screencap command fails (e.g. because it doesn&#39;t exist on older Androids), we fall back to <code>client.framebuffer(serial, &#39;png&#39;)</code>, which is slower and has additional installation requirements.</p>
+<ul>
+<li><strong>callback(err, screencap)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>screencap</strong> The PNG stream.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>screencap</code> (see callback)</li>
+</ul>
+
+<a href="#deviceshellcommand" id="deviceshellcommand" style="color: inherit; text-decoration: none;">
+  <h4>device.shell(command)</h4>
+</a>
+<p>Runs a shell command on the device. Note that you&#39;ll be limited to the permissions of the <code>shell</code> user, which ADB uses.</p>
+<ul>
+<li><strong>command</strong> The shell command to execute. When <code>String</code>, the command is run as-is. When <code>Array</code>, the elements will be rudimentarily escaped (for convenience, not security) and joined to form a command.</li>
+<li><strong>callback(err, conn)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>conn</strong> A readable stream (<code>Socket</code> actually) containing the progressive <code>stdout</code> of the command. Use with <code>adb.util.readAll</code> to get a readable String from it.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>conn</code> (see callback)</li>
+</ul>
+
+<a href="#example" id="example" style="color: inherit; text-decoration: none;">
+  <h5>Example</h5>
+</a>
+<ul>
+<li>Read the output of an instantaneous command
+```typescript
+import Bluebird from &#39;bluebird&#39;;
+import Adb from &#39;@devicefarmer/adbkit&#39;;</li>
+</ul>
+<p>const client = Adb.createClient();</p>
+<p>client
+    .listDevices()
+    .then(function (devices) {
+      return Promise.map(devices, function (device) {
+        const device = client.getDevice(device.id);
+          return (
+              device
+                  .shell(&#39;echo $RANDOM&#39;)
+                  // Use the readAll() utility to read all the content without
+                  // having to deal with the readable stream. <code>output</code> will be a Buffer
+                  // containing all the output.
+                  .then(adb.util.readAll)
+                  .then(function (output) {
+                      console.log(&#39;[%s] %s&#39;, device.id, output.toString().trim());
+                  })
+          );
+      });
+    })
+    .then(function () {
+        console.log(&#39;Done.&#39;);
+    })
+    .catch(function (err) {
+        console.error(&#39;Something went wrong:&#39;, err.stack);
+    });</p>
+<pre><code><br/><span class="hl-0">* </span><span class="hl-2">Progressively</span><span class="hl-0"> </span><span class="hl-2">read</span><span class="hl-0"> </span><span class="hl-2">the</span><span class="hl-0"> </span><span class="hl-2">output</span><span class="hl-0"> </span><span class="hl-4">of</span><span class="hl-0"> </span><span class="hl-2">a</span><span class="hl-0"> </span><span class="hl-2">long</span><span class="hl-0">-</span><span class="hl-2">running</span><span class="hl-0"> </span><span class="hl-2">command</span><span class="hl-0"> </span><span class="hl-2">and</span><span class="hl-0"> </span><span class="hl-2">terminate</span><span class="hl-0"> </span><span class="hl-2">it</span><br/><span class="hl-3">```typescript</span><br/><span class="hl-3">import Bluebird from &#39;bluebird&#39;;</span><br/><span class="hl-3">import Adb from &#39;@devicefarmer/adbkit&#39;;</span><br/><br/><span class="hl-3">const client = Adb.createClient();</span><br/><span class="hl-3">client.listDevices()</span><br/><span class="hl-3">  .then(function(devices) {</span><br/><span class="hl-3">    return Bluebird.map(devices, function(device) {</span><br/><span class="hl-3">      const device = client.getDevice(device.id);</span><br/><span class="hl-3">      return device.shell(&#39;logcat&#39;) // logcat just for illustration,</span><br/><span class="hl-3">                                    // prefer client.openLogcat in real use </span><br/><span class="hl-3">        .then(function(conn) {</span><br/><span class="hl-3">          var line = 0</span><br/><span class="hl-3">          conn.on(&#39;data&#39;, function(data) {</span><br/><span class="hl-3">            // here `</span><span class="hl-6">ps</span><span class="hl-3">` on the device shows the running logcat process</span><br/><span class="hl-3">            console.log(data.toString())</span><br/><span class="hl-3">            line += 1</span><br/><span class="hl-3">            // close the stream and the running process</span><br/><span class="hl-3">            // on the device will be gone, gracefully</span><br/><span class="hl-3">            if (line &gt; 100) conn.end()</span><br/><span class="hl-3">          });</span><br/><span class="hl-3">          conn.on(&#39;close&#39;, function() {</span><br/><span class="hl-3">            // here `</span><span class="hl-6">ps</span><span class="hl-3">` on the device shows the logcat process is gone</span><br/><span class="hl-3">            console.log(&#39;100 lines read already, bye&#39;)</span><br/><span class="hl-3">          })</span><br/><span class="hl-3">        })</span><br/><span class="hl-3">    })</span><br/><span class="hl-3">  })</span><br/><span class="hl-3">  .then(function() {</span><br/><span class="hl-3">    console.log(&#39;Done.&#39;)</span><br/><span class="hl-3">  })</span><br/><span class="hl-3">  .catch(function(err) {</span><br/><span class="hl-3">    console.error(&#39;Something went wrong:&#39;, err.stack)</span><br/><span class="hl-3">  })</span>
+</code></pre>
+
+<a href="#devicestartactivityoptions" id="devicestartactivityoptions" style="color: inherit; text-decoration: none;">
+  <h4>device.startActivity(options)</h4>
+</a>
+<p>Starts the configured activity on the device. Roughly analogous to <code>adb shell am start &lt;options&gt;</code>.</p>
+<ul>
+<li><strong>options</strong> The activity configuration. The following options are available:<ul>
+<li><strong>debug</strong> Set to <code>true</code> to enable debugging.</li>
+<li><strong>wait</strong> Set to <code>true</code> to wait for the activity to launch.</li>
+<li><strong>user</strong> The user to run as. Not set by default. If the option is unsupported by the device, an attempt will be made to run the same command again without the user option.</li>
+<li><strong>action</strong> The action.</li>
+<li><strong>data</strong> The data URI, if any.</li>
+<li><strong>mimeType</strong> The mime type, if any.</li>
+<li><strong>category</strong> The category. For multiple categories, pass an <code>Array</code>.</li>
+<li><strong>component</strong> The component.</li>
+<li><strong>flags</strong> Numeric flags.</li>
+<li><strong>extras</strong> Any extra data.<ul>
+<li>When an <code>Array</code>, each item must be an <code>Object</code> the following properties:<ul>
+<li><strong>key</strong> The key name.</li>
+<li><strong>type</strong> The type, which can be one of <code>&#39;string&#39;</code>, <code>&#39;null&#39;</code>, <code>&#39;bool&#39;</code>, <code>&#39;int&#39;</code>, <code>&#39;long&#39;</code>, <code>&#39;float&#39;</code>, <code>&#39;uri&#39;</code>, <code>&#39;component&#39;</code>.</li>
+<li><strong>value</strong> The value. Optional and unused if type is <code>&#39;null&#39;</code>. If an <code>Array</code>, type is automatically set to be an array of <code>&lt;type&gt;</code>.</li>
+</ul>
+</li>
+<li>When an <code>Object</code>, each key is treated as the key name. Simple values like <code>null</code>, <code>String</code>, <code>Boolean</code> and <code>Number</code> are type-mapped automatically (<code>Number</code> maps to <code>&#39;int&#39;</code>) and can be used as-is. For more complex types, like arrays and URIs, set the value to be an <code>Object</code> like in the Array syntax (see above), but leave out the <code>key</code> property.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicestartserviceoptions" id="devicestartserviceoptions" style="color: inherit; text-decoration: none;">
+  <h4>device.startService(options)</h4>
+</a>
+<p>Starts the configured service on the device. Roughly analogous to <code>adb shell am startservice &lt;options&gt;</code>.</p>
+<ul>
+<li><strong>options</strong> The service configuration. The following options are available:<ul>
+<li><strong>user</strong> The user to run as. Defaults to <code>0</code>. If the option is unsupported by the device, an attempt will be made to run the same command again without the user option.</li>
+<li><strong>action</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>data</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>mimeType</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>category</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>component</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>flags</strong> See <code>client.startActivity()</code> for details.</li>
+<li><strong>extras</strong> See <code>client.startActivity()</code> for details.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicestatpath" id="devicestatpath" style="color: inherit; text-decoration: none;">
+  <h4>device.stat(path)</h4>
+</a>
+<p>A convenience shortcut for <code>sync.stat()</code>, mainly for one-off use cases. The connection cannot be reused, resulting in poorer performance over multiple calls. However, the Sync client will be closed automatically for you, so that&#39;s one less thing to worry about.</p>
+<ul>
+<li><strong>path</strong> See <code>sync.stat()</code> for details.</li>
+<li><strong>callback(err, stats)</strong> Optional. Use this or the returned <code>Promise</code>. See <code>sync.stat()</code> for details.</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: See <code>sync.stat()</code> for details.</li>
+</ul>
+
+<a href="#devicesyncservice" id="devicesyncservice" style="color: inherit; text-decoration: none;">
+  <h4>device.syncService()</h4>
+</a>
+<p>Establishes a new Sync connection that can be used to push and pull files. This method provides the most freedom and the best performance for repeated use, but can be a bit cumbersome to use. For simple use cases, consider using <code>client.stat()</code>, <code>client.push()</code> and <code>client.pull()</code>.</p>
+<ul>
+<li><strong>callback(err, sync)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>sync</strong> The Sync client. See below for details. Call <code>sync.end()</code> when done.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>sync</code> (see callback)</li>
+</ul>
+
+<a href="#devicetcpipport" id="devicetcpipport" style="color: inherit; text-decoration: none;">
+  <h4>device.tcpip(port)</h4>
+</a>
+<p>Puts the device&#39;s ADB daemon into tcp mode, allowing you to use <code>adb connect</code> or <code>client.connect()</code> to connect to it. Note that the device will still be visible to ADB as a regular USB-connected device until you unplug it. Same as <code>adb tcpip &lt;port&gt;</code>.</p>
+<ul>
+<li><strong>port</strong> Optional. The port the device should listen on. Defaults to <code>5555</code>.</li>
+<li><strong>callback(err, port)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>port</strong> The port the device started listening on.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>port</code> (see callback)</li>
+</ul>
+
+<a href="#devicetrackjdwp" id="devicetrackjdwp" style="color: inherit; text-decoration: none;">
+  <h4>device.trackJdwp()</h4>
+</a>
+<p>Starts a JDWP tracker for the given device.</p>
+<p>Note that as the tracker will keep a connection open, you must call <code>tracker.end()</code> if you wish to stop tracking JDWP processes.</p>
+<ul>
+<li><strong>callback(err, tracker)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>tracker</strong> The JDWP tracker, which is an <a href="http://nodejs.org/api/events.html"><code>EventEmitter</code></a>. The following events are available:<ul>
+<li><strong>add</strong> <strong>(pid)</strong> Emitted when a new JDWP process becomes available, once per pid.</li>
+<li><strong>remove</strong> <strong>(pid)</strong> Emitted when a JDWP process becomes unavailable, once per pid.</li>
+<li><strong>changeSet</strong> <strong>(changes, pids)</strong> All changes in a single event.<ul>
+<li><strong>changes</strong> An object with the following properties always present:<ul>
+<li><strong>added</strong> An array of pids that were added. Empty if none.</li>
+<li><strong>removed</strong> An array of pids that were removed. Empty if none.</li>
+</ul>
+</li>
+<li><strong>pids</strong> All currently active pids (including pids from previous runs).</li>
+</ul>
+</li>
+<li><strong>end</strong> Emitted when the underlying connection ends.</li>
+<li><strong>error</strong> <strong>(err)</strong> Emitted if there&#39;s an error.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>tracker</code> (see callback)</li>
+</ul>
+
+<a href="#deviceuninstallpkg" id="deviceuninstallpkg" style="color: inherit; text-decoration: none;">
+  <h4>device.uninstall(pkg)</h4>
+</a>
+<p>Uninstalls the package from the device. This is roughly analogous to <code>adb uninstall &lt;pkg&gt;</code>.</p>
+<ul>
+<li><strong>pkg</strong> The package name. This is NOT the APK.</li>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#deviceusb" id="deviceusb" style="color: inherit; text-decoration: none;">
+  <h4>device.usb()</h4>
+</a>
+<p>Puts the device&#39;s ADB daemon back into USB mode. Reverses <code>client.tcpip()</code>. Same as <code>adb usb</code>.</p>
+<ul>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicewaitbootcomplete" id="devicewaitbootcomplete" style="color: inherit; text-decoration: none;">
+  <h4>device.waitBootComplete()</h4>
+</a>
+<p>Waits until the device has finished booting. Note that the device must already be seen by ADB. This is roughly analogous to periodically checking <code>adb shell getprop sys.boot_completed</code>.</p>
+<ul>
+<li><strong>callback(err)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> if the device has completed booting, <code>Error</code> otherwise (can occur if the connection dies while checking).</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>true</code></li>
+</ul>
+
+<a href="#devicewaitfordevice" id="devicewaitfordevice" style="color: inherit; text-decoration: none;">
+  <h4>device.waitForDevice()</h4>
+</a>
+<p>Waits until ADB can see the device. Note that you must know the serial in advance. Other than that, works like <code>adb -s serial wait-for-device</code>. If you&#39;re planning on reacting to random devices being plugged in and out, consider using <code>client.trackDevices()</code> instead.</p>
+<ul>
+<li><strong>callback(err, id)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> if the device has completed booting, <code>Error</code> otherwise (can occur if the connection dies while checking).</li>
+<li><strong>id</strong> The device ID. Can be useful for chaining.</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>id</code> (see callback)</li>
+</ul>
+
+<a href="#sync" id="sync" style="color: inherit; text-decoration: none;">
+  <h3>Sync</h3>
+</a>
+
+<a href="#syncend" id="syncend" style="color: inherit; text-decoration: none;">
+  <h4>sync.end()</h4>
+</a>
+<p>Closes the Sync connection, allowing Node to quit (assuming nothing else is keeping it alive, of course).</p>
+<ul>
+<li>Returns: The sync instance.</li>
+</ul>
+
+<a href="#syncpullpath" id="syncpullpath" style="color: inherit; text-decoration: none;">
+  <h4>sync.pull(path)</h4>
+</a>
+<p>Pulls a file from the device as a <code>PullTransfer</code> <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a>.</p>
+<ul>
+<li><strong>path</strong> The path to pull from.</li>
+<li>Returns: A <code>PullTransfer</code> instance. See below for details.</li>
+</ul>
+
+<a href="#syncpushcontents-path-mode" id="syncpushcontents-path-mode" style="color: inherit; text-decoration: none;">
+  <h4>sync.push(contents, path[, mode])</h4>
+</a>
+<p>Attempts to identify <code>contents</code> and calls the appropriate <code>push*</code> method for it.</p>
+<ul>
+<li><strong>contents</strong> When <code>String</code>, treated as a local file path and forwarded to <code>sync.pushFile()</code>. Otherwise, treated as a <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a> and forwarded to <code>sync.pushStream()</code>.</li>
+<li><strong>path</strong> The path to push to.</li>
+<li><strong>mode</strong> Optional. The mode of the file. Defaults to <code>0644</code>.</li>
+<li>Returns: A <code>PushTransfer</code> instance. See below for details.</li>
+</ul>
+
+<a href="#syncpushfilefile-path-mode" id="syncpushfilefile-path-mode" style="color: inherit; text-decoration: none;">
+  <h4>sync.pushFile(file, path[, mode])</h4>
+</a>
+<p>Pushes a local file to the given path. Note that the path must be writable by the ADB user (usually <code>shell</code>). When in doubt, use <code>&#39;/data/local/tmp&#39;</code> with an appropriate filename.</p>
+<ul>
+<li><strong>file</strong> The local file path.</li>
+<li><strong>path</strong> See <code>sync.push()</code> for details.</li>
+<li><strong>mode</strong> See <code>sync.push()</code> for details.</li>
+<li>Returns: See <code>sync.push()</code> for details.</li>
+</ul>
+
+<a href="#syncpushstreamstream-path-mode" id="syncpushstreamstream-path-mode" style="color: inherit; text-decoration: none;">
+  <h4>sync.pushStream(stream, path[, mode])</h4>
+</a>
+<p>Pushes a <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a> to the given path. Note that the path must be writable by the ADB user (usually <code>shell</code>). When in doubt, use <code>&#39;/data/local/tmp&#39;</code> with an appropriate filename.</p>
+<ul>
+<li><strong>stream</strong> The readable stream.</li>
+<li><strong>path</strong> See <code>sync.push()</code> for details.</li>
+<li><strong>mode</strong> See <code>sync.push()</code> for details.</li>
+<li>Returns: See <code>sync.push()</code> for details.</li>
+</ul>
+
+<a href="#syncreaddirpath" id="syncreaddirpath" style="color: inherit; text-decoration: none;">
+  <h4>sync.readdir(path)</h4>
+</a>
+<p>Retrieves a list of directory entries (e.g. files) in the given path, not including the <code>.</code> and <code>..</code> entries, just like <a href="http://nodejs.org/api/fs.html"><code>fs.readdir</code></a>. If given a non-directory path, no entries are returned.</p>
+<ul>
+<li><strong>path</strong> The path.</li>
+<li><strong>callback(err, files)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>files</strong> An <code>Array</code> of <a href="http://nodejs.org/api/fs.html#fs_class_fs_stats"><code>fs.Stats</code></a>-compatible instances. While the <code>stats.is*</code> methods are available, only the following properties are supported (in addition to the <code>name</code> field which contains the filename):<ul>
+<li><strong>name</strong> The filename.</li>
+<li><strong>mode</strong> The raw mode.</li>
+<li><strong>size</strong> The file size.</li>
+<li><strong>mtime</strong> The time of last modification as a <code>Date</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>files</code> (see callback)</li>
+</ul>
+
+<a href="#syncstatpath" id="syncstatpath" style="color: inherit; text-decoration: none;">
+  <h4>sync.stat(path)</h4>
+</a>
+<p>Retrieves information about the given path.</p>
+<ul>
+<li><strong>path</strong> The path.</li>
+<li><strong>callback(err, stats)</strong> Optional. Use this or the returned <code>Promise</code>.<ul>
+<li><strong>err</strong> <code>null</code> when successful, <code>Error</code> otherwise.</li>
+<li><strong>stats</strong> An <a href="http://nodejs.org/api/fs.html#fs_class_fs_stats"><code>fs.Stats</code></a> instance. While the <code>stats.is*</code> methods are available, only the following properties are supported:<ul>
+<li><strong>mode</strong> The raw mode.</li>
+<li><strong>size</strong> The file size.</li>
+<li><strong>mtime</strong> The time of last modification as a <code>Date</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Returns: <code>Promise</code></li>
+<li>Resolves with: <code>stats</code> (see callback)</li>
+</ul>
+
+<a href="#synctempfilepath" id="synctempfilepath" style="color: inherit; text-decoration: none;">
+  <h4>sync.tempFile(path)</h4>
+</a>
+<p>A simple helper method for creating appropriate temporary filenames for pushing files. This is essentially the same as taking the basename of the file and appending it to <code>&#39;/data/local/tmp/&#39;</code>.</p>
+<ul>
+<li><strong>path</strong> The path of the file.</li>
+<li>Returns: An appropriate temporary file path.</li>
+</ul>
+
+<a href="#pushtransfer" id="pushtransfer" style="color: inherit; text-decoration: none;">
+  <h3>PushTransfer</h3>
+</a>
+<p>A simple EventEmitter, mainly for keeping track of the progress.</p>
+<p>List of events:</p>
+<ul>
+<li><strong>progress</strong> <strong>(stats)</strong> Emitted when a chunk has been flushed to the ADB connection.<ul>
+<li><strong>stats</strong> An object with the following stats about the transfer:<ul>
+<li><strong>bytesTransferred</strong> The number of bytes transferred so far.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>error</strong> <strong>(err)</strong> Emitted on error.<ul>
+<li><strong>err</strong> An <code>Error</code>.</li>
+</ul>
+</li>
+<li><strong>end</strong> Emitted when the transfer has successfully completed.</li>
+</ul>
+
+<a href="#pushtransfercancel" id="pushtransfercancel" style="color: inherit; text-decoration: none;">
+  <h4>pushTransfer.cancel()</h4>
+</a>
+<p>Cancels the transfer by ending both the stream that is being pushed and the sync connection. This will most likely end up creating a broken file on your device. <strong>Use at your own risk.</strong> Also note that you must create a new sync connection if you wish to continue using the sync service.</p>
+<ul>
+<li>Returns: The pushTransfer instance.</li>
+</ul>
+
+<a href="#pulltransfer" id="pulltransfer" style="color: inherit; text-decoration: none;">
+  <h3>PullTransfer</h3>
+</a>
+<p><code>PullTransfer</code> is a <a href="http://nodejs.org/api/stream.html"><code>Stream</code></a>. Use <a href="http://nodejs.org/api/fs.html"><code>fs.createWriteStream()</code></a> to pipe the stream to a file if necessary.</p>
+<p>List of events:</p>
+<ul>
+<li><strong>progress</strong> <strong>(stats)</strong> Emitted when a new chunk is received.<ul>
+<li><strong>stats</strong> An object with the following stats about the transfer:<ul>
+<li><strong>bytesTransferred</strong> The number of bytes transferred so far.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>error</strong> <strong>(err)</strong> Emitted on error.<ul>
+<li><strong>err</strong> An <code>Error</code>.</li>
+</ul>
+</li>
+<li><strong>end</strong> Emitted when the transfer has successfully completed.</li>
+</ul>
+
+<a href="#pulltransfercancel" id="pulltransfercancel" style="color: inherit; text-decoration: none;">
+  <h4>pullTransfer.cancel()</h4>
+</a>
+<p>Cancels the transfer by ending the connection. Can be useful for reading endless streams of data, such as <code>/dev/urandom</code> or <code>/dev/zero</code>, perhaps for benchmarking use. Note that you must create a new sync connection if you wish to continue using the sync service.</p>
+<ul>
+<li>Returns: The pullTransfer instance.</li>
+</ul>
+
+<a href="#incompatible-changes-in-version-2x" id="incompatible-changes-in-version-2x" style="color: inherit; text-decoration: none;">
+  <h1>Incompatible changes in version 2.x</h1>
+</a>
+<p>Previously, we made extensive use of callbacks in almost every feature. While this normally works okay, ADB connections can be quite fickle, and it was starting to become difficult to handle every possible error. For example, we&#39;d often fail to properly clean up after ourselves when a connection suddenly died in an unexpected place, causing memory and resource leaks.</p>
+<p>In version 2, we&#39;ve replaced nearly all callbacks with <a href="http://promisesaplus.com/">Promises</a> (using <a href="https://github.com/petkaantonov/bluebird">Bluebird</a>), allowing for much more reliable error propagation and resource cleanup (thanks to <code>.finally()</code>). Additionally, many commands can now be cancelled on the fly, and although unimplemented at this point, we&#39;ll also be able to report progress on long-running commands without any changes to the API.</p>
+<p>Unfortunately, some API changes were required for this change. <code>client.framebuffer()</code>&#39;s callback, for example, previously accepted more than one argument, which doesn&#39;t translate into Promises so well. Thankfully, it made sense to combine the arguments anyway, and we were able to do it quite cleanly.</p>
+<p>Furthermore, most API methods were returning the current instance for chaining purposes. While perhaps useful in some contexts, most of the time it probably didn&#39;t quite do what users expected, as chained calls were run in parallel rather than in serial fashion. Now every applicable API method returns a Promise, which is an incompatible but welcome change. This will also allow you to hook into <code>yield</code> and coroutines in Node 0.12.</p>
+<p><strong>However, all methods still accept (and will accept in the future) callbacks for those who prefer them.</strong></p>
+<p>Test coverage was also massively improved, although we&#39;ve still got ways to go.</p>
+
+<a href="#more-information" id="more-information" style="color: inherit; text-decoration: none;">
+  <h2>More information</h2>
+</a>
+<ul>
+<li><a href="http://developer.android.com/tools/help/adb.html">Android Debug Bridge</a><ul>
+<li><a href="https://github.com/android/platform_system_core/blob/master/adb/SERVICES.TXT">SERVICES.TXT</a> (ADB socket protocol)</li>
+</ul>
+</li>
+<li><a href="http://blogs.kgsoft.co.uk/2013_03_15_prg.htm">Android ADB Protocols</a> (a blog post explaining the protocol)</li>
+<li><a href="https://github.com/flier/adb.js">adb.js</a> (another Node.js ADB implementation)</li>
+<li><a href="https://chrome.google.com/webstore/detail/adb/dpngiggdglpdnjdoaefidgiigpemgage">ADB Chrome extension</a></li>
+</ul>
+
+<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
+  <h2>Contributing</h2>
+</a>
+<p>See <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+
+<a href="#license" id="license" style="color: inherit; text-decoration: none;">
+  <h2>License</h2>
+</a>
+<p>See <a href="LICENSE">LICENSE</a>.</p>
+<p>Copyright © The OpenSTF Project. All Rights Reserved.</p>
+</div></div><div class="col-4 col-menu menu-sticky-wrap menu-highlight"><nav class="tsd-navigation primary"><ul><li class="current"><a href="modules.html">Exports</a></li></ul></nav><nav class="tsd-navigation secondary menu-sticky"><ul><li class="tsd-kind-reference"><a href="modules.html#default" class="tsd-kind-icon">default</a></li><li class="tsd-kind-enum"><a href="enums/KeyCodes.html" class="tsd-kind-icon">Key<wbr/>Codes</a></li><li class="tsd-kind-class"><a href="classes/Adb.html" class="tsd-kind-icon">Adb</a></li><li class="tsd-kind-class"><a href="classes/Client.html" class="tsd-kind-icon">Client</a></li><li class="tsd-kind-class"><a href="classes/DeviceClient.html" class="tsd-kind-icon">Device<wbr/>Client</a></li><li class="tsd-kind-class"><a href="classes/Parser.html" class="tsd-kind-icon">Parser</a></li><li class="tsd-kind-class"><a href="classes/ShellCommand.html" class="tsd-kind-icon">Shell<wbr/>Command</a></li><li class="tsd-kind-interface"><a href="interfaces/ClientOptions.html" class="tsd-kind-icon">Client<wbr/>Options</a></li><li class="tsd-kind-interface"><a href="interfaces/CpuStats.html" class="tsd-kind-icon">Cpu<wbr/>Stats</a></li><li class="tsd-kind-interface"><a href="interfaces/Device.html" class="tsd-kind-icon">Device</a></li><li class="tsd-kind-interface"><a href="interfaces/DeviceWithPath.html" class="tsd-kind-icon">Device<wbr/>With<wbr/>Path</a></li><li class="tsd-kind-interface"><a href="interfaces/ExtendedPublicKey.html" class="tsd-kind-icon">Extended<wbr/>Public<wbr/>Key</a></li><li class="tsd-kind-interface"><a href="interfaces/Extra.html" class="tsd-kind-icon">Extra</a></li><li class="tsd-kind-interface"><a href="interfaces/ExtraObject.html" class="tsd-kind-icon">Extra<wbr/>Object</a></li><li class="tsd-kind-interface"><a href="interfaces/Forward.html" class="tsd-kind-icon">Forward</a></li><li class="tsd-kind-interface"><a href="interfaces/FramebufferMeta.html" class="tsd-kind-icon">Framebuffer<wbr/>Meta</a></li><li class="tsd-kind-interface"><a href="interfaces/FramebufferStreamWithMeta.html" class="tsd-kind-icon">Framebuffer<wbr/>Stream<wbr/>With<wbr/>Meta</a></li><li class="tsd-kind-interface"><a href="interfaces/Loads.html" class="tsd-kind-icon">Loads</a></li><li class="tsd-kind-interface"><a href="interfaces/Reverse.html" class="tsd-kind-icon">Reverse</a></li><li class="tsd-kind-interface"><a href="interfaces/SocketOptions.html" class="tsd-kind-icon">Socket<wbr/>Options</a></li><li class="tsd-kind-interface"><a href="interfaces/StartActivityOptions.html" class="tsd-kind-icon">Start<wbr/>Activity<wbr/>Options</a></li><li class="tsd-kind-interface"><a href="interfaces/StartServiceOptions.html" class="tsd-kind-icon">Start<wbr/>Service<wbr/>Options</a></li><li class="tsd-kind-interface"><a href="interfaces/TrackerChangeSet.html" class="tsd-kind-icon">Tracker<wbr/>Change<wbr/>Set</a></li><li class="tsd-kind-interface"><a href="interfaces/WithToString.html" class="tsd-kind-icon">With<wbr/>To<wbr/>String</a></li><li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="modules.html#Callback" class="tsd-kind-icon">Callback</a></li><li class="tsd-kind-type-alias"><a href="modules.html#ExtraValue" class="tsd-kind-icon">Extra<wbr/>Value</a></li><li class="tsd-kind-type-alias"><a href="modules.html#Features" class="tsd-kind-icon">Features</a></li><li class="tsd-kind-type-alias"><a href="modules.html#Properties" class="tsd-kind-icon">Properties</a></li></ul></nav></div></div></div><footer class="with-border-bottom"><div class="container"><h2>Legend</h2><div class="tsd-legend-group"><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li><li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li><li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li><li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li><li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li><li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li></ul><ul class="tsd-legend"><li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li><li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li></ul></div><h2>Settings</h2><p>Theme <select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></p></div></footer><div class="container tsd-generator"><p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div><div class="overlay"></div><script src="assets/main.js"></script></body></html>
