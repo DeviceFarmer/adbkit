@@ -5,7 +5,10 @@ import Bluebird from 'bluebird';
 // Possible replies:
 // "No such device 192.168.2.2:5555"
 // ""
+// "disconnected 192.168.2.2:5555"
+
 const RE_OK = /^$/;
+const RE_DISC = /^disconnected.*$/
 
 export default class HostDisconnectCommand extends Command<string> {
   execute(host: string, port: number): Bluebird<string> {
@@ -14,7 +17,7 @@ export default class HostDisconnectCommand extends Command<string> {
       switch (reply) {
         case Protocol.OKAY:
           return this.parser.readValue().then(function (value) {
-            if (RE_OK.test(value.toString())) {
+            if (RE_OK.test(value.toString()) || RE_DISC.test(value.toString())) {
               return `${host}:${port}`;
             } else {
               throw new Error(value.toString());

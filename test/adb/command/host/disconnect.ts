@@ -34,7 +34,7 @@ describe('DisconnectCommand', function () {
             expect(val).to.be.equal('192.168.2.2:5555');
         });
     });
-    return it('should reject with error if unable to disconnect', function () {
+    it('should reject with error if unable to disconnect', function () {
         const conn = new MockConnection();
         const cmd = new DisconnectCommand(conn as Connection);
         setImmediate(function () {
@@ -46,4 +46,16 @@ describe('DisconnectCommand', function () {
             expect(err.message).to.eql('No such device 192.168.2.2:5555');
         });
     });
+    return it('should resolve with the new device id if disconnected', function () {
+        const conn = new MockConnection();
+        const cmd = new DisconnectCommand(conn as Connection);
+        setImmediate(function () {
+            conn.getSocket().causeRead(Protocol.OKAY);
+            conn.getSocket().causeRead(Protocol.encodeData('disconnected 192.168.2.2:5555'));
+            return conn.getSocket().causeEnd();
+        });
+        return cmd.execute('192.168.2.2', 5555).then(function (val) {
+            expect(val).to.be.equal('192.168.2.2:5555');
+        });
+    });    
 });
