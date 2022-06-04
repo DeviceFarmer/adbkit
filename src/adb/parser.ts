@@ -31,6 +31,15 @@ class UnexpectedDataError extends Error {
   }
 }
 
+class TimeoutError extends Error {
+  constructor() {
+    super(`Socket timeout reached.`);
+    Object.setPrototypeOf(this, TimeoutError.prototype);
+    this.name = 'TimeoutError';
+    Error.captureStackTrace(this, TimeoutError);
+  }
+}
+
 Bluebird.config({
   // Enable warnings
   // warnings: true,
@@ -46,6 +55,7 @@ export default class Parser {
   public static FailError = FailError;
   public static PrematureEOFError = PrematureEOFError;
   public static UnexpectedDataError = UnexpectedDataError;
+  public static TimeoutError = TimeoutError;
   private ended = false;
 
   constructor(public stream: Duplex) {
@@ -59,6 +69,7 @@ export default class Parser {
     let tryRead: () => void;
     let errorListener: (error: Error) => void;
     let endListener: () => void;
+    let timeoutListener: () => void;
     return new Bluebird<boolean>((resolve, reject, onCancel) => {
       tryRead = () => {
         while (this.stream.read()) {
@@ -72,9 +83,14 @@ export default class Parser {
         this.ended = true;
         return resolve(true);
       };
+      timeoutListener = () => {
+        this.stream.end()
+        return reject(new Parser.TimeoutError());
+      };
       this.stream.on('readable', tryRead);
       this.stream.on('error', errorListener);
       this.stream.on('end', endListener);
+      this.stream.on('timeout', timeoutListener);
       this.stream.read(0);
       this.stream.end();
       onCancel(() => {
@@ -84,6 +100,7 @@ export default class Parser {
       this.stream.removeListener('readable', tryRead);
       this.stream.removeListener('error', errorListener);
       this.stream.removeListener('end', endListener);
+      this.stream.removeListener('timeout', timeoutListener);
       // return r;
     });
   }
@@ -98,6 +115,7 @@ export default class Parser {
     let tryRead: () => void;
     let errorListener: (error: Error) => void;
     let endListener: () => void;
+    let timeoutListener: () => void;
 
     return new Bluebird<Buffer>((resolve, reject, onCancel) => {
       tryRead = () => {
@@ -116,9 +134,14 @@ export default class Parser {
         this.ended = true;
         return resolve(all);
       };
+      timeoutListener = () => {
+        this.stream.end()
+        return reject(new Parser.TimeoutError());
+      };
       this.stream.on('readable', tryRead);
       this.stream.on('error', errorListener);
       this.stream.on('end', endListener);
+      this.stream.on('timeout', timeoutListener);
       tryRead();
       onCancel(() => {
         // console.log('2-onCanceled');
@@ -127,6 +150,7 @@ export default class Parser {
       this.stream.removeListener('readable', tryRead);
       this.stream.removeListener('error', errorListener);
       this.stream.removeListener('end', endListener);
+      this.stream.removeListener('timeout', timeoutListener);
     });
   }
 
@@ -138,6 +162,7 @@ export default class Parser {
     let tryRead: () => void;
     let errorListener: (error: Error) => void;
     let endListener: () => void;
+    let timeoutListener: () => void;
     return new Bluebird<Buffer>((resolve, reject /*, onCancel*/) => {
       tryRead = () => {
         if (howMany) {
@@ -161,16 +186,22 @@ export default class Parser {
         this.ended = true;
         return reject(new Parser.PrematureEOFError(howMany));
       };
+      timeoutListener = () => {
+        this.stream.end()
+        return reject(new Parser.TimeoutError());
+      };
       errorListener = (err) => reject(err);
       this.stream.on('readable', tryRead);
       this.stream.on('error', errorListener);
       this.stream.on('end', endListener);
+      this.stream.on('timeout', timeoutListener);
       tryRead();
       // onCancel(() => {});
     }).finally(() => {
       this.stream.removeListener('readable', tryRead);
       this.stream.removeListener('error', errorListener);
       this.stream.removeListener('end', endListener);
+      this.stream.removeListener('timeout', timeoutListener);
     });
   }
 
@@ -178,6 +209,7 @@ export default class Parser {
     let tryRead: () => void;
     let errorListener: (error: Error) => void;
     let endListener: () => void;
+    let timeoutListener: () => void;
     return new Bluebird<void>((resolve, reject /*, onCancel*/) => {
       tryRead = () => {
         if (howMany) {
@@ -206,15 +238,21 @@ export default class Parser {
       errorListener = function (err) {
         return reject(err);
       };
+      timeoutListener = () => {
+        this.stream.end()
+        return reject(new Parser.TimeoutError());
+      };
       this.stream.on('readable', tryRead);
       this.stream.on('error', errorListener);
       this.stream.on('end', endListener);
+      this.stream.on('timeout', timeoutListener);
       tryRead();
       // onCancel(() => {});
     }).finally(() => {
       this.stream.removeListener('readable', tryRead);
       this.stream.removeListener('error', errorListener);
       this.stream.removeListener('end', endListener);
+      this.stream.removeListener('timeout', timeoutListener);
     });
   }
 

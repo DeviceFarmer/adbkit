@@ -24,13 +24,15 @@ export default class Client extends EventEmitter {
   public readonly host: string;
   public readonly port: number | string;
   public readonly bin: string;
+  public readonly timeout: number;
 
-  constructor({ host = '127.0.0.1', port = 5037, bin = 'adb' }: ClientOptions = { port: 5037 }) {
+  constructor({ host = '127.0.0.1', port = 5037, bin = 'adb', timeout = 0 }: ClientOptions = { port: 5037 }) {
     super();
     this.host = host;
     this.port = port;
     this.bin = bin;
-    this.options = { host, port, bin };
+    this.timeout = timeout;
+    this.options = { host, port, bin, timeout };
   }
 
   public createTcpUsbBridge(serial: string, options: SocketOptions): TcpUsbServer {
