@@ -13,7 +13,7 @@ const EXTRA_TYPES = {
   bool: 'z',
   int: 'i',
   long: 'l',
-  float: 'l',
+  float: 'f',
   uri: 'u',
   component: 'cn',
 };
