@@ -237,9 +237,14 @@ export default class Sync extends EventEmitter {
 
   private _readData(): PullTransfer {
     const transfer = new PullTransfer();
-    const readEnd = () => {
+    const readEnd = (afterEnd?) => {
       transfer.removeListener('cancel', cancelListener);
-      return transfer.end();
+      let retEnd = transfer.end();
+      if (afterEnd) {
+        return afterEnd();
+      } else {
+        return retEnd;
+      }
     };
     const readNext = () => {
       return this.parser.readAscii(4).then((reply) => {
@@ -256,9 +261,13 @@ export default class Sync extends EventEmitter {
               return readEnd();
             });
           case Protocol.FAIL:
-            return this._readError();
+            return readEnd(() => {
+              return this._readError();
+            });
           default:
-            return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+            return readEnd(() => {
+              return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+            });
         }
       });
     };
