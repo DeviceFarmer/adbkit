@@ -237,32 +237,43 @@ export default class Sync extends EventEmitter {
 
   private _readData(): PullTransfer {
     const transfer = new PullTransfer();
+    const readEnd = (afterEnd?) => {
+      transfer.removeListener('cancel', cancelListener);
+      let retEnd = transfer.end();
+      if (afterEnd) {
+        return afterEnd();
+      } else {
+        return retEnd;
+      }
+    };
     const readNext = () => {
       return this.parser.readAscii(4).then((reply) => {
         switch (reply) {
           case Protocol.DATA:
             return this.parser.readBytes(4).then((lengthData) => {
               const length = lengthData.readUInt32LE(0);
-              return this.parser.readByteFlow(length, transfer).then(readNext);
+              return this.parser.readByteFlow(length, transfer).then(() => {
+                readNext();
+              });
             });
           case Protocol.DONE:
             return this.parser.readBytes(4).then(function () {
-              return true;
+              return readEnd();
             });
           case Protocol.FAIL:
-            return this._readError();
+            return readEnd(() => {
+              return this._readError();
+            });
           default:
-            return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+            return readEnd(() => {
+              return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+            });
         }
       });
     };
     const reader = readNext()
       .catch(Bluebird.CancellationError, () => this.connection.end())
-      .catch((err: Error) => transfer.emit('error', err))
-      .finally(function () {
-        transfer.removeListener('cancel', cancelListener);
-        return transfer.end();
-      });
+      .catch((err: Error) => transfer.emit('error', err));
     const cancelListener = () => reader.cancel();
     transfer.on('cancel', cancelListener);
     return transfer;
