@@ -237,17 +237,23 @@ export default class Sync extends EventEmitter {
 
   private _readData(): PullTransfer {
     const transfer = new PullTransfer();
+    const readEnd = () => {
+      transfer.removeListener('cancel', cancelListener);
+      return transfer.end();
+    };
     const readNext = () => {
       return this.parser.readAscii(4).then((reply) => {
         switch (reply) {
           case Protocol.DATA:
             return this.parser.readBytes(4).then((lengthData) => {
               const length = lengthData.readUInt32LE(0);
-              return this.parser.readByteFlow(length, transfer).then(readNext);
+              return this.parser.readByteFlow(length, transfer).then(() => {
+                readNext();
+              });
             });
           case Protocol.DONE:
             return this.parser.readBytes(4).then(function () {
-              return true;
+              return readEnd();
             });
           case Protocol.FAIL:
             return this._readError();
@@ -258,11 +264,7 @@ export default class Sync extends EventEmitter {
     };
     const reader = readNext()
       .catch(Bluebird.CancellationError, () => this.connection.end())
-      .catch((err: Error) => transfer.emit('error', err))
-      .finally(function () {
-        transfer.removeListener('cancel', cancelListener);
-        return transfer.end();
-      });
+      .catch((err: Error) => transfer.emit('error', err));
     const cancelListener = () => reader.cancel();
     transfer.on('cancel', cancelListener);
     return transfer;
