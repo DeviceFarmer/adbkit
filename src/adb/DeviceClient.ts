@@ -331,7 +331,7 @@ export default class DeviceClient {
 
      * @param port The port number to connect to.
      * @param host Optional. The host to connect to. Allegedly this is supposed to establish a connection to the given host from the device, but we have not been able to get it to work at all. Skip the host and everything works great.
-     * 
+     *
      * @returns The TCP connection (i.e. [`net.Socket`][node-net]). Read and write as you please. Call `conn.end()` to end the connection.
      */
   public openTcp(port: number, host?: string): Bluebird<Duplex> {
@@ -453,8 +453,9 @@ export default class DeviceClient {
     return this.transport().then((transport) => {
       return new InstallCommand(transport)
         .execute(apk)
-        .then(() => this.shell(['rm', '-f', apk]))
-        .then((stream) => new Parser(stream).readAll())
+        .finally(() => {
+          return this.shell(['rm', '-f', apk]).then((stream) => new Parser(stream).readAll());
+        })
         .then(() => true);
     });
   }
@@ -525,7 +526,7 @@ export default class DeviceClient {
      * Retrieves information about the given path.
      *
      * @param path The path.
-     * 
+     *
      * @returns An [`fs.Stats`][node-fs-stats] instance. While the `stats.is*` methods are available, only the following properties are supported:
         -   **mode** The raw mode.
         -   **size** The file size.
