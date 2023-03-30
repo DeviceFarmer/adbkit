@@ -1,6 +1,6 @@
 {
   "name": "@devicefarmer/adbkit",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "description": "A Typescript client for the Android Debug Bridge.",
   "keywords": [
     "adb",
@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@devicefarmer/adbkit-logcat": "^2.1.2",
-    "@devicefarmer/adbkit-monkey": "~1.2.0",
+    "@devicefarmer/adbkit-monkey": "~1.2.1",
     "bluebird": "~3.7",
     "commander": "^9.1.0",
     "debug": "~4.3.1",
