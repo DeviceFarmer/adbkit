@@ -1,4 +1,4 @@
 export default interface Device {
   id: string;
-  type: 'emulator' | 'device' | 'offline';
+  type: 'emulator' | 'device' | 'offline' | 'unauthorized';
 }
