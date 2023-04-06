@@ -49,11 +49,10 @@ import Reverse from '../Reverse';
 import StartActivityOptions from '../StartActivityOptions';
 import StartServiceOptions from '../StartServiceOptions';
 import Bluebird from 'bluebird';
-import { Duplex } from 'stream';
+import { Duplex, Readable } from 'stream';
 import Stats from './sync/stats';
 import Entry from './sync/entry';
 import PushTransfer from './sync/pushtransfer';
-import { ReadStream } from 'fs';
 import PullTransfer from './sync/pulltransfer';
 import { Properties } from '../Properties';
 import { Features } from '../Features';
@@ -424,7 +423,7 @@ export default class DeviceClient {
    * @param apk When `String`, interpreted as a path to an APK file. When [`Stream`][node-stream], installs directly from the stream, which must be a valid APK.
    * @returns true
    */
-  public install(apk: string | ReadStream): Bluebird<boolean> {
+  public install(apk: string | Readable): Bluebird<boolean> {
     const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
     return this.push(apk, temp).then((transfer) => {
       let endListener: () => void;
@@ -564,7 +563,7 @@ export default class DeviceClient {
    * @param path See `sync.push()` for details.
    * @param mode See `sync.push()` for details.
    */
-  public push(contents: string | ReadStream, path: string, mode?: number): Bluebird<PushTransfer> {
+  public push(contents: string | Readable, path: string, mode?: number): Bluebird<PushTransfer> {
     return this.syncService().then((sync) => sync.push(contents, path, mode).on('end', () => sync.end()));
   }
 
