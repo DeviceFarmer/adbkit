@@ -430,7 +430,7 @@ export default class DeviceClient {
       let errorListener: (err: Error) => void;
       return new Bluebird<boolean>((resolve, reject) => {
         errorListener = (err: Error) => reject(err);
-        endListener = () => this.installRemote(temp).then((value: boolean) => resolve(value));
+        endListener = () => this.installRemote(temp).then((value: boolean) => resolve(value)).catch(reject);
         transfer.on('error', errorListener);
         transfer.on('end', endListener);
       }).finally(() => {
