@@ -3,7 +3,7 @@ import Protocol from '../../protocol';
 import Bluebird from 'bluebird';
 
 export default class ForwardCommand extends Command<boolean> {
-  execute(serial: string, local: string, remote: string): Bluebird<boolean> {
+  execute(serial: string, local: string, remote: string): Bluebird<number> {
     this._send(`host-serial:${serial}:forward:${local};${remote}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
@@ -11,7 +11,9 @@ export default class ForwardCommand extends Command<boolean> {
           return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
               case Protocol.OKAY:
-                return true;
+                return this.parser.readValue().then((buffer) => {
+                  return Number(buffer.toString());
+                }).catch(_ => 0);
               case Protocol.FAIL:
                 return this.parser.readError();
               default:
