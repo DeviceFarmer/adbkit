@@ -71,7 +71,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-progress": "0.0.1",
     "mocha": "~10.2.0",
-    "prettier": "^2.2.1",
+    "prettier": "^3.0.2",
     "rimraf": "^3.0.2",
     "sinon": "~15.0.1",
     "sinon-chai": "~3.7.0",
