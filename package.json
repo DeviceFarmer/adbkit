@@ -58,7 +58,7 @@
   "devDependencies": {
     "@types/debug": "^4.1.5",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.8.7",
     "@types/sinon-chai": "^3.2.5",
     "@types/bluebird": "^3.5.33",
     "@types/node-forge": "^1.0.1",
