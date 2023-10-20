@@ -2,6 +2,11 @@ import Protocol from '../../protocol';
 import Command from '../../command';
 import Bluebird from 'bluebird';
 
+class UninstallError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
 export default class UninstallCommand extends Command<boolean> {
   execute(pkg: string): Bluebird<boolean> {
     this._send(`shell:pm uninstall ${pkg}`);
@@ -13,6 +18,9 @@ export default class UninstallCommand extends Command<boolean> {
             .then(function (match) {
               if (match[1] === 'Success') {
                 return true;
+              } else if (match[1].includes('DELETE_FAILED_DEVICE_POLICY_MANAGER')) {
+                const reason = match[1];
+                throw new UninstallError(`${pkg} could not be uninstalled [${reason}]`);
               } else {
                 // Either way, the package was uninstalled or doesn't exist,
                 // which is good enough for us.
