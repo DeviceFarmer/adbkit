@@ -161,7 +161,7 @@ export default class DeviceClient {
    *   `jdwp:<process pid>`
    * @returns true
    */
-  public forward(local: string, remote: string): Bluebird<boolean> {
+  public forward(local: string, remote: string): Bluebird<number> {
     return this.connection().then((conn) => new ForwardCommand(conn).execute(this.serial, local, remote));
   }
 
