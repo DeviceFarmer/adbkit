@@ -279,7 +279,7 @@ export default class Sync extends EventEmitter {
             return this.parser.readBytes(4).then((lengthData) => {
               const length = lengthData.readUInt32LE(0);
               return this.parser.readByteFlow(length, transfer).then(() => {
-                readNext();
+                return readNext()
               });
             });
           case Protocol.DONE:
