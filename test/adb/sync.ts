@@ -30,8 +30,8 @@ describe('Sync', function () {
     let client!: Client;
     let deviceList: Device[] | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const forEachSyncDevice = function (iterator: (sync: Sync) => any, done): Promise<Sync> {
-        assert(deviceList.length > 0, 'At least one connected Android device is required');
+    const forEachSyncDevice = function (iterator: (sync: Sync) => any): Promise<void> {
+        assert(deviceList && deviceList.length > 0, 'At least one connected Android device is required');
         const promises = deviceList.map(function (device) {
             return client
                 .getDevice(device.id)
@@ -43,9 +43,7 @@ describe('Sync', function () {
                     });
                 });
         });
-        return Promise.all(promises)
-            .then(() => done())
-            .catch(done);
+        return Promise.all(promises).then()
     };
     before(function () {
         if (process.env.RUN_DEVICE_TESTS) {
@@ -99,7 +97,7 @@ describe('Sync', function () {
             expect(transfer).to.be.an.instanceof(PushTransfer);
             return transfer.cancel();
         });
-        return dt('should be able to push >65536 byte chunks without error', function (done) {
+        return dt('should be able to push >65536 byte chunks without error', function () {
             return forEachSyncDevice(function (sync) {
                 return new Promise(function (resolve, reject) {
                     const stream = new Stream.PassThrough();
@@ -110,11 +108,11 @@ describe('Sync', function () {
                     stream.write(content);
                     return stream.end();
                 });
-            }, done);
+            });
         });
     });
     describe('pull(path)', function () {
-        dt('should retrieve the same content pushStream() pushed', function (done) {
+        dt('should retrieve the same content pushStream() pushed', function () {
             return forEachSyncDevice(function (sync) {
                 return new Promise(function (resolve, reject) {
                     const stream = new Stream.PassThrough();
@@ -138,25 +136,25 @@ describe('Sync', function () {
                     stream.write(content);
                     return stream.end();
                 });
-            }, done);
+            });
         });
-        dt('should emit error for non-existing files', function (done) {
+        dt('should emit error for non-existing files', function () {
             return forEachSyncDevice(function (sync) {
                 return new Promise(function (resolve) {
                     const transfer = sync.pull(SURELY_NONEXISTING_PATH);
                     return transfer.on('error', resolve);
                 });
-            }, done);
+            });
         });
-        dt('should return a PullTransfer instance', function (done) {
+        dt('should return a PullTransfer instance', function () {
             return forEachSyncDevice(function (sync) {
                 const rval = sync.pull(SURELY_EXISTING_FILE);
                 expect(rval).to.be.an.instanceof(PullTransfer);
                 return rval.cancel();
-            }, done);
+            });
         });
         return describe('Stream', function () {
-            return dt("should emit 'end' when pull is done", function (done) {
+            return dt("should emit 'end' when pull is done", function () {
                 return forEachSyncDevice(function (sync) {
                     return new Promise(function (resolve, reject) {
                         const transfer = sync.pull(SURELY_EXISTING_FILE);
@@ -164,19 +162,19 @@ describe('Sync', function () {
                         transfer.on('end', resolve);
                         return transfer.resume();
                     });
-                }, done);
+                });
             });
         });
     });
     return describe('stat(path)', function () {
-        dt('should return a Promise', function (done) {
+        dt('should return a Promise', function () {
             return forEachSyncDevice(function (sync) {
                 const rval = sync.stat(SURELY_EXISTING_PATH);
                 expect(rval).to.be.an.instanceof(Promise);
                 return rval;
-            }, done);
+            });
         });
-        dt('should call with an ENOENT error if the path does not exist', function (done) {
+        dt('should call with an ENOENT error if the path does not exist', function () {
             return forEachSyncDevice(function (sync) {
                 return sync
                     .stat(SURELY_NONEXISTING_PATH)
@@ -189,21 +187,21 @@ describe('Sync', function () {
                         expect(err.errno).to.equal(34);
                         return expect(err.path).to.equal(SURELY_NONEXISTING_PATH);
                     });
-            }, done);
+            });
         });
-        dt('should call with an fs.Stats instance for an existing path', function (done) {
+        dt('should call with an fs.Stats instance for an existing path', function () {
             return forEachSyncDevice(function (sync) {
                 return sync.stat(SURELY_EXISTING_PATH).then(function (stats) {
                     return expect(stats).to.be.an.instanceof(Fs.Stats);
                 });
-            }, done);
+            });
         });
         describe('Stats', function () {
             it('should implement Fs.Stats', function (done) {
                 expect(new Stats(0, BigInt(0), 0)).to.be.an.instanceof(Fs.Stats);
                 done();
             });
-            dt('should set the `.mode` property for isFile() etc', function (done) {
+            dt('should set the `.mode` property for isFile() etc', function () {
                 return forEachSyncDevice(function (sync) {
                     return sync.stat(SURELY_EXISTING_FILE).then(function (stats) {
                         expect(stats).to.be.an.instanceof(Fs.Stats);
@@ -211,24 +209,24 @@ describe('Sync', function () {
                         expect(stats.isFile()).to.be.true;
                         return expect(stats.isDirectory()).to.be.false;
                     });
-                }, done);
+                });
             });
-            dt('should set the `.size` property', function (done) {
+            dt('should set the `.size` property', function () {
                 return forEachSyncDevice(function (sync) {
                     return sync.stat(SURELY_EXISTING_FILE).then(function (stats) {
                         expect(stats).to.be.an.instanceof(Fs.Stats);
                         expect(stats.isFile()).to.be.true;
                         return expect(stats.size).to.be.above(0);
                     });
-                }, done);
+                });
             });
-            return dt('should set the `.mtime` property', function (done) {
+            return dt('should set the `.mtime` property', function () {
                 return forEachSyncDevice(function (sync) {
                     return sync.stat(SURELY_EXISTING_FILE).then(function (stats) {
                         expect(stats).to.be.an.instanceof(Fs.Stats);
                         return expect(stats.mtime).to.be.an.instanceof(Date);
                     });
-                }, done);
+                });
             });
         });
         return describe('Entry', function () {
@@ -236,7 +234,7 @@ describe('Sync', function () {
                 expect(new Entry('foo', 0, 0, 0)).to.be.an.instanceof(Stats);
                 done();
             });
-            dt('should set the `.name` property', function (done) {
+            dt('should set the `.name` property', function () {
                 return forEachSyncDevice(function (sync) {
                     return sync.readdir(SURELY_EXISTING_PATH).then(function (files) {
                         expect(files).to.be.an('Array');
@@ -245,9 +243,9 @@ describe('Sync', function () {
                             return expect(file).to.be.an.instanceof(Entry);
                         });
                     });
-                }, done);
+                });
             });
-            return dt('should set the Stats properties', function (done) {
+            return dt('should set the Stats properties', function () {
                 return forEachSyncDevice(function (sync) {
                     return sync.readdir(SURELY_EXISTING_PATH).then(function (files) {
                         expect(files).to.be.an('Array');
@@ -257,7 +255,7 @@ describe('Sync', function () {
                             return expect(file.mtime).to.not.be.null;
                         });
                     });
-                }, done);
+                });
             });
         });
     });
