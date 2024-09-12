@@ -48,10 +48,12 @@ describe('Sync', function () {
             .catch(done);
     };
     before(function () {
-        client = Adb.createClient();
-        return client.listDevices().then(function (devices) {
-            deviceList = devices;
-        });
+        if (process.env.RUN_DEVICE_TESTS) {
+            client = Adb.createClient();
+            return client.listDevices().then(function (devices) {
+                deviceList = devices;
+            });
+        }
     });
     describe('end()', function () {
         return it('should end the sync connection', function () {
