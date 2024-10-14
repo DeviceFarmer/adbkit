@@ -951,6 +951,22 @@ Waits until ADB can see the device. Note that you must know the serial in advanc
 -   Returns: `Promise`
 -   Resolves with: `id` (see callback)
 
+#### device.attach():
+Reattaches ADB to the device's ADB USB interface. This re-enables communication between ADB and device, reversing `client.detach()`.
+
+-   **callback(err)** Optional. Use this or the returned `Promise`.
+    -   **err** `null` if the device device was reattached successfully, `Error` otherwise (can occur if the device is not detached).
+-   Returns: `Promise`
+-   Resolves with: `true`
+
+#### device.detach():
+Detaches ADB's USB interface from ADB. This releases the device from ADB control, allowing other processes to use it.
+
+-   **callback(err)** Optional. Use this or the returned `Promise`.
+    -   **err** `null` if the device device was detached successfully, `Error` otherwise (can occur if the device is not attached).
+-   Returns: `Promise`
+-   Resolves with: `true`
+
 ### Sync
 
 #### sync.end()
