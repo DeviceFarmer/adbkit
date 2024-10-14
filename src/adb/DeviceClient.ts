@@ -36,6 +36,8 @@ import {
   WaitBootCompleteCommand,
 } from './command/host-transport';
 import {
+  AttachCommand,
+  DetachCommand,
   ForwardCommand,
   GetDevicePathCommand,
   GetSerialNoCommand,
@@ -602,5 +604,23 @@ export default class DeviceClient {
    */
   public waitForDevice(): Bluebird<string> {
     return this.connection().then((conn) => new WaitForDeviceCommand(conn).execute(this.serial));
+  }
+
+  /**
+   * Reattaches ADB to the device's ADB USB interface. This re-enables communication between ADB and device, reversing `client.detach()`.
+   *
+   * @returns true
+   */
+  public attach(): Bluebird<boolean> {
+    return this.connection().then((conn) => new AttachCommand(conn).execute(this.serial));
+  }
+
+  /**
+   * Detaches ADB's USB interface from ADB. This releases the device from ADB control, allowing other processes to use it.
+   *
+   * @returns true
+   */
+  public detach(): Bluebird<boolean> {
+    return this.connection().then((conn) => new DetachCommand(conn).execute(this.serial));
   }
 }
