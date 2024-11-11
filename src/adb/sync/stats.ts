@@ -43,6 +43,6 @@ export default class Stats extends Fs.Stats {
     this.mode = Number(mode);
     this.size = Number(sizeBig);
     this.sizeBig = sizeBig;
-    this.mtime = new Date(mtime * 1000);
+    this.mtimeMs = mtime * 1000;
   }
 }
