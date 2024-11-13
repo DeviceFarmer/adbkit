@@ -7,7 +7,7 @@ blocks:
         - name: NPM publish
           commands:
             - checkout
-            - sem-version node 12
+            - sem-version node 20
             - cache restore
             - npm install
             - npm publish --access public
@@ -15,5 +15,5 @@ blocks:
         - name: npmjs
 agent:
   machine:
-    type: e1-standard-2
-    os_image: ubuntu1804
+    type: e2-standard-2
+    os_image: ubuntu2204
