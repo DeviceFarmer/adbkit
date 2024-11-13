@@ -15,5 +15,5 @@ blocks:
         - name: npmjs
 agent:
   machine:
-    type: e2-standard-2
-    os_image: ubuntu2204
+    type: e1-standard-2
+    os_image: ubuntu2004
