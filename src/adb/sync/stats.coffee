@@ -21,6 +21,6 @@ class Stats extends Fs.Stats
   @S_IRGRP  = 0o0040   # group has read permission
 
   constructor: (@mode, @size, mtime) ->
-    @mtime = new Date mtime * 1000
+    @mtimeMs = new Date mtime * 1000
 
 module.exports = Stats

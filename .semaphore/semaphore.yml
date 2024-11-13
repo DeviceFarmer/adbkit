@@ -2,8 +2,8 @@ version: v1.0
 name: NPM Test
 agent:
   machine:
-    type: e1-standard-2
-    os_image: ubuntu1804
+    type: e2-standard-2
+    os_image: ubuntu2204
 blocks:
   - name: Test
     task:
@@ -14,7 +14,7 @@ blocks:
             - 'wget https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O ~/platform-tools-latest-linux.zip'
             - unzip ~/platform-tools-latest-linux.zip -d ~
             - 'export PATH=$PATH:~/platform-tools'
-            - sem-version node 12
+            - sem-version node 20
             - cache restore
             - npm install
             - cache store
