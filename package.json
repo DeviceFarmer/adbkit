@@ -1,6 +1,6 @@
 {
   "name": "@devicefarmer/adbkit",
-  "version": "3.3.6",
+  "version": "3.3.7",
   "description": "A Typescript client for the Android Debug Bridge.",
   "keywords": [
     "adb",
