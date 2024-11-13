@@ -2,7 +2,7 @@ version: v1.0
 name: NPM Test
 agent:
   machine:
-    type: e1-standard-2
+    type: e2-standard-2
     os_image: ubuntu2204
 blocks:
   - name: Test
