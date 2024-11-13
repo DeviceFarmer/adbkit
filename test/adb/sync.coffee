@@ -46,12 +46,13 @@ describe 'Sync', ->
         done()
       .catch done
 
-  before (done) ->
-    client = Adb.createClient()
-    client.listDevices()
-      .then (devices) ->
-        deviceList = devices
-        done()
+  if process.env.RUN_DEVICE_TESTS
+    before (done) ->
+      client = Adb.createClient()
+      client.listDevices()
+        .then (devices) ->
+          deviceList = devices
+          done()
 
   describe 'end()', ->
 
