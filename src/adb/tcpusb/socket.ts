@@ -11,6 +11,7 @@ import * as Net from 'net';
 import ServiceMap from './servicemap';
 import Service from './service';
 import SocketOptions from '../../SocketOptions';
+import ExtendedPublicKey from '../../ExtendedPublicKey';
 
 const debug = d('adb:tcpusb:socket');
 const UINT32_MAX = 0xffffffff;
@@ -159,6 +160,14 @@ export default class Socket extends EventEmitter {
         if (!this.signature) {
           this.signature = packet.data;
         }
+
+        const digest = this.token.toString('binary');
+        const sig = this.signature.toString('binary');
+        for (const key of this.options.knownPublicKeys ?? []) {
+          // If signature matches one of the known public keys, we can safely accept the connection
+          if (key.verify(digest, sig)) return this._acceptConnection();
+        }
+
         debug('O:A_AUTH');
         const b = this.write(Packet.assemble(Packet.A_AUTH, AUTH_TOKEN, 0, this.token));
         return Bluebird.resolve(b);
@@ -189,16 +198,23 @@ export default class Socket extends EventEmitter {
             });
           })
           .then(() => {
-            return this._deviceId();
-          })
-          .then((id) => {
-            this.authorized = true;
-            debug('O:A_CNXN');
-            return this.write(Packet.assemble(Packet.A_CNXN, Packet.swap32(this.version), this.maxPayload, id));
+            return this._acceptConnection();
           });
       default:
         throw new Error(`Unknown authentication method ${packet.arg0}`);
     }
+  }
+
+  /**
+   * Mark the incoming connection as authorized
+   * and send the connection packet
+   */
+  private _acceptConnection(): Bluebird<boolean> {
+    return this._deviceId().then((id) => {
+      this.authorized = true;
+      debug('O:A_CNXN');
+      return this.write(Packet.assemble(Packet.A_CNXN, Packet.swap32(this.version), this.maxPayload, id));
+    });
   }
 
   private _handleOpenPacket(packet: Packet): Bluebird<boolean | Service> {
