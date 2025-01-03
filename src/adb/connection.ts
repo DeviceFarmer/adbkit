@@ -78,8 +78,9 @@ export default class Connection extends EventEmitter {
     return this;
   }
 
-  public write(data: Buffer, callback?: (err?: Error) => void): boolean {
-    return this.socket.write(dump(data), callback);
+  public write(data: Buffer, callback?: (err?: Error) => void): this {
+    this.socket.write(dump(data), callback);
+    return this;
   }
 
   public startServer(): Bluebird<ChildProcess> {
