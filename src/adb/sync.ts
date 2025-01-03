@@ -191,7 +191,7 @@ export default class Sync extends EventEmitter {
         if (!this.connection.socket.writableNeedDrain && (chunk = stream.read(DATA_MAX_LENGTH) || stream.read())) {
           this._sendCommandWithLength(Protocol.DATA, chunk.length);
           transfer.push(chunk.length);
-          if (this.connection.write(chunk, track)) {
+          if (!this.connection.write(chunk, track).socket.writableNeedDrain) {
             return writeNext();
           } else {
             return waitForDrain().then(writeNext);
