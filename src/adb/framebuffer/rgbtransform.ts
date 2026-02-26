@@ -3,14 +3,17 @@ import { Stream, TransformCallback, TransformOptions } from 'stream';
 import FramebufferMeta from '../../FramebufferMeta';
 
 class RgbTransform extends Stream.Transform {
-  private _buffer = Buffer.from('');
+  private _buffer: Buffer = Buffer.from('');
   private readonly _r_pos: number;
   private readonly _g_pos: number;
   private readonly _b_pos: number;
   private readonly _a_pos: number;
   private readonly _pixel_bytes: number;
 
-  constructor(private meta: FramebufferMeta, options?: TransformOptions) {
+  constructor(
+    private meta: FramebufferMeta,
+    options?: TransformOptions,
+  ) {
     super(options);
     Assert.ok(
       this.meta.bpp === 24 || this.meta.bpp === 32,
