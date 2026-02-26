@@ -1,6 +1,6 @@
 import * as Net from 'net';
 import { EventEmitter } from 'events';
-import { ChildProcess, execFile, ExecFileOptions } from 'child_process';
+import { ChildProcess, execFile } from 'child_process';
 import Parser from './parser';
 import dump from './dump';
 import d from 'debug';
@@ -95,13 +95,14 @@ export default class Connection extends EventEmitter {
 
   private _exec(args: string[], options): Bluebird<ChildProcess> {
     debug(`CLI: ${this.options.bin} ${args.join(' ')}`);
-    return Bluebird.promisify<
-      ChildProcess,
-      string,
-      ReadonlyArray<string>,
-      ({ encoding?: string | null } & ExecFileOptions) | undefined | null
-      // eslint-disable-next-line indent
-    >(execFile)(this.options.bin as string, args, options);
+    return new Bluebird<ChildProcess>((resolve, reject) => {
+      const proc = execFile(this.options.bin as string, args, options, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(proc);
+      });
+    });
   }
 
   // _handleError(err) {}
