@@ -257,9 +257,17 @@ export default class Parser {
   }
 
   public readError(): Bluebird<never> {
-    return this.readValue().then(function (value) {
-      throw new Parser.FailError(value.toString());
-    });
+    return this.readValue()
+      .then(function (value) {
+        throw new Parser.FailError(value.toString());
+      })
+      .finally(() => {
+        // A FAIL ends the smart-socket conversation, but not all servers
+        // close the connection afterwards (e.g. adb 1.0.39 keeps it open
+        // after a failed host:transport), so we must destroy it ourselves
+        // to avoid leaking the socket.
+        this.stream.destroy();
+      });
   }
 
   public readValue(): Bluebird<Buffer> {
@@ -309,6 +317,9 @@ export default class Parser {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public unexpected(data: string, expected: string): Bluebird<any> {
+    // The protocol state is unknown after unexpected data, so the
+    // connection can never be safely reused; destroy it to avoid leaks.
+    this.stream.destroy();
     return Bluebird.reject(new Parser.UnexpectedDataError(data, expected));
   }
 }
