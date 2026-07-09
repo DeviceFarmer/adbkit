@@ -62,7 +62,7 @@
     "@types/sinon-chai": "^3.2.5",
     "@types/bluebird": "^3.5.33",
     "@types/node-forge": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^5.48.0",
     "bench": "~0.3.6",
     "chai": "~4.3.0",
