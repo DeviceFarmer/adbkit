@@ -228,7 +228,7 @@ export default class DeviceClient {
   }
 
   /**
-   * Puts the device into root mode which may be needed by certain shell commands. A remount is generally required after a successful root call. **Note that this will only work if your device supports this feature. Production devices almost never do.**
+   * Reboots the device. Similar to adb reboot. Note that the method resolves when ADB reports that the device has been rebooted (i.e. the reboot command was successful), not when the device becomes available again.
    *
    * @return true
    */
