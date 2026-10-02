@@ -1,7 +1,10 @@
 import Service from './service';
+import ReverseStream from './reversestream';
+
+type Stream = Service | ReverseStream;
 
 export default class ServiceMap {
-  private remotes: Record<number, Service> = Object.create(null);
+  private remotes: Record<number, Stream> = Object.create(null);
   public count = 0;
 
   public end(): void {
@@ -14,7 +17,7 @@ export default class ServiceMap {
     this.count = 0;
   }
 
-  public insert(remoteId: number, socket: Service): Service {
+  public insert(remoteId: number, socket: Stream): Stream {
     if (this.remotes[remoteId]) {
       throw new Error(`Remote ID ${remoteId} is already being used`);
     } else {
@@ -23,12 +26,12 @@ export default class ServiceMap {
     }
   }
 
-  public get(remoteId: number): Service | null {
+  public get(remoteId: number): Stream | null {
     return this.remotes[remoteId] || null;
   }
 
-  public remove(remoteId: number): Service | null {
-    let remote: Service;
+  public remove(remoteId: number): Stream | null {
+    let remote: Stream;
     if ((remote = this.remotes[remoteId])) {
       delete this.remotes[remoteId];
       this.count -= 1;

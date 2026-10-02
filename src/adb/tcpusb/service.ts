@@ -99,7 +99,10 @@ export default class Service extends EventEmitter {
         if (this.ended) {
           throw new LateTransportError();
         }
-        this.transport.write(Protocol.encodeData(packet.data.slice(0, -1))); // Discard null byte at end
+        return this.socket.rewriteReverseService(packet.data.slice(0, -1).toString()); // Discard null byte at end
+      })
+      .then((name) => {
+        this.transport.write(Protocol.encodeData(name));
         return this.transport.parser.readAscii(4).then((reply) => {
           switch (reply) {
             case Protocol.OKAY:
