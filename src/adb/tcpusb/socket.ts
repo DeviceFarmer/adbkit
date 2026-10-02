@@ -10,6 +10,7 @@ import Client from '../client';
 import * as Net from 'net';
 import ServiceMap from './servicemap';
 import Service from './service';
+import ReverseStream from './reversestream';
 import SocketOptions from '../../SocketOptions';
 import ExtendedPublicKey from '../../ExtendedPublicKey';
 
@@ -20,6 +21,7 @@ const AUTH_TOKEN = 1;
 const AUTH_SIGNATURE = 2;
 const AUTH_RSAPUBLICKEY = 3;
 const TOKEN_LENGTH = 20;
+const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '::1'];
 
 class AuthError extends Error {
   constructor(message: string) {
@@ -49,6 +51,7 @@ export default class Socket extends EventEmitter {
   private syncToken = new RollingCounter(UINT32_MAX);
   private remoteId = new RollingCounter(UINT32_MAX);
   private services = new ServiceMap();
+  private reverses = new Map<string, Net.Server>();
   private remoteAddress?: string;
   private token?: Buffer;
   private signature?: Buffer;
@@ -84,6 +87,10 @@ export default class Socket extends EventEmitter {
     }
     // End services first so that they can send a final payload before FIN.
     this.services.end();
+    for (const server of this.reverses.values()) {
+      server.close();
+    }
+    this.reverses.clear();
     this.socket.end();
     this.ended = true;
     this.emit('end');
@@ -256,6 +263,68 @@ export default class Socket extends EventEmitter {
       debug('Received a packet to a service that may have been closed already');
       return Promise.resolve(false);
     }
+  }
+
+  /**
+   * The device's adbd connects `adb reverse` streams to its adb server, not to our client. For
+   * `reverse:forward:[norebind:]<remote>;<local>`, listen locally and return the service with <local> replaced
+   * by that listener, whose connections are relayed to the client. Other services are returned unchanged.
+   */
+  public rewriteReverseService(name: string): Bluebird<string> {
+    // The adb server connects to the listener, so it only works when that server shares our host.
+    if (LOOPBACK_HOSTS.indexOf(this.client.host) === -1) {
+      return Bluebird.resolve(name);
+    }
+    const forward = /^reverse:forward:(norebind:)?([^;]+);(.+)$/.exec(name);
+    if (forward) {
+      const [, norebind = '', remote, local] = forward;
+      return this._listenReverse(remote, local).then((port) => `reverse:forward:${norebind}${remote};tcp:${port}`);
+    }
+    const kill = /^reverse:killforward:(.+)$/.exec(name);
+    if (kill) {
+      this._closeReverse(kill[1]);
+    } else if (name === 'reverse:killforward-all') {
+      for (const remote of [...this.reverses.keys()]) {
+        this._closeReverse(remote);
+      }
+    }
+    return Bluebird.resolve(name);
+  }
+
+  public removeService(localId: number): void {
+    this.services.remove(localId);
+  }
+
+  private _listenReverse(remote: string, local: string): Bluebird<number> {
+    this._closeReverse(remote);
+    return new Bluebird<number>((resolve, reject) => {
+      const server = Net.createServer((conn) => this._openReverse(local, conn));
+      server.on('error', reject);
+      server.listen(0, '127.0.0.1', () => {
+        const port = (server.address() as Net.AddressInfo).port;
+        this.reverses.set(remote, server);
+        debug(`Reverse ${remote} => client ${local} via 127.0.0.1:${port}`);
+        resolve(port);
+      });
+    });
+  }
+
+  private _closeReverse(remote: string): void {
+    const server = this.reverses.get(remote);
+    if (server) {
+      server.close();
+      this.reverses.delete(remote);
+    }
+  }
+
+  private _openReverse(local: string, conn: Net.Socket): void {
+    if (this.ended) {
+      conn.destroy();
+      return;
+    }
+    const stream = new ReverseStream(this, this.remoteId.next(), conn);
+    this.services.insert(stream.localId, stream);
+    stream.open(local);
   }
 
   public write(chunk: Buffer | string): boolean {
