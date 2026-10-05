@@ -108,3 +108,108 @@ describe('TcpUsb Socket reverse', function () {
     socket.end();
   });
 });
+
+describe('TcpUsb Socket delayed_ack', function () {
+  async function relay(delayed: boolean) {
+    const { socket, next, receive } = setup();
+    (socket as unknown as { delayedAck: boolean }).delayedAck = delayed;
+    const name = await socket.rewriteReverseService('reverse:forward:tcp:9123;tcp:8000');
+    const conn = Net.connect(+name.split('tcp:').pop(), '127.0.0.1');
+    const open = await next(Packet.A_OPEN);
+    return { socket, next, receive, conn, open };
+  }
+
+  it('should enable delayed_ack only when the client lists it', async function () {
+    for (const [banner, expected] of [
+      ['host::features=shell_v2,cmd,delayed_ack\x00', true],
+      ['host::features=shell_v2,cmd\x00', false],
+      ['host::\x00', false],
+    ] as Array<[string, boolean]>) {
+      const { socket, next, receive } = setup();
+      receive(Packet.A_CNXN, 0x01000001, 1024 * 1024, Buffer.from(banner));
+      await next(Packet.A_AUTH);
+      expect(socket.delayedAck, banner).to.equal(expected);
+      socket.end();
+    }
+  });
+
+  it('should keep several packets in flight with delayed_ack', async function () {
+    const { socket, next, receive, conn, open } = await relay(true);
+    expect(open.arg1).to.equal(32 * 1024 * 1024);
+    receive(Packet.A_OKAY, 7, open.arg0, Buffer.from([0, 0, 0, 2])); // 32 MiB credit
+    conn.write(Buffer.alloc(3 * socket.maxPayload));
+    for (let i = 0; i < 3; i++) {
+      expect((await next(Packet.A_WRTE)).data.length).to.equal(socket.maxPayload);
+    }
+
+    receive(Packet.A_WRTE, 7, open.arg0, Buffer.from('pong'));
+    const ack = await next(Packet.A_OKAY);
+    expect(ack.data.readUInt32LE(0)).to.equal(4);
+    conn.destroy();
+    socket.end();
+  });
+
+  it('should stop at the credit the client gave', async function () {
+    const { socket, next, receive, conn, open } = await relay(true);
+    const credit = Buffer.alloc(4);
+    credit.writeInt32LE(socket.maxPayload, 0);
+    receive(Packet.A_OKAY, 7, open.arg0, credit);
+    conn.write(Buffer.alloc(2 * socket.maxPayload));
+    await next(Packet.A_WRTE);
+    const more = next(Packet.A_WRTE);
+    const early = await Promise.race([more.then(() => true), new Promise((r) => setTimeout(() => r(false), 100))]);
+    expect(early).to.equal(false);
+    receive(Packet.A_OKAY, 7, open.arg0, credit);
+    expect((await more).data.length).to.equal(socket.maxPayload);
+    conn.destroy();
+    socket.end();
+  });
+
+  it('should keep one packet in flight without delayed_ack', async function () {
+    const { socket, next, receive, conn, open } = await relay(false);
+    expect(open.arg1).to.equal(0);
+    receive(Packet.A_OKAY, 7, open.arg0);
+    conn.write(Buffer.alloc(2 * socket.maxPayload));
+    await next(Packet.A_WRTE);
+    const more = next(Packet.A_WRTE);
+    const early = await Promise.race([more.then(() => true), new Promise((r) => setTimeout(() => r(false), 100))]);
+    expect(early).to.equal(false);
+    receive(Packet.A_OKAY, 7, open.arg0);
+    await more;
+    receive(Packet.A_WRTE, 7, open.arg0, Buffer.from('pong'));
+    expect((await next(Packet.A_OKAY)).data.length).to.equal(0);
+    conn.destroy();
+    socket.end();
+  });
+});
+
+describe('TcpUsb Socket banner', function () {
+  async function banner(delayed: boolean): Promise<string> {
+    const { socket } = setup();
+    const internals = socket as unknown as {
+      delayedAck: boolean;
+      client: unknown;
+      _deviceId: () => Promise<Buffer>;
+    };
+    internals.delayedAck = delayed;
+    internals.client = {
+      getDevice: () => ({
+        getProperties: () =>
+          Promise.resolve({ 'ro.product.name': 'n', 'ro.product.model': 'm', 'ro.product.device': 'd' }),
+      }),
+    };
+    const id = (await internals._deviceId()).toString();
+    socket.end();
+    return id;
+  }
+
+  it('should list delayed_ack as its own ;-terminated property', async function () {
+    expect(await banner(true)).to.equal(
+      'device::ro.product.name=n;ro.product.model=m;ro.product.device=d;features=delayed_ack;\x00',
+    );
+  });
+
+  it('should list no features without delayed_ack', async function () {
+    expect(await banner(false)).to.equal('device::ro.product.name=n;ro.product.model=m;ro.product.device=d;\x00');
+  });
+});
