@@ -16,7 +16,8 @@ import ExtendedPublicKey from '../../ExtendedPublicKey';
 
 const debug = d('adb:tcpusb:socket');
 const UINT32_MAX = 0xffffffff;
-const UINT16_MAX = 0xffff;
+// adb's own MAX_PAYLOAD. A stream has one packet in flight, so this bounds throughput per round trip.
+const MAX_PAYLOAD = 1024 * 1024;
 const AUTH_TOKEN = 1;
 const AUTH_SIGNATURE = 2;
 const AUTH_RSAPUBLICKEY = 3;
@@ -149,7 +150,7 @@ export default class Socket extends EventEmitter {
   private _handleConnectionPacket(packet): Bluebird<boolean> {
     debug('I:A_CNXN', packet);
     this.version = Packet.swap32(packet.arg0);
-    this.maxPayload = Math.min(UINT16_MAX, packet.arg1);
+    this.maxPayload = Math.min(MAX_PAYLOAD, packet.arg1);
     return this._createToken().then((token) => {
       this.token = token;
       debug(`Created challenge '${this.token.toString('base64')}'`);
