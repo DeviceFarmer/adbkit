@@ -163,7 +163,12 @@ export default class Service extends EventEmitter {
       return this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, null));
     }
     // Credit the client only once the bytes are written, so a slow device pushes back.
-    this.transport.write(data, () => {
+    this.transport.write(data, (err?: Error | null) => {
+      if (err) {
+        debug('transport write failed', err);
+        this.end();
+        return;
+      }
       if (!this.ended) {
         debug('O:A_OKAY');
         this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, this.window.ack(data.length)));

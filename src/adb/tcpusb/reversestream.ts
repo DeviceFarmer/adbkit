@@ -86,7 +86,12 @@ export default class ReverseStream {
       return;
     }
     // Credit the client only once the bytes are written, so a slow reader pushes back.
-    this.conn.write(data, () => {
+    this.conn.write(data, (err?: Error | null) => {
+      if (err) {
+        debug('conn write failed', err);
+        this.end();
+        return;
+      }
       if (!this.ended) ack();
     });
   }
