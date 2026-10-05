@@ -58,6 +58,8 @@ export default class Socket extends EventEmitter {
   private signature?: Buffer;
   public version = 1;
   public maxPayload = 4096;
+  /** adb's `delayed_ack`: on when the client's banner lists it; we list it back. */
+  public delayedAck = false;
 
   constructor(
     private readonly client: Client,
@@ -151,6 +153,8 @@ export default class Socket extends EventEmitter {
     debug('I:A_CNXN', packet);
     this.version = Packet.swap32(packet.arg0);
     this.maxPayload = Math.min(MAX_PAYLOAD, packet.arg1);
+    const features = /features=([^;\x00]*)/.exec(packet.data ? packet.data.toString() : '');
+    this.delayedAck = !!features && features[1].split(',').indexOf('delayed_ack') !== -1;
     return this._createToken().then((token) => {
       this.token = token;
       debug(`Created challenge '${this.token.toString('base64')}'`);
@@ -348,7 +352,7 @@ export default class Socket extends EventEmitter {
     return this.client
       .getDevice(this.serial)
       .getProperties()
-      .then(function (properties) {
+      .then((properties) => {
         const id = (function () {
           const ref = ['ro.product.name', 'ro.product.model', 'ro.product.device'];
           const results = [];
@@ -358,7 +362,9 @@ export default class Socket extends EventEmitter {
           }
           return results;
         })().join('');
-        return Buffer.from(`device::${id}\x00`);
+        // ;-terminated like the properties: the client would read the NUL as part of the last value.
+        const features = this.delayedAck ? 'features=delayed_ack;' : '';
+        return Buffer.from(`device::${id}${features}\x00`);
       });
   }
 }

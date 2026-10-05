@@ -7,6 +7,7 @@ import Client from '../client';
 import Socket from './socket';
 import ReadableStream = NodeJS.ReadableStream;
 import Connection from '../connection';
+import SendWindow, { INITIAL_WINDOW } from './sendwindow';
 const debug = d('adb:tcpusb:service');
 
 class PrematurePacketError extends Error {
@@ -36,7 +37,7 @@ export default class Service extends EventEmitter {
   private opened = false;
   private ended = false;
   private transport?: Connection;
-  private needAck = false;
+  private window: SendWindow;
 
   constructor(
     private client: Client,
@@ -46,6 +47,7 @@ export default class Service extends EventEmitter {
     private socket: Socket,
   ) {
     super();
+    this.window = new SendWindow(socket.delayedAck);
   }
 
   public end(): Service {
@@ -91,6 +93,8 @@ export default class Service extends EventEmitter {
 
   private _handleOpenPacket(packet): Bluebird<boolean> {
     debug('I:A_OPEN', packet);
+    // With delayed acks, arg1 is how much the client lets us send before its first A_OKAY; 0 means it has them off.
+    this.window = new SendWindow(this.socket.delayedAck && packet.arg1 > 0, packet.arg1);
     return this.client
       .getDevice(this.serial)
       .transport()
@@ -107,7 +111,9 @@ export default class Service extends EventEmitter {
           switch (reply) {
             case Protocol.OKAY:
               debug('O:A_OKAY');
-              this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, null));
+              this.socket.write(
+                Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, this.window.ack(INITIAL_WINDOW)),
+              );
               return (this.opened = true);
             case Protocol.FAIL:
               return this.transport.parser.readError();
@@ -138,7 +144,7 @@ export default class Service extends EventEmitter {
     if (!this.transport) {
       throw new Service.PrematurePacketError(packet);
     }
-    this.needAck = false;
+    this.window.acked(packet);
     return this._tryPush();
   }
 
@@ -150,11 +156,25 @@ export default class Service extends EventEmitter {
     if (!this.transport) {
       throw new Service.PrematurePacketError(packet);
     }
-    if (this.transport && packet.data) {
-      this.transport.write(packet.data);
+    const data = packet.data || Buffer.alloc(0);
+    if (!this.window.delayed) {
+      this.transport.write(data);
+      debug('O:A_OKAY');
+      return this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, null));
     }
-    debug('O:A_OKAY');
-    return this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, null));
+    // Credit the client only once the bytes are written, so a slow device pushes back.
+    this.transport.write(data, (err?: Error | null) => {
+      if (err) {
+        debug('transport write failed', err);
+        this.end();
+        return;
+      }
+      if (!this.ended) {
+        debug('O:A_OKAY');
+        this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, this.window.ack(data.length)));
+      }
+    });
+    return true;
   }
 
   private _handleClosePacket(packet: Packet): Service | undefined {
@@ -169,15 +189,18 @@ export default class Service extends EventEmitter {
   }
 
   private _tryPush(): boolean | undefined {
-    if (this.needAck || this.ended) {
-      return;
-    }
-    const chunk = this._readChunk(this.transport.socket);
-    if (chunk) {
+    let pushed = false;
+    while (!this.ended && this.window.canSend) {
+      const chunk = this._readChunk(this.transport.socket);
+      if (!chunk) {
+        break;
+      }
       debug('O:A_WRTE');
       this.socket.write(Packet.assemble(Packet.A_WRTE, this.localId, this.remoteId, chunk));
-      return (this.needAck = true);
+      this.window.sent(chunk.length);
+      pushed = true;
     }
+    return pushed || undefined;
   }
 
   private _readChunk(stream: ReadableStream): Buffer {
