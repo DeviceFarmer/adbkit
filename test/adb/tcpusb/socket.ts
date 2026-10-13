@@ -1,8 +1,10 @@
 import * as Net from 'net';
+import * as forge from 'node-forge';
 import { expect } from 'chai';
 import Client from '../../../src/adb/client';
 import Packet from '../../../src/adb/tcpusb/packet';
 import Socket from '../../../src/adb/tcpusb/socket';
+import SocketOptions from '../../../src/SocketOptions';
 import MockDuplex from '../../mock/duplex';
 
 interface Written {
@@ -12,7 +14,7 @@ interface Written {
   data: Buffer;
 }
 
-function setup(host = '127.0.0.1') {
+function setup(host = '127.0.0.1', options: SocketOptions = {}) {
   const duplex = new MockDuplex() as MockDuplex & { setNoDelay: () => void };
   duplex.setNoDelay = () => undefined;
   const written: Written[] = [];
@@ -26,7 +28,7 @@ function setup(host = '127.0.0.1') {
     });
     waiters.splice(0).forEach((fn) => fn());
   });
-  const socket = new Socket(new Client({ host, port: 5037 }), 'serial', duplex as unknown as Net.Socket);
+  const socket = new Socket(new Client({ host, port: 5037 }), 'serial', duplex as unknown as Net.Socket, options);
   (socket as unknown as { authorized: boolean }).authorized = true;
   const next = (command: number): Promise<Written> =>
     new Promise((resolve) => {
@@ -211,5 +213,78 @@ describe('TcpUsb Socket banner', function () {
 
   it('should list no features without delayed_ack', async function () {
     expect(await banner(false)).to.equal('device::ro.product.name=n;ro.product.model=m;ro.product.device=d;\x00');
+  });
+});
+
+describe('TcpUsb Socket known public keys', function () {
+  const token = Buffer.alloc(20, 7);
+  const pair = () => forge.pki.rsa.generateKeyPair({ bits: 1024, e: 0x10001 });
+  // adb signs the 20-byte token as if it were a SHA-1 digest.
+  const sign = (key: forge.pki.rsa.PrivateKey) => {
+    const md = forge.md.sha1.create();
+    md.digest = () => forge.util.createBuffer(token.toString('binary'));
+    return Buffer.from(key.sign(md), 'binary');
+  };
+  // adb's RSAPublicKey struct (len, n0inv, n and rr little-endian, e), base64 and NUL-terminated.
+  const adbPublicKey = (key: forge.pki.rsa.PublicKey) => {
+    const len = 128;
+    const n = Buffer.from(key.n.toString(16).padStart(len * 2, '0'), 'hex').reverse();
+    const struct = Buffer.alloc(4 + 4 + len + len + 4);
+    struct.writeUInt32LE(len / 4, 0);
+    n.copy(struct, 8);
+    struct.writeUInt32LE(0x10001, 8 + len + len);
+    return Buffer.from(`${struct.toString('base64')}\0`);
+  };
+
+  // Sends one AUTH packet (and optionally the public key), then reports whether the bridge accepted the client,
+  // challenged it again or closed the connection, and any 'error' it emitted.
+  async function authenticate(knownPublicKeys: forge.pki.rsa.PublicKey[], signature?: Buffer, publicKey?: Buffer) {
+    const { socket, next, receive } = setup('127.0.0.1', { knownPublicKeys } as SocketOptions);
+    const internals = socket as unknown as { token: Buffer; _acceptConnection: () => Promise<boolean> };
+    internals.token = token;
+    const errors: Error[] = [];
+    socket.on('error', (err: Error) => errors.push(err));
+    const accepted = new Promise<string>((resolve) => {
+      internals._acceptConnection = () => {
+        resolve('accepted');
+        return Promise.resolve(true);
+      };
+    });
+    const ended = new Promise<string>((resolve) => socket.once('end', () => resolve('ended')));
+    const challenged = () => next(Packet.A_AUTH).then(() => 'challenged');
+    receive(Packet.A_AUTH, 2, 0, signature);
+    let outcome = await Promise.race([accepted, ended, challenged()]);
+    if (publicKey && outcome === 'challenged') {
+      receive(Packet.A_AUTH, 3, 0, publicKey);
+      outcome = await Promise.race([accepted, ended, challenged()]);
+    }
+    socket.end();
+    return { outcome, errors };
+  }
+
+  it('should ask again instead of failing when no known key made the signature', async function () {
+    const [client, other] = [pair(), pair()];
+    expect(await authenticate([other.publicKey], sign(client.privateKey))).to.deep.equal({
+      outcome: 'challenged',
+      errors: [],
+    });
+  });
+
+  it('should accept a signature from a later known key', async function () {
+    const [client, other] = [pair(), pair()];
+    expect(await authenticate([other.publicKey, client.publicKey], sign(client.privateKey))).to.deep.equal({
+      outcome: 'accepted',
+      errors: [],
+    });
+  });
+
+  it('should close the connection on a missing signature', async function () {
+    expect(await authenticate([pair().publicKey])).to.deep.equal({ outcome: 'ended', errors: [] });
+  });
+
+  it('should close the connection when the public key did not make the signature', async function () {
+    const [client, other] = [pair(), pair()];
+    const result = await authenticate([], sign(client.privateKey), adbPublicKey(other.publicKey));
+    expect(result).to.deep.equal({ outcome: 'ended', errors: [] });
   });
 });
