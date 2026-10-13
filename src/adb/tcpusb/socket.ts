@@ -24,6 +24,16 @@ const AUTH_RSAPUBLICKEY = 3;
 const TOKEN_LENGTH = 20;
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '::1'];
 
+// node-forge throws instead of returning false for a signature it can't verify (another key, wrong length).
+function verifies(key: ExtendedPublicKey, digest: string, sig: string): boolean {
+  try {
+    return key.verify(digest, sig);
+  } catch (err) {
+    debug(`Signature check failed: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 class AuthError extends Error {
   constructor(message: string) {
     super(message);
@@ -172,12 +182,15 @@ export default class Socket extends EventEmitter {
         if (!this.signature) {
           this.signature = packet.data;
         }
+        if (!this.signature?.length) {
+          throw new Socket.AuthError('Missing signature');
+        }
 
         const digest = this.token.toString('binary');
         const sig = this.signature.toString('binary');
         for (const key of this.options.knownPublicKeys ?? []) {
           // If signature matches one of the known public keys, we can safely accept the connection
-          if (key.verify(digest, sig)) return this._acceptConnection();
+          if (verifies(key, digest, sig)) return this._acceptConnection();
         }
 
         debug('O:A_AUTH');
@@ -195,7 +208,7 @@ export default class Socket extends EventEmitter {
           .then((key) => {
             const digest = this.token.toString('binary');
             const sig = this.signature.toString('binary');
-            if (!key.verify(digest, sig)) {
+            if (!verifies(key, digest, sig)) {
               debug('Signature mismatch');
               throw new Socket.AuthError('Signature mismatch');
             }
