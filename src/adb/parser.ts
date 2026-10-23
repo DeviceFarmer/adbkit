@@ -23,7 +23,10 @@ class PrematureEOFError extends Error {
 }
 
 class UnexpectedDataError extends Error {
-  constructor(public unexpected: string, public expected: string) {
+  constructor(
+    public unexpected: string,
+    public expected: string,
+  ) {
     super(`Unexpected '${unexpected}', was expecting ${expected}`);
     Object.setPrototypeOf(this, UnexpectedDataError.prototype);
     this.name = 'UnexpectedDataError';
@@ -84,7 +87,7 @@ export default class Parser {
         return resolve(true);
       };
       timeoutListener = () => {
-        this.stream.end()
+        this.stream.end();
         return reject(new Parser.TimeoutError());
       };
       this.stream.on('readable', tryRead);
@@ -135,7 +138,7 @@ export default class Parser {
         return resolve(all);
       };
       timeoutListener = () => {
-        this.stream.end()
+        this.stream.end();
         return reject(new Parser.TimeoutError());
       };
       this.stream.on('readable', tryRead);
@@ -187,7 +190,7 @@ export default class Parser {
         return reject(new Parser.PrematureEOFError(howMany));
       };
       timeoutListener = () => {
-        this.stream.end()
+        this.stream.end();
         return reject(new Parser.TimeoutError());
       };
       errorListener = (err) => reject(err);
@@ -217,7 +220,7 @@ export default class Parser {
           // whatever is available, which will be less than the needed amount.
           // avoid chunk is undefined.
           let chunk;
-          while (chunk = this.stream.read(howMany) || this.stream.read()) {
+          while ((chunk = this.stream.read(howMany) || this.stream.read())) {
             howMany -= chunk.length;
             targetStream.write(chunk);
             if (howMany === 0) {
@@ -239,7 +242,7 @@ export default class Parser {
         return reject(err);
       };
       timeoutListener = () => {
-        this.stream.end()
+        this.stream.end();
         return reject(new Parser.TimeoutError());
       };
       this.stream.on('readable', tryRead);

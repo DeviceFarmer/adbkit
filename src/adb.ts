@@ -19,7 +19,7 @@ export default class Adb {
       bin: options.bin,
       host: options.host || process.env.ADB_HOST,
       port: options.port || 5037,
-      timeout: options.timeout || 0
+      timeout: options.timeout || 0,
     };
     if (!opts.port) {
       const port = parseInt(process.env.ADB_PORT || '5037', 10);
