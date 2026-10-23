@@ -33,12 +33,12 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/devicefarmer/adbkit.git"
+    "url": "git+https://github.com/DeviceFarmer/adbkit.git"
   },
   "scripts": {
     "clean": "rimraf dist index.d.ts index.js",
     "keycode": "node tasks/keycode.js",
-    "prepublish": "npm run clean && npm run compile && npm run test",
+    "prepublishOnly": "npm run clean && npm run compile && npm run test",
     "compile": "tsc  -p .",
     "compile2": "tsc -p tsconfig-dist.json",
     "lint": "eslint   ./ --ext .ts",
