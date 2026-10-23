@@ -69,7 +69,10 @@ const debug = d('adb:client');
 const NoUserOptionError = (err: Error) => err.message.indexOf('--user') !== -1;
 
 export default class DeviceClient {
-  constructor(public readonly client: Client, public readonly serial: string) {
+  constructor(
+    public readonly client: Client,
+    public readonly serial: string,
+  ) {
     // no code
   }
 
@@ -432,7 +435,10 @@ export default class DeviceClient {
       let errorListener: (err: Error) => void;
       return new Bluebird<boolean>((resolve, reject) => {
         errorListener = (err: Error) => reject(err);
-        endListener = () => this.installRemote(temp).then((value: boolean) => resolve(value)).catch(reject);
+        endListener = () =>
+          this.installRemote(temp)
+            .then((value: boolean) => resolve(value))
+            .catch(reject);
         transfer.on('error', errorListener);
         transfer.on('end', endListener);
       }).finally(() => {

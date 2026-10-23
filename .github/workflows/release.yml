@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version already bumped on the default branch, without the v prefix (e.g. 3.3.10)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Check the version is releasable
+        env:
+          VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          # release/v* satisfies the version check below by construction, so
+          # without this the branch could be tagged and published unmerged.
+          if [ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]; then
+            echo "::error::run this on $DEFAULT_BRANCH, not $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::$VERSION is not a three part version like 3.3.10, with no v prefix"
+            exit 1
+          fi
+
+          # Prepare release bumps package.json and Release tags what it produced,
+          # so equality is the precondition here rather than an increase.
+          CURRENT=$(node -p 'require("./package.json").version')
+          PACKAGE=$(node -p 'require("./package.json").name')
+          if [ "$CURRENT" != "$VERSION" ]; then
+            echo "::error::package.json is at $CURRENT, so the $VERSION bump has not merged yet"
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::tag v$VERSION already exists"
+            exit 1
+          fi
+
+          if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+            echo "::error::$PACKAGE@$VERSION is already published to npm"
+            exit 1
+          fi
+
+      - name: Read the release notes back out of the changelog
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/changelog.mts --extract CHANGELOG.md "$VERSION" > notes.md
+          cat notes.md
+
+      - name: Tag and publish
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file notes.md
+
+  npm:
+    name: Publish to npm
+    needs: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ inputs.version }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Take npm to a version that can publish with OIDC
+        run: npm install -g npm@^11.5.1
+
+      # No lockfile is committed, so npm ci has nothing to install from.
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      # npm 7 and later no longer run the prepublish script on publish, so the
+      # build and the tests run here explicitly. prepublishOnly repeats them on
+      # npm publish, which also covers a publish from a laptop.
+      - name: Build
+        run: |
+          set -euo pipefail
+          npm run clean
+          npm run compile
+
+      - name: Test
+        run: npm test
+
+      - name: Check the tarball has every compiled module
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"
+          # Each TypeScript source has to ship as JavaScript with its declarations,
+          # and the adbkit binary loads dist/src/cli.js.
+          git ls-files 'src/*.ts' index.ts | sed 's/\.ts$//' > "$RUNNER_TEMP/modules.txt"
+          node -e '
+            var fs = require("fs")
+            var files = require(process.argv[1])[0].files.map(function(f) { return f.path })
+            var modules = fs.readFileSync(process.argv[2], "utf8").split("\n").filter(Boolean)
+            var missing = []
+            modules.forEach(function(module) {
+              ;[".js", ".d.ts"].forEach(function(ext) {
+                if (files.indexOf("dist/" + module + ext) < 0) {
+                  missing.push("dist/" + module + ext)
+                }
+              })
+            })
+            if (files.indexOf("bin/adbkit") < 0) {
+              missing.push("bin/adbkit")
+            }
+            console.log(files.join("\n"))
+            if (!modules.length || missing.length) {
+              console.error("::error::missing from the tarball: " + (missing.join(", ") || "every module"))
+              process.exit(1)
+            }
+          ' "$RUNNER_TEMP/pack.json" "$RUNNER_TEMP/modules.txt"
+
+      - name: Publish
+        run: npm publish --access public
