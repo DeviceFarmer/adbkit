@@ -1,7 +1,10 @@
 export default class RollingCounter {
   private now: number;
 
-  constructor(private readonly max: number, private readonly min = 1) {
+  constructor(
+    private readonly max: number,
+    private readonly min = 1,
+  ) {
     this.now = this.min;
   }
 
