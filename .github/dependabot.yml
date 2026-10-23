@@ -8,11 +8,6 @@ updates:
   ignore:
   - dependency-name: "@types/node"
     versions:
-    - 14.14.22
-    - 14.14.24
-    - 14.14.25
-    - 14.14.26
-    - 14.14.28
     - 15.0.0
   - dependency-name: sinon
     versions:
@@ -44,3 +39,7 @@ updates:
   - dependency-name: split
     versions:
     - 1.0.1
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly

@@ -1,0 +1,156 @@
+# Changelog
+
+## 3.3.9 (2026-07-08)
+
+* Update OS image from Ubuntu 20.04 to 22.04 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/546
+* Update OS image from Ubuntu 20.04 to 22.04 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/549
+* Fix bug that leaves dangling connections by @pimterry in https://github.com/DeviceFarmer/adbkit/pull/548
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.3.8...v3.3.9
+
+## 3.3.8 (2024-11-20)
+
+* Allow authorization of known public keys in the tcp usb bridge by @YishaiYosifov in https://github.com/DeviceFarmer/adbkit/pull/540
+* Update version to 3.3.8 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/541
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.3.7...v3.3.8
+
+## 3.3.7 (2024-11-14)
+
+* It fixes a bug on stats with nodeJS 22.11.0 version and higher by @denis99999 in https://github.com/DeviceFarmer/adbkit/pull/538
+* Update version to 3.3.7 by @denis99999 in https://github.com/DeviceFarmer/adbkit/pull/539
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.3.6...v3.3.7
+
+## 2.11.3 (2024-11-14)
+
+* [Security] Bump node-forge from 0.9.2 to 0.10.0 by @dependabot-preview in https://github.com/DeviceFarmer/adbkit/pull/28
+* Bump version to 2.11.3 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/30
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v2.11.2...v2.11.3
+
+## 3.3.6 (2024-10-14)
+
+* Update CI machine image to ubuntu2004 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/532
+* Skip before hook in sync tests if no devices by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/533
+* Fix leaked promise in pull by @dfriederich in https://github.com/DeviceFarmer/adbkit/pull/530
+* Fix running Hardware tests by @dfriederich in https://github.com/DeviceFarmer/adbkit/pull/531
+* Add attach / detach commands by @YishaiYosifov in https://github.com/DeviceFarmer/adbkit/pull/534
+* Update version to 3.3.6 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/535
+
+### New Contributors
+
+* @dfriederich made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/530
+* @YishaiYosifov made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/534
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.6...v3.3.6
+
+## 3.2.6 (2024-01-18)
+
+* Bump prettier from 2.8.8 to 3.0.2 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/471
+* Bump eslint-config-prettier from 8.10.0 to 9.0.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/474
+* Bump eslint-plugin-prettier from 4.2.1 to 5.0.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/472
+* Throw error if DELETE_FAILED_DEVICE_POLICY_MANAGER is sent by @tburakdemir in https://github.com/DeviceFarmer/adbkit/pull/513
+* Update version to 3.2.6 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/525
+
+### New Contributors
+
+* @tburakdemir made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/513
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.5...v3.2.6
+
+## 3.2.5 (2023-06-23)
+
+* Allow all streams in client.push() & client.install() types, not just FS streams by @pimterry in https://github.com/DeviceFarmer/adbkit/pull/436
+* Include 'unauthorized' in the possible device states type by @pimterry in https://github.com/DeviceFarmer/adbkit/pull/437
+* fix unhandled rejection when installing apk by @bambloo in https://github.com/DeviceFarmer/adbkit/pull/446
+* Update node.js to 16 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/465
+
+### New Contributors
+
+* @bambloo made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/446
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.4...v3.2.5
+
+## 3.2.4 (2023-03-30)
+
+* Add support for socket timeouts by @a1rwulf in https://github.com/DeviceFarmer/adbkit/pull/303
+* Fix adb disconnect always throwing an error by @a1rwulf in https://github.com/DeviceFarmer/adbkit/pull/302
+* Fixed wrong extra flag for type float by @Jaid in https://github.com/DeviceFarmer/adbkit/pull/312
+* Add partial adb STA2 command implementation by @sunjw in https://github.com/DeviceFarmer/adbkit/pull/277
+* Bump @typescript-eslint/eslint-plugin from 4.33.0 to 5.44.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/383
+* Bump sinon from 13.0.2 to 14.0.2 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/381
+* Bump @types/mocha from 9.1.1 to 10.0.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/357
+* Bump sinon from 14.0.2 to 15.0.1 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/396
+* Bump @typescript-eslint/parser from 4.33.0 to 5.48.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/402
+* Install exception handling. Cleanup after install command. by @DonVietnam in https://github.com/DeviceFarmer/adbkit/pull/403
+* change source path in bin for correct work cli commands by @gmanru in https://github.com/DeviceFarmer/adbkit/pull/410
+* Bump @types/node from 14.18.42 to 18.15.11 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/434
+* Bump typescript from 4.9.5 to 5.0.2 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/427
+* Bump mocha from 8.3.2 to 10.2.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/394
+* Try to fix memory leak in _readData. by @sunjw in https://github.com/DeviceFarmer/adbkit/pull/315
+* Release 3.2.4 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/435
+
+### New Contributors
+
+* @a1rwulf made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/303
+* @Jaid made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/312
+* @sunjw made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/277
+* @DonVietnam made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/403
+* @gmanru made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/410
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.3...v3.2.4
+
+## 3.2.3 (2022-05-04)
+
+* Add missing exports by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/286
+* Fix authentication check in https://github.com/DeviceFarmer/adbkit/issues/42
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.2...v3.2.3
+
+## 3.2.2 (2022-04-20)
+
+* Default to IPv4 localhost for Node 17 compatibility by @pimterry in https://github.com/DeviceFarmer/adbkit/pull/214
+* Bump ts-node from 9.1.1 to 10.4.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/195
+* Bump @types/mocha from 8.2.3 to 9.0.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/145
+* Fixup TypeScript error for test by @jonathanKingston in https://github.com/DeviceFarmer/adbkit/pull/269
+* Update commander by @jonathanKingston in https://github.com/DeviceFarmer/adbkit/pull/270
+* Bump @types/node-forge from 0.10.10 to 1.0.1 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/257
+* Bump node-forge from 0.10.0 to 1.3.1 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/268
+* Bump sinon from 9.2.4 to 13.0.1 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/246
+* Bump eslint from 7.32.0 to 8.12.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/267
+* Release 3.2.2 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/276
+
+### New Contributors
+
+* @jonathanKingston made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/269
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.1...v3.2.2
+
+## 3.2.1 (2022-01-12)
+
+* Upgrade to GitHub-native Dependabot by @dependabot-preview in https://github.com/DeviceFarmer/adbkit/pull/105
+* avoid chunk is undefined. by @rcpirate in https://github.com/DeviceFarmer/adbkit/pull/127
+* Bump sinon-chai from 3.5.0 to 3.7.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/115
+* Bump @types/node-forge from 0.9.10 to 0.10.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/124
+* Bump eslint-plugin-prettier from 3.4.1 to 4.0.0 by @dependabot in https://github.com/DeviceFarmer/adbkit/pull/167
+* Update adbkit-monkey dependency version to 1.2.0 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/179
+
+### New Contributors
+
+* @rcpirate made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/127
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.2.0...v3.2.1
+
+## 3.2.0 (2021-03-09)
+
+* Dependency version updates
+* Wait for device command update (#83)
+* Extend original `getPackages` method, keep compatibility (#61)
+* Showcase long-running shell commands (#59)
+* Add 'client.getPackagesWithFlags' for flags in 'pm list packages' (#56)
+* Code cleanup (#38)
+* Extend adb keycodes (#27)
+* Rewrite to TypeScript (#31)
+* Many thanks to @drauggresh
+
