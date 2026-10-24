@@ -11,6 +11,9 @@ updates:
   # typescript-eslint supports TypeScript < 6.1 only.
   - dependency-name: typescript
     update-types: ["version-update:semver-major"]
+  # The types follow the oldest supported Node.js (engines), not the latest.
+  - dependency-name: "@types/node"
+    update-types: ["version-update:semver-major"]
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
