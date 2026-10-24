@@ -59,7 +59,7 @@
     "@types/debug": "^4.1.5",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.15.11",
-    "@types/sinon-chai": "^3.2.5",
+    "@types/sinon-chai": "^4.0.1",
     "@types/bluebird": "^3.5.33",
     "@types/node-forge": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
