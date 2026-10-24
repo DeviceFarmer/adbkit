@@ -10,7 +10,7 @@ export default class ScreencapCommand extends Command<Duplex> {
     this._send('shell:echo && screencap -p 2>/dev/null');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
-        case Protocol.OKAY:
+        case Protocol.OKAY: {
           let transform = new LineTransform();
           return this.parser
             .readBytes(1)
@@ -22,6 +22,7 @@ export default class ScreencapCommand extends Command<Duplex> {
             .catch(Parser.PrematureEOFError, () => {
               throw Error('No support for the screencap command');
             });
+        }
         case Protocol.FAIL:
           return this.parser.readError();
         default:

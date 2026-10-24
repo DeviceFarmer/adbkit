@@ -63,8 +63,9 @@ export default class Service extends EventEmitter {
       // We may or may not have gotten here due to @socket ending, so write
       // may fail.
       this.socket.write(Packet.assemble(Packet.A_CLSE, localId, this.remoteId, null));
-    } catch (error) {}
-    // Let it go
+    } catch {
+      // Let it go
+    }
     this.transport = null;
     this.ended = true;
     this.emit('end');

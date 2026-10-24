@@ -1,0 +1,7 @@
+*.md
+/dist/
+/index.js
+/index.d.ts
+package-lock.json
+/.github/
+/tasks/

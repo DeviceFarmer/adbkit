@@ -134,7 +134,9 @@ export default class Sync extends EventEmitter {
   }
 
   pushFile(file: string, path: string, mode = DEFAULT_CHMOD): PushTransfer {
-    mode || (mode = DEFAULT_CHMOD);
+    if (!mode) {
+      mode = DEFAULT_CHMOD;
+    }
     return this.pushStream(Fs.createReadStream(file), path, mode);
   }
 

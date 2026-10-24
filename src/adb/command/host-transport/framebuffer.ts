@@ -46,12 +46,13 @@ export default class FrameBufferCommand extends Command<any> {
       case 'rgb':
       case 'rgba':
         break;
-      default:
+      default: {
         // Known to be supported by GraphicsMagick
         debug(`Silently transforming '${meta.format}' into 'rgb' for \`gm\``);
         const transform = new RgbTransform(meta);
         meta.format = 'rgb';
         raw = this.parser.raw().pipe(transform);
+      }
     }
     const proc = spawn('gm', ['convert', '-size', `${meta.width}x${meta.height}`, `${meta.format}:-`, `${format}:-`]);
     if (raw) {

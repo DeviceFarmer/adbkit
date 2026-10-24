@@ -36,15 +36,14 @@
     "url": "git+https://github.com/DeviceFarmer/adbkit.git"
   },
   "scripts": {
-    "clean": "rimraf dist index.d.ts index.js",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "keycode": "node tasks/keycode.js",
     "prepublishOnly": "npm run clean && npm run compile && npm run test",
-    "compile": "tsc  -p .",
-    "compile2": "tsc -p tsconfig-dist.json",
-    "lint": "eslint   ./ --ext .ts",
-    "format": "eslint ./ --ext .ts --fix",
-    "testJS": "mocha --reporter spec --colors 'dist/test/**/*.js'",
-    "test": "mocha -r ts-node/register --reporter spec --colors 'test/**/*.ts'"
+    "compile": "tsc -p .",
+    "format": "prettier --write . && eslint . --fix",
+    "lint": "eslint . && prettier --check .",
+    "pretest": "npm run compile",
+    "test": "mocha"
   },
   "dependencies": {
     "@devicefarmer/adbkit-logcat": "^2.1.2",
@@ -56,29 +55,23 @@
     "split": "~1.0.1"
   },
   "devDependencies": {
-    "@types/debug": "^4.1.5",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "^18.15.11",
-    "@types/sinon-chai": "^3.2.5",
+    "@eslint/js": "^10.0.1",
     "@types/bluebird": "^3.5.33",
+    "@types/debug": "^4.1.5",
+    "@types/node": "^22.20.5",
     "@types/node-forge": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.44.0",
-    "@typescript-eslint/parser": "^5.48.0",
     "bench": "~0.3.6",
-    "chai": "~4.3.0",
-    "eslint": "^8.12.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-progress": "0.0.1",
-    "mocha": "~10.2.0",
-    "prettier": "^3.0.2",
-    "rimraf": "^3.0.2",
-    "sinon": "~15.0.1",
-    "sinon-chai": "~3.7.0",
-    "ts-node": "^10.4.0",
-    "typescript": "^5.0.2"
+    "chai": "^6.3.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "mocha": "^12.0.3",
+    "prettier": "^3.9.10",
+    "sinon": "^22.1.0",
+    "sinon-chai": "^4.0.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.0"
   },
   "engines": {
-    "node": ">= 0.10.4"
+    "node": ">= 22"
   }
 }

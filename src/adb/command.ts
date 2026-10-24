@@ -21,7 +21,7 @@ export default abstract class Command<T> {
   }
 
   // FIXME(intentional any): not "any" will break it all
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public abstract execute(...args: any[]): Bluebird<T>;
 
   public _send(data: string | Buffer): Command<T> {

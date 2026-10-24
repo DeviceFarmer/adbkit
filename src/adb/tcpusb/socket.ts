@@ -79,8 +79,9 @@ export default class Socket extends EventEmitter {
   ) {
     super();
 
-    let base: SocketOptions;
-    (base = this.options).auth || (base.auth = () => Bluebird.resolve(true));
+    if (!this.options.auth) {
+      this.options.auth = () => Bluebird.resolve(true);
+    }
     this.socket.setNoDelay(true);
     this.reader = new PacketReader(this.socket)
       .on('packet', this._handle.bind(this))
@@ -163,6 +164,7 @@ export default class Socket extends EventEmitter {
     debug('I:A_CNXN', packet);
     this.version = Packet.swap32(packet.arg0);
     this.maxPayload = Math.min(MAX_PAYLOAD, packet.arg1);
+    // eslint-disable-next-line no-control-regex
     const features = /features=([^;\x00]*)/.exec(packet.data ? packet.data.toString() : '');
     this.delayedAck = !!features && features[1].split(',').indexOf('delayed_ack') !== -1;
     return this._createToken().then((token) => {
@@ -176,7 +178,7 @@ export default class Socket extends EventEmitter {
   private _handleAuthPacket(packet: Packet): Bluebird<boolean> {
     debug('I:A_AUTH', packet);
     switch (packet.arg0) {
-      case AUTH_SIGNATURE:
+      case AUTH_SIGNATURE: {
         // Store first signature, ignore the rest
         if (packet.data) debug(`Received signature '${packet.data.toString('base64')}'`);
         if (!this.signature) {
@@ -196,6 +198,7 @@ export default class Socket extends EventEmitter {
         debug('O:A_AUTH');
         const b = this.write(Packet.assemble(Packet.A_AUTH, AUTH_TOKEN, 0, this.token));
         return Bluebird.resolve(b);
+      }
       case AUTH_RSAPUBLICKEY:
         if (!this.signature) {
           throw new Socket.AuthError('Public key sent before signature');

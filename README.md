@@ -8,7 +8,7 @@ Internally, we use this library to drive a multitude of Android devices from a v
 
 ## Requirements
 
--   [Node.js][nodejs] >= 0.10
+-   [Node.js][nodejs] 22 or newer
 -   The `adb` command line tool
 
 Please note that although it may happen at some point, **this project is NOT an implementation of the ADB _server_**. The target host (where the devices are connected) must still have ADB installed and either already running (e.g. via `adb start-server`) or available in `$PATH`. An attempt will be made to start the server locally via the aforementioned command if the initial connection fails. This is the only case where we fall back to the `adb` binary.

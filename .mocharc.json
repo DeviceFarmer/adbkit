@@ -1,0 +1,5 @@
+{
+  "extension": ["mts"],
+  "recursive": true,
+  "spec": ["test"]
+}
