@@ -1,4 +1,3 @@
-import Bluebird from 'bluebird';
 import Protocol from './protocol';
 import { Duplex } from 'stream';
 
@@ -43,37 +42,64 @@ class TimeoutError extends Error {
   }
 }
 
-Bluebird.config({
-  // Enable warnings
-  // warnings: true,
-  // Enable long stack traces
-  // longStackTraces: true,
-  // Enable cancellation
-  cancellation: true,
-  // Enable monitoring
-  // monitoring: true,
-});
+class CancellationError extends Error {
+  constructor() {
+    super('Parser was cancelled');
+    Object.setPrototypeOf(this, CancellationError.prototype);
+    this.name = 'CancellationError';
+    Error.captureStackTrace(this, CancellationError);
+  }
+}
+
+type Resolve<T> = (value: T) => void;
+type Reject = (err: Error) => void;
+
+interface ReadHandlers {
+  readable: () => void;
+  end: () => void;
+}
 
 export default class Parser {
   public static FailError = FailError;
   public static PrematureEOFError = PrematureEOFError;
   public static UnexpectedDataError = UnexpectedDataError;
   public static TimeoutError = TimeoutError;
+  public static CancellationError = CancellationError;
   private ended = false;
+  private cancelled = false;
+  private readonly pending = new Set<Reject>();
 
   constructor(public stream: Duplex) {
     // empty
   }
 
-  public end(): Bluebird<boolean> {
+  /**
+   * Cancels the parser: every pending read rejects with
+   * `Parser.CancellationError`, and so does every read started afterwards.
+   * This replaces bluebird's cancellation for the long-running readers
+   * (trackers, sync transfers, timeouts). It doesn't touch the stream; end
+   * or destroy it separately. `end()` keeps working after a cancel.
+   */
+  public cancel(): void {
+    this.cancelled = true;
+    for (const reject of Array.from(this.pending)) {
+      reject(new Parser.CancellationError());
+    }
+  }
+
+  public isCancelled(): boolean {
+    return this.cancelled;
+  }
+
+  public end(): Promise<boolean> {
     if (this.ended) {
-      return Bluebird.resolve<boolean>(true);
+      return Promise.resolve<boolean>(true);
     }
     let tryRead: () => void;
     let errorListener: (error: Error) => void;
     let endListener: () => void;
     let timeoutListener: () => void;
-    return new Bluebird<boolean>((resolve, reject, onCancel) => {
+    return new Promise<boolean>((resolve, reject) => {
       tryRead = () => {
         while (this.stream.read()) {
           // ignore
@@ -96,78 +122,76 @@ export default class Parser {
       this.stream.on('timeout', timeoutListener);
       this.stream.read(0);
       this.stream.end();
-      onCancel(() => {
-        // console.log('1-onCanceled');
-      });
     }).finally(() => {
       this.stream.removeListener('readable', tryRead);
       this.stream.removeListener('error', errorListener);
       this.stream.removeListener('end', endListener);
       this.stream.removeListener('timeout', timeoutListener);
-      // return r;
     });
+  }
+
+  /**
+   * Runs one read: attaches the listeners, tries to read right away, and
+   * detaches everything once the read settles or the parser is cancelled.
+   */
+  private _read<T>(handlers: (resolve: Resolve<T>, reject: Reject) => ReadHandlers): Promise<T> {
+    if (this.cancelled) {
+      return Promise.reject(new Parser.CancellationError());
+    }
+    let cleanup: (() => void) | undefined;
+    return new Promise<T>((resolve, reject) => {
+      const { readable, end } = handlers(resolve, reject);
+      const errorListener = (err: Error) => reject(err);
+      const timeoutListener = () => {
+        this.stream.end();
+        reject(new Parser.TimeoutError());
+      };
+      this.stream.on('readable', readable);
+      this.stream.on('error', errorListener);
+      this.stream.on('end', end);
+      this.stream.on('timeout', timeoutListener);
+      this.pending.add(reject);
+      cleanup = () => {
+        this.stream.removeListener('readable', readable);
+        this.stream.removeListener('error', errorListener);
+        this.stream.removeListener('end', end);
+        this.stream.removeListener('timeout', timeoutListener);
+        this.pending.delete(reject);
+      };
+      readable();
+    }).finally(() => cleanup?.());
   }
 
   public raw(): Duplex {
     return this.stream;
   }
 
-  public readAll(): Bluebird<Buffer> {
+  public readAll(): Promise<Buffer> {
     let all = Buffer.alloc(0);
-
-    let tryRead: () => void;
-    let errorListener: (error: Error) => void;
-    let endListener: () => void;
-    let timeoutListener: () => void;
-
-    return new Bluebird<Buffer>((resolve, reject, onCancel) => {
-      tryRead = () => {
+    return this._read<Buffer>((resolve) => ({
+      readable: () => {
         let chunk;
         while ((chunk = this.stream.read())) {
           all = Buffer.concat([all, chunk]);
         }
         if (this.ended) {
-          return resolve(all);
+          resolve(all);
         }
-      };
-      errorListener = function (err) {
-        return reject(err);
-      };
-      endListener = () => {
+      },
+      end: () => {
         this.ended = true;
-        return resolve(all);
-      };
-      timeoutListener = () => {
-        this.stream.end();
-        return reject(new Parser.TimeoutError());
-      };
-      this.stream.on('readable', tryRead);
-      this.stream.on('error', errorListener);
-      this.stream.on('end', endListener);
-      this.stream.on('timeout', timeoutListener);
-      tryRead();
-      onCancel(() => {
-        // console.log('2-onCanceled');
-      });
-    }).finally(() => {
-      this.stream.removeListener('readable', tryRead);
-      this.stream.removeListener('error', errorListener);
-      this.stream.removeListener('end', endListener);
-      this.stream.removeListener('timeout', timeoutListener);
-    });
+        resolve(all);
+      },
+    }));
   }
 
-  public readAscii(howMany: number): Bluebird<string> {
+  public readAscii(howMany: number): Promise<string> {
     return this.readBytes(howMany).then((chunk) => chunk.toString('ascii'));
   }
 
-  public readBytes(howMany: number): Bluebird<Buffer> {
-    let tryRead: () => void;
-    let errorListener: (error: Error) => void;
-    let endListener: () => void;
-    let timeoutListener: () => void;
-    return new Bluebird<Buffer>((resolve, reject /*, onCancel*/) => {
-      tryRead = () => {
+  public readBytes(howMany: number): Promise<Buffer> {
+    return this._read<Buffer>((resolve, reject) => ({
+      readable: () => {
         if (howMany) {
           const chunk = this.stream.read(howMany);
           if (chunk) {
@@ -184,37 +208,17 @@ export default class Parser {
         } else {
           return resolve(Buffer.alloc(0));
         }
-      };
-      endListener = () => {
+      },
+      end: () => {
         this.ended = true;
-        return reject(new Parser.PrematureEOFError(howMany));
-      };
-      timeoutListener = () => {
-        this.stream.end();
-        return reject(new Parser.TimeoutError());
-      };
-      errorListener = (err) => reject(err);
-      this.stream.on('readable', tryRead);
-      this.stream.on('error', errorListener);
-      this.stream.on('end', endListener);
-      this.stream.on('timeout', timeoutListener);
-      tryRead();
-      // onCancel(() => {});
-    }).finally(() => {
-      this.stream.removeListener('readable', tryRead);
-      this.stream.removeListener('error', errorListener);
-      this.stream.removeListener('end', endListener);
-      this.stream.removeListener('timeout', timeoutListener);
-    });
+        reject(new Parser.PrematureEOFError(howMany));
+      },
+    }));
   }
 
-  public readByteFlow(howMany: number, targetStream: Duplex): Bluebird<void> {
-    let tryRead: () => void;
-    let errorListener: (error: Error) => void;
-    let endListener: () => void;
-    let timeoutListener: () => void;
-    return new Bluebird<void>((resolve, reject /*, onCancel*/) => {
-      tryRead = () => {
+  public readByteFlow(howMany: number, targetStream: Duplex): Promise<void> {
+    return this._read<void>((resolve, reject) => ({
+      readable: () => {
         if (howMany) {
           // Try to get the exact amount we need first. If unsuccessful, take
           // whatever is available, which will be less than the needed amount.
@@ -233,33 +237,15 @@ export default class Parser {
         } else {
           return resolve();
         }
-      };
-      endListener = () => {
+      },
+      end: () => {
         this.ended = true;
-        return reject(new Parser.PrematureEOFError(howMany));
-      };
-      errorListener = function (err) {
-        return reject(err);
-      };
-      timeoutListener = () => {
-        this.stream.end();
-        return reject(new Parser.TimeoutError());
-      };
-      this.stream.on('readable', tryRead);
-      this.stream.on('error', errorListener);
-      this.stream.on('end', endListener);
-      this.stream.on('timeout', timeoutListener);
-      tryRead();
-      // onCancel(() => {});
-    }).finally(() => {
-      this.stream.removeListener('readable', tryRead);
-      this.stream.removeListener('error', errorListener);
-      this.stream.removeListener('end', endListener);
-      this.stream.removeListener('timeout', timeoutListener);
-    });
+        reject(new Parser.PrematureEOFError(howMany));
+      },
+    }));
   }
 
-  public readError(): Bluebird<never> {
+  public readError(): Promise<never> {
     return this.readValue()
       .then(function (value) {
         throw new Parser.FailError(value.toString());
@@ -273,14 +259,14 @@ export default class Parser {
       });
   }
 
-  public readValue(): Bluebird<Buffer> {
+  public readValue(): Promise<Buffer> {
     return this.readAscii(4).then((value) => {
       const length = Protocol.decodeLength(value);
       return this.readBytes(length);
     });
   }
 
-  public readUntil(code: number): Bluebird<Buffer> {
+  public readUntil(code: number): Promise<Buffer> {
     let skipped = Buffer.alloc(0);
     const read = () => {
       return this.readBytes(1).then(function (chunk) {
@@ -295,7 +281,7 @@ export default class Parser {
     return read();
   }
 
-  searchLine(re: RegExp): Bluebird<RegExpExecArray> {
+  searchLine(re: RegExp): Promise<RegExpExecArray> {
     return this.readLine().then((line) => {
       const match = re.exec(line.toString());
       if (match) {
@@ -306,7 +292,7 @@ export default class Parser {
     });
   }
 
-  public readLine(): Bluebird<Buffer> {
+  public readLine(): Promise<Buffer> {
     return this.readUntil(0x0a).then(function (line) {
       // '\n'
       if (line[line.length - 1] === 0x0d) {
@@ -319,10 +305,10 @@ export default class Parser {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public unexpected(data: string, expected: string): Bluebird<any> {
+  public unexpected(data: string, expected: string): Promise<any> {
     // The protocol state is unknown after unexpected data, so the
     // connection can never be safely reused; destroy it to avoid leaks.
     this.stream.destroy();
-    return Bluebird.reject(new Parser.UnexpectedDataError(data, expected));
+    return Promise.reject(new Parser.UnexpectedDataError(data, expected));
   }
 }

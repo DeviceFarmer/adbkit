@@ -1,14 +1,13 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 export default class RebootCommand extends Command<boolean> {
-  execute(): Bluebird<boolean> {
+  execute(): Promise<boolean> {
     this._send('reboot:');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
         case Protocol.OKAY:
-          return this.parser.readAll().return(true);
+          return this.parser.readAll().then(() => true);
         case Protocol.FAIL:
           return this.parser.readError();
         default:

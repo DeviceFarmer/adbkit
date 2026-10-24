@@ -2,7 +2,6 @@ import Protocol from '../../protocol';
 import Parser from '../../parser';
 import Command from '../../command';
 import StartActivityOptions from '../../../StartActivityOptions';
-import Bluebird from 'bluebird';
 import { Extra, ExtraObject, ExtraValue } from '../../../StartServiceOptions';
 
 const RE_ERROR = /^Error: (.*)$/;
@@ -19,7 +18,7 @@ const EXTRA_TYPES = {
 };
 
 class StartActivityCommand extends Command<boolean> {
-  execute(options: StartActivityOptions): Bluebird<boolean> {
+  execute(options: StartActivityOptions): Promise<boolean> {
     const args = this._intentArgs(options);
     if (options.debug) {
       args.push('-D');
@@ -33,7 +32,7 @@ class StartActivityCommand extends Command<boolean> {
     return this._run('start', args);
   }
 
-  _run(command: string, args: Array<string | number>): Bluebird<boolean> {
+  _run(command: string, args: Array<string | number>): Promise<boolean> {
     this._send(`shell:am ${command} ${args.join(' ')}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
@@ -46,8 +45,11 @@ class StartActivityCommand extends Command<boolean> {
             .then(function (match) {
               throw new Error(match[1]);
             })
-            .catch(Parser.PrematureEOFError, function () {
-              return true;
+            .catch(function (err) {
+              if (err instanceof Parser.PrematureEOFError) {
+                return true;
+              }
+              throw err;
             });
         case Protocol.FAIL:
           return this.parser.readError();

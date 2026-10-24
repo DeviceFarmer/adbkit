@@ -1,12 +1,11 @@
 import LineTransform from '../../linetransform';
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 // FIXME(intentional any): not "any" will break it all
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default class LogcatCommand extends Command<any> {
-  execute(options: { clear?: boolean } = {}): Bluebird<LineTransform> {
+  execute(options: { clear?: boolean } = {}): Promise<LineTransform> {
     let cmd;
     // For some reason, LG G Flex requires a filter spec with the -B option.
     // It doesn't actually use it, though. Regardless of the spec we always get

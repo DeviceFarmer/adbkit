@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventEmitter } from 'events';
-import Bluebird from 'bluebird';
 import Parser from './parser';
+import { warnUnhandled } from './promise';
 import Command from './command';
 
 interface JdwpTrackerChangeSet {
@@ -18,7 +18,9 @@ interface JdwpTrackerChangeSet {
 export default class JdwpTracker extends EventEmitter {
   private pids = [];
   private pidMap = Object.create(null);
-  private reader: Bluebird<JdwpTracker | boolean>;
+  private reader: Promise<unknown>;
+  private reading = true;
+  private ended = false;
 
   constructor(private command: Command<JdwpTracker>) {
     super();
@@ -26,18 +28,22 @@ export default class JdwpTracker extends EventEmitter {
     this.pids = [];
     this.pidMap = Object.create(null);
     this.reader = this.read()
-      .catch(Parser.PrematureEOFError, () => {
-        return this.emit('end');
-      })
-      .catch(Bluebird.CancellationError, () => {
-        this.command.connection.end();
-        return this.emit('end');
-      })
       .catch((err) => {
+        if (err instanceof Parser.PrematureEOFError) {
+          return this._emitEnd();
+        }
+        if (err instanceof Parser.CancellationError) {
+          this.command.connection.end();
+          return this._emitEnd();
+        }
         this.command.connection.end();
         this.emit('error', err);
-        return this.emit('end');
-      });
+        return this._emitEnd();
+      })
+      .finally(() => {
+        this.reading = false;
+      })
+      .catch(warnUnhandled);
   }
 
   on(event: 'end', listener: () => void): this;
@@ -67,7 +73,7 @@ export default class JdwpTracker extends EventEmitter {
     return super.emit(event, ...args);
   }
 
-  read(): Bluebird<JdwpTracker> {
+  read(): Promise<JdwpTracker> {
     return this.command.parser.readValue().then((list) => {
       const pids = list.toString().split('\n');
       const maybeEmpty = pids.pop();
@@ -106,8 +112,26 @@ export default class JdwpTracker extends EventEmitter {
     return this;
   }
 
+  /**
+   * Stops tracking: cancels the pending read, ends the connection and
+   * emits 'end'.
+   */
   end(): JdwpTracker {
-    this.reader.cancel();
+    if (this.reading) {
+      // The read loop ends the connection and emits 'end' once cancelled.
+      this.command.parser.cancel();
+    } else if (!this.ended) {
+      this.command.connection.end();
+      this._emitEnd();
+    }
     return this;
+  }
+
+  private _emitEnd(): boolean {
+    if (this.ended) {
+      return false;
+    }
+    this.ended = true;
+    return this.emit('end');
   }
 }

@@ -1,6 +1,5 @@
 import * as Net from 'net';
 import d from 'debug';
-import Bluebird from 'bluebird';
 import Packet from './packet';
 import Socket from './socket';
 import SendWindow, { INITIAL_WINDOW } from './sendwindow';
@@ -42,7 +41,7 @@ export default class ReverseStream {
     this.socket.write(Packet.assemble(Packet.A_OPEN, this.localId, credit, Buffer.from(`${service}\x00`)));
   }
 
-  public handle(packet: Packet): Bluebird<boolean> {
+  public handle(packet: Packet): Promise<boolean> {
     switch (packet.command) {
       case Packet.A_OKAY:
         debug('I:A_OKAY', packet);
@@ -62,7 +61,7 @@ export default class ReverseStream {
         this.end();
         break;
     }
-    return Bluebird.resolve(true);
+    return Promise.resolve(true);
   }
 
   public end(): ReverseStream {

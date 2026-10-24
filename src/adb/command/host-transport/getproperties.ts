@@ -1,6 +1,5 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 import { Properties } from '../../../Properties';
 
 const RE_KEYVAL = /^\[([\s\S]*?)\]: \[([\s\S]*?)\]\r?$/gm;
@@ -8,7 +7,7 @@ const RE_KEYVAL = /^\[([\s\S]*?)\]: \[([\s\S]*?)\]\r?$/gm;
 // FIXME(intentional any): not "any" will break it all
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default class GetPropertiesCommand extends Command<any> {
-  execute(): Bluebird<Properties> {
+  execute(): Promise<Properties> {
     this._send('shell:getprop');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

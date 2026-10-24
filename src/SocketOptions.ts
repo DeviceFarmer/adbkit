@@ -1,7 +1,10 @@
 import ExtendedPublicKey from './ExtendedPublicKey';
-import Bluebird from 'bluebird';
 
 export default interface SocketOptions {
-  auth?: (key: ExtendedPublicKey) => Bluebird<void | boolean>;
+  /**
+   * Accepts or rejects a client key: resolve to accept, reject to refuse.
+   * Any promise-like value works, as does throwing to refuse.
+   */
+  auth?: (key: ExtendedPublicKey) => PromiseLike<void | boolean>;
   knownPublicKeys?: ExtendedPublicKey[];
 }

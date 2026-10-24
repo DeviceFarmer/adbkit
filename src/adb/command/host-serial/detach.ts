@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class DetachCommand extends Command<boolean> {
-  execute(serial: string): Bluebird<boolean> {
+  execute(serial: string): Promise<boolean> {
     this._send(`host-serial:${serial}:detach`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

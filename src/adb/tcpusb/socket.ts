@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
 import d from 'debug';
-import Bluebird from 'bluebird';
 import PacketReader from './packetreader';
 import RollingCounter from './rollingcounter';
 import Packet from './packet';
 import Auth from '../auth';
+import { warnUnhandled } from '../promise';
 import Client from '../client';
 import * as Net from 'net';
 import ServiceMap from './servicemap';
@@ -80,7 +80,7 @@ export default class Socket extends EventEmitter {
     super();
 
     if (!this.options.auth) {
-      this.options.auth = () => Bluebird.resolve(true);
+      this.options.auth = () => Promise.resolve(true);
     }
     this.socket.setNoDelay(true);
     this.reader = new PacketReader(this.socket)
@@ -116,41 +116,49 @@ export default class Socket extends EventEmitter {
     return this.end();
   }
 
-  private _handle(packet: Packet): Bluebird<boolean> {
+  private _handle(packet: Packet): Promise<boolean> {
     if (this.ended) {
-      return Bluebird.resolve(false);
+      return Promise.resolve(false);
     }
     this.emit('userActivity', packet);
-    return Bluebird.try(() => {
-      switch (packet.command) {
-        case Packet.A_SYNC:
-          return Bluebird.resolve(this._handleSyncPacket());
-        case Packet.A_CNXN:
-          return this._handleConnectionPacket(packet);
-        case Packet.A_OPEN:
-          return this._handleOpenPacket(packet).then((r) => !!r);
-        case Packet.A_OKAY:
-        case Packet.A_WRTE:
-        case Packet.A_CLSE:
-          return this._forwardServicePacket(packet).then((r) => !!r);
-        case Packet.A_AUTH:
-          return this._handleAuthPacket(packet);
-        default:
-          throw new Error(`Unknown command ${packet.command}`);
-      }
+    // Runs the handler synchronously, like bluebird's Promise.try did; the
+    // order of the window, ack and open handling depends on it.
+    return new Promise<boolean>((resolve) => {
+      resolve(this._dispatch(packet));
     })
-      .catch(Socket.AuthError, () => {
-        this.end();
-        return false;
-      })
-      .catch(Socket.UnauthorizedError, () => {
-        this.end();
+      .catch((err) => {
+        if (err instanceof Socket.AuthError || err instanceof Socket.UnauthorizedError) {
+          this.end();
+          return false;
+        }
+        this._error(err);
         return false;
       })
       .catch((err) => {
-        this._error(err);
+        // _error() emits 'error', which throws without a listener. The
+        // 'packet' listener calling us doesn't await the result.
+        warnUnhandled(err);
         return false;
       });
+  }
+
+  private _dispatch(packet: Packet): Promise<boolean> {
+    switch (packet.command) {
+      case Packet.A_SYNC:
+        return Promise.resolve(this._handleSyncPacket());
+      case Packet.A_CNXN:
+        return this._handleConnectionPacket(packet);
+      case Packet.A_OPEN:
+        return this._handleOpenPacket(packet).then((r) => !!r);
+      case Packet.A_OKAY:
+      case Packet.A_WRTE:
+      case Packet.A_CLSE:
+        return this._forwardServicePacket(packet).then((r) => !!r);
+      case Packet.A_AUTH:
+        return this._handleAuthPacket(packet);
+      default:
+        throw new Error(`Unknown command ${packet.command}`);
+    }
   }
 
   private _handleSyncPacket(): boolean {
@@ -160,7 +168,7 @@ export default class Socket extends EventEmitter {
     return this.write(Packet.assemble(Packet.A_SYNC, 1, this.syncToken.next()));
   }
 
-  private _handleConnectionPacket(packet): Bluebird<boolean> {
+  private _handleConnectionPacket(packet): Promise<boolean> {
     debug('I:A_CNXN', packet);
     this.version = Packet.swap32(packet.arg0);
     this.maxPayload = Math.min(MAX_PAYLOAD, packet.arg1);
@@ -175,7 +183,7 @@ export default class Socket extends EventEmitter {
     });
   }
 
-  private _handleAuthPacket(packet: Packet): Bluebird<boolean> {
+  private _handleAuthPacket(packet: Packet): Promise<boolean> {
     debug('I:A_AUTH', packet);
     switch (packet.arg0) {
       case AUTH_SIGNATURE: {
@@ -197,7 +205,7 @@ export default class Socket extends EventEmitter {
 
         debug('O:A_AUTH');
         const b = this.write(Packet.assemble(Packet.A_AUTH, AUTH_TOKEN, 0, this.token));
-        return Bluebird.resolve(b);
+        return Promise.resolve(b);
       }
       case AUTH_RSAPUBLICKEY:
         if (!this.signature) {
@@ -220,7 +228,8 @@ export default class Socket extends EventEmitter {
           })
           .then((key) => {
             if (!this.options.auth) return;
-            return this.options.auth(key).catch(() => {
+            const auth = this.options.auth;
+            return new Promise((resolve) => resolve(auth(key))).catch(() => {
               debug('Connection rejected by user-defined auth handler');
               throw new Socket.AuthError('Rejected by user-defined handler');
             });
@@ -237,7 +246,7 @@ export default class Socket extends EventEmitter {
    * Mark the incoming connection as authorized
    * and send the connection packet
    */
-  private _acceptConnection(): Bluebird<boolean> {
+  private _acceptConnection(): Promise<boolean> {
     return this._deviceId().then((id) => {
       this.authorized = true;
       debug('O:A_CNXN');
@@ -245,7 +254,7 @@ export default class Socket extends EventEmitter {
     });
   }
 
-  private _handleOpenPacket(packet: Packet): Bluebird<boolean | Service> {
+  private _handleOpenPacket(packet: Packet): Promise<boolean | Service> {
     if (!this.authorized) {
       throw new Socket.UnauthorizedError();
     }
@@ -257,7 +266,7 @@ export default class Socket extends EventEmitter {
     const name = this._skipNull(packet.data);
     debug(`Calling ${name}`);
     const service = new Service(this.client, this.serial, localId, remoteId, this);
-    return new Bluebird<boolean | Service>((resolve, reject) => {
+    return new Promise<boolean | Service>((resolve, reject) => {
       service.on('error', reject);
       service.on('end', resolve);
       this.services.insert(localId, service);
@@ -291,10 +300,10 @@ export default class Socket extends EventEmitter {
    * `reverse:forward:[norebind:]<remote>;<local>`, listen locally and return the service with <local> replaced
    * by that listener, whose connections are relayed to the client. Other services are returned unchanged.
    */
-  public rewriteReverseService(name: string): Bluebird<string> {
+  public rewriteReverseService(name: string): Promise<string> {
     // The adb server connects to the listener, so it only works when that server shares our host.
     if (LOOPBACK_HOSTS.indexOf(this.client.host) === -1) {
-      return Bluebird.resolve(name);
+      return Promise.resolve(name);
     }
     const forward = /^reverse:forward:(norebind:)?([^;]+);(.+)$/.exec(name);
     if (forward) {
@@ -309,16 +318,16 @@ export default class Socket extends EventEmitter {
         this._closeReverse(remote);
       }
     }
-    return Bluebird.resolve(name);
+    return Promise.resolve(name);
   }
 
   public removeService(localId: number): void {
     this.services.remove(localId);
   }
 
-  private _listenReverse(remote: string, local: string): Bluebird<number> {
+  private _listenReverse(remote: string, local: string): Promise<number> {
     this._closeReverse(remote);
-    return new Bluebird<number>((resolve, reject) => {
+    return new Promise<number>((resolve, reject) => {
       const server = Net.createServer((conn) => this._openReverse(local, conn));
       server.on('error', reject);
       server.listen(0, '127.0.0.1', () => {
@@ -355,15 +364,17 @@ export default class Socket extends EventEmitter {
     return this.socket.write(chunk);
   }
 
-  private _createToken(): Bluebird<Buffer> {
-    return Bluebird.promisify(crypto.randomBytes)(TOKEN_LENGTH);
+  private _createToken(): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(TOKEN_LENGTH, (err, buf) => (err ? reject(err) : resolve(buf)));
+    });
   }
 
   private _skipNull(data: Buffer): Buffer {
     return data.slice(0, -1); // Discard null byte at end
   }
 
-  private _deviceId(): Bluebird<Buffer> {
+  private _deviceId(): Promise<Buffer> {
     debug('Loading device properties to form a standard device ID');
     return this.client
       .getDevice(this.serial)

@@ -5,7 +5,6 @@ import * as pkg from '../package.json';
 import Adb from './adb';
 import Auth from './adb/auth';
 import PacketReader from './adb/tcpusb/packetreader';
-import Bluebird from 'bluebird';
 
 const program = new Command();
 
@@ -46,7 +45,7 @@ program
     const adb = Adb.createClient();
     const server = adb
       .createTcpUsbBridge(serial, {
-        auth: () => Bluebird.resolve(),
+        auth: () => Promise.resolve(),
       })
       .on('listening', () => console.info('Connect with `adb connect localhost:%d`', options.port))
       .on('error', (err) => console.error('An error occured: ' + err.message));

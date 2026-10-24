@@ -1,6 +1,5 @@
 import Fs from 'fs';
 import Stream from 'stream';
-import Promise from 'bluebird';
 import Sinon from 'sinon';
 import { use, expect, assert } from 'chai';
 import simonChai from 'sinon-chai';
@@ -12,10 +11,14 @@ import Entry from '../../dist/src/adb/sync/entry.js';
 import PushTransferModule from '../../dist/src/adb/sync/pushtransfer.js';
 import PullTransferModule from '../../dist/src/adb/sync/pulltransfer.js';
 import MockConnection from '../mock/connection.mts';
+import ParserModule from '../../dist/src/adb/parser.js';
+import ProtocolModule from '../../dist/src/adb/protocol.js';
 import type Client from '../../dist/src/adb/client.js';
 import type Device from '../../dist/src/Device.js';
 
 const Adb = AdbModule.default;
+const Parser = ParserModule.default;
+const Protocol = ProtocolModule.default;
 const Sync = SyncModule.default;
 const Stats = StatsModule.default;
 const PushTransfer = PushTransferModule.default;
@@ -44,7 +47,7 @@ describe('Sync', function () {
         .syncService()
         .then(function (sync: Sync) {
           expect(sync).to.be.an.instanceof(Sync);
-          return Promise.cast(iterator(sync)).finally(function () {
+          return Promise.resolve(iterator(sync)).finally(function () {
             return sync.end();
           });
         });
@@ -172,7 +175,7 @@ describe('Sync', function () {
       });
     });
   });
-  return describe('stat(path)', function () {
+  describe('stat(path)', function () {
     dt('should return a Promise', function () {
       return forEachSyncDevice(function (sync) {
         const rval = sync.stat(SURELY_EXISTING_PATH);
@@ -263,6 +266,114 @@ describe('Sync', function () {
           });
         });
       });
+    });
+  });
+  describe('pushStream() without a device', function () {
+    const setup = () => {
+      const conn = new MockConnection();
+      const writes: Buffer[] = [];
+      conn.getSocket().on('write', (chunk: Buffer) => writes.push(Buffer.from(chunk)));
+      const sync = new Sync(conn);
+      const stream = new Stream.PassThrough();
+      const transfer = sync.pushStream(stream, '/foo', 0o644);
+      return { conn, writes, stream, transfer };
+    };
+    const commands = (writes: Buffer[]) => {
+      // Splits what was written into [id, length] headers, skipping payloads.
+      const all = Buffer.concat(writes);
+      const out: Array<[string, number]> = [];
+      let offset = 0;
+      while (offset < all.length) {
+        const id = all.toString('ascii', offset, offset + 4);
+        const length = all.readUInt32LE(offset + 4);
+        out.push([id, length]);
+        offset += 8 + (id === 'DONE' ? 0 : length);
+      }
+      return out;
+    };
+    const expectNoListeners = (stream: Stream.PassThrough) => {
+      expect(stream.listenerCount('readable')).to.equal(0);
+      expect(stream.listenerCount('end')).to.equal(0);
+      expect(stream.listenerCount('error')).to.equal(0);
+    };
+    it('should send the data in 64 KiB chunks, then DONE, and end on OKAY', function (done) {
+      const { conn, writes, stream, transfer } = setup();
+      transfer.on('error', done);
+      transfer.on('end', function () {
+        try {
+          const sent = commands(writes);
+          expect(sent[0][0]).to.equal('SEND');
+          expect(sent.slice(1).map(([id, length]) => (id === 'DONE' ? id : `${id} ${length}`))).to.eql([
+            'DATA 65536',
+            'DATA 4464',
+            'DONE',
+          ]);
+          expect(transfer.stats.bytesTransferred).to.equal(70000);
+          expectNoListeners(stream);
+          done();
+        } catch (err) {
+          done(err);
+        }
+      });
+      stream.end(Buffer.alloc(70000, 1));
+      setTimeout(function () {
+        conn.getSocket().causeRead(Protocol.OKAY);
+        conn.getSocket().causeRead(Buffer.alloc(4));
+      }, 10);
+    });
+    it("should emit 'error' with a FailError on a FAIL reply", function (done) {
+      const { conn, stream, transfer } = setup();
+      transfer.on('error', function (err) {
+        try {
+          expect(err).to.be.an.instanceOf(Parser.FailError);
+          setImmediate(function () {
+            expectNoListeners(stream);
+            done();
+          });
+        } catch (e) {
+          done(e);
+        }
+      });
+      stream.write(Buffer.alloc(10));
+      setTimeout(function () {
+        const message = Buffer.from('permission denied');
+        const length = Buffer.alloc(4);
+        length.writeUInt32LE(message.length, 0);
+        conn.getSocket().causeRead(Protocol.FAIL);
+        conn.getSocket().causeRead(Buffer.concat([length, message]));
+      }, 10);
+    });
+  });
+  describe('cancel()', function () {
+    it('should end a push transfer, its connection and the stream listeners', function (done) {
+      const conn = new MockConnection();
+      Sinon.spy(conn, 'end');
+      const sync = new Sync(conn);
+      const stream = new Stream.PassThrough();
+      const transfer = sync.pushStream(stream, 'foo');
+      transfer.on('end', function () {
+        setImmediate(function () {
+          expect(conn.end).to.have.been.called;
+          expect(stream.listenerCount('readable')).to.equal(0);
+          expect(stream.listenerCount('end')).to.equal(0);
+          expect(stream.listenerCount('error')).to.equal(0);
+          done();
+        });
+      });
+      transfer.on('error', done);
+      transfer.cancel();
+    });
+    it('should end a pull transfer and its connection', function (done) {
+      const conn = new MockConnection();
+      Sinon.spy(conn, 'end');
+      const sync = new Sync(conn);
+      const transfer = sync.pull('foo');
+      transfer.on('finish', function () {
+        expect(conn.end).to.have.been.called;
+        done();
+      });
+      transfer.on('error', done);
+      transfer.cancel();
     });
   });
 });

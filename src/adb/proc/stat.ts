@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
 import Parser from '../parser';
 import Sync from '../sync';
+import { warnUnhandled } from '../promise';
 import { CpuStats, Loads } from '../../CpuStats';
-import Bluebird from 'bluebird';
 
 const RE_CPULINE = /^cpu[0-9]+ .*$/gm;
 const RE_COLSEP = / +/g;
@@ -28,10 +28,8 @@ class ProcStat extends EventEmitter {
 
     this.stats = this._emptyStats();
     this._ignore = {};
-    this._timer = setInterval(() => {
-      return this.update();
-    }, this.interval);
-    this.update();
+    this._timer = setInterval(() => this._tick(), this.interval);
+    this._tick();
   }
 
   public end(): void {
@@ -42,7 +40,7 @@ class ProcStat extends EventEmitter {
     }
   }
 
-  public update(): Bluebird<Stats> {
+  public update(): Promise<Stats> {
     if (!this.sync) {
       throw Error('Closed');
     }
@@ -53,8 +51,17 @@ class ProcStat extends EventEmitter {
       })
       .catch((err) => {
         this._error(err);
-        return Bluebird.reject(err);
+        throw err;
       });
+  }
+
+  // The periodic updates aren't awaited by anyone; their errors are reported
+  // through the 'error' event instead of as unhandled rejections.
+  private _tick(): void {
+    if (!this.sync) {
+      return;
+    }
+    this.update().catch(() => undefined);
   }
 
   private _parse(out: string): Stats {
@@ -137,6 +144,12 @@ class ProcStat extends EventEmitter {
   }
 
   private _error(err: Error): boolean {
+    if (this.listenerCount('error') === 0) {
+      // Without a listener, emit() would throw inside a promise chain that
+      // nobody awaits. Warn like the old bluebird unhandled rejection did.
+      warnUnhandled(err);
+      return false;
+    }
     return this.emit('error', err);
   }
 

@@ -1,10 +1,9 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
 import Reverse from '../../../Reverse';
-import Bluebird from 'bluebird';
 
 export default class ListReversesCommand extends Command<Reverse[]> {
-  execute(): Bluebird<Reverse[]> {
+  execute(): Promise<Reverse[]> {
     this._send('reverse:list-forward');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

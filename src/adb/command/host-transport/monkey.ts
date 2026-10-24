@@ -1,10 +1,12 @@
-import Bluebird from 'bluebird';
 import Protocol from '../../protocol';
+import Parser from '../../parser';
 import Command from '../../command';
 import { Duplex } from 'stream';
 
+const MONKEY_LINE_TIMEOUT = 1000;
+
 export default class MonkeyCommand extends Command<Duplex> {
-  execute(port: number): Bluebird<Duplex> {
+  execute(port: number): Promise<Duplex> {
     // Some devices have broken /sdcard (i.e. /mnt/sdcard), which monkey will
     // attempt to use to write log files to. We can cheat and set the location
     // with an environment variable, because most logs use
@@ -26,20 +28,30 @@ export default class MonkeyCommand extends Command<Duplex> {
           // On some devices (such as F-08D by Fujitsu), the monkey
           // command gives no output no matter how many verbose flags you
           // give it. So we use a fallback timeout.
-          return this.parser
-            .searchLine(/^:Monkey:/)
-            .timeout(1000)
-            .then(() => {
-              return this.parser.raw();
-            })
-            .catch(Bluebird.TimeoutError, () => {
-              return this.parser.raw();
-            });
+          // The timeout has to cancel the search; otherwise it would keep
+          // consuming the monkey's output from the stream.
+          return this._searchMonkeyLine();
         case Protocol.FAIL:
           return this.parser.readError();
         default:
           return this.parser.unexpected(reply, 'OKAY or FAIL');
       }
     });
+  }
+
+  private _searchMonkeyLine(): Promise<Duplex> {
+    const timer = setTimeout(() => this.parser.cancel(), MONKEY_LINE_TIMEOUT);
+    return this.parser
+      .searchLine(/^:Monkey:/)
+      .then(
+        () => this.parser.raw(),
+        (err) => {
+          if (err instanceof Parser.CancellationError) {
+            return this.parser.raw();
+          }
+          throw err;
+        },
+      )
+      .finally(() => clearTimeout(timer));
   }
 }

@@ -1,9 +1,8 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
-import Bluebird from 'bluebird';
 
 export default class GetPackagesCommand extends Command<string[]> {
-  execute(flags?: string): Bluebird<string[]> {
+  execute(flags?: string): Promise<string[]> {
     if (flags) {
       this._send(`shell:pm list packages ${flags} 2>/dev/null`);
     } else {

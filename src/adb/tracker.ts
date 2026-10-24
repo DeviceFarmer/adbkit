@@ -1,5 +1,5 @@
-import Bluebird from 'bluebird';
 import Parser from './parser';
+import { warnUnhandled } from './promise';
 import { EventEmitter } from 'events';
 import Device from '../Device';
 import HostDevicesCommand from './command/host/devices';
@@ -9,22 +9,31 @@ import TrackerChangeSet from '../TrackerChangeSet';
 export default class Tracker extends EventEmitter {
   private deviceList: Device[] = [];
   private deviceMap: Record<string, Device> = {};
-  private reader: Bluebird<boolean | Device[]>;
+  private reader: Promise<unknown>;
 
   constructor(private readonly command: HostDevicesCommand | HostDevicesWithPathsCommand) {
     super();
     this.reader = this.read()
-      .catch(Bluebird.CancellationError, () => true)
-      .catch(Parser.PrematureEOFError, () => {
-        throw new Error('Connection closed');
+      .catch((err) => {
+        if (err instanceof Parser.CancellationError) {
+          return true;
+        }
+        if (err instanceof Parser.PrematureEOFError) {
+          throw new Error('Connection closed');
+        }
+        throw err;
       })
       .catch((err) => this.emit('error', err))
       .finally(() => {
-        this.command.parser.end().then(() => this.emit('end'));
-      });
+        this.command.parser
+          .end()
+          .then(() => this.emit('end'))
+          .catch(warnUnhandled);
+      })
+      .catch(warnUnhandled);
   }
 
-  public read(): Bluebird<Device[]> {
+  public read(): Promise<Device[]> {
     return this.command._readDevices().then((list) => {
       this.update(list);
       return this.read();
@@ -66,8 +75,12 @@ export default class Tracker extends EventEmitter {
     return this;
   }
 
+  /**
+   * Stops tracking: cancels the pending read and closes the connection.
+   * Emits 'end' once the connection has ended.
+   */
   public end(): Tracker {
-    this.reader.cancel();
+    this.command.parser.cancel();
     return this;
   }
 }

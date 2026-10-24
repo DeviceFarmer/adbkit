@@ -1,11 +1,10 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 const RE_OK = /restarting in/;
 
 export default class TcpIpCommand extends Command<number> {
-  execute(port: number): Bluebird<number> {
+  execute(port: number): Promise<number> {
     this._send(`tcpip:${port}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

@@ -1,10 +1,9 @@
-import Bluebird from 'bluebird';
 import Protocol from '../../protocol';
 import Command from '../../command';
 import JdwpTracker from '../../jdwptracker';
 
 export default class TrackJdwpCommand extends Command<JdwpTracker> {
-  execute(): Bluebird<JdwpTracker> {
+  execute(): Promise<JdwpTracker> {
     this._send('track-jdwp');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

@@ -1,10 +1,9 @@
 import Protocol from '../../protocol';
 import Sync from '../../sync';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 
 export default class SyncCommand extends Command<Sync> {
-  execute(): Bluebird<Sync> {
+  execute(): Promise<Sync> {
     this._send('sync:');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

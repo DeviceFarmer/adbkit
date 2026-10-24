@@ -5,7 +5,6 @@ import Parser from './parser';
 import dump from './dump';
 import d from 'debug';
 import { Socket } from 'net';
-import Bluebird from 'bluebird';
 import { ClientOptions } from '../ClientOptions';
 
 const debug = d('adb:connection');
@@ -24,7 +23,7 @@ export default class Connection extends EventEmitter {
     this.triedStarting = false;
   }
 
-  public connect(): Bluebird<Connection> {
+  public connect(): Promise<Connection> {
     this.socket = Net.connect(this.options);
     this.socket.setNoDelay(true);
     this.parser = new Parser(this.socket);
@@ -34,7 +33,7 @@ export default class Connection extends EventEmitter {
     this.socket.on('timeout', () => this.emit('timeout'));
     this.socket.on('close', (hadError: boolean) => this.emit('close', hadError));
 
-    return new Bluebird((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.socket.once('connect', resolve);
       this.socket.once('error', reject);
     })
@@ -83,7 +82,7 @@ export default class Connection extends EventEmitter {
     return this;
   }
 
-  public startServer(): Bluebird<ChildProcess> {
+  public startServer(): Promise<ChildProcess> {
     let port = 0;
     if ('port' in this.options) {
       port = this.options.port;
@@ -93,9 +92,9 @@ export default class Connection extends EventEmitter {
     return this._exec(args, {});
   }
 
-  private _exec(args: string[], options): Bluebird<ChildProcess> {
+  private _exec(args: string[], options): Promise<ChildProcess> {
     debug(`CLI: ${this.options.bin} ${args.join(' ')}`);
-    return new Bluebird<ChildProcess>((resolve, reject) => {
+    return new Promise<ChildProcess>((resolve, reject) => {
       const proc = execFile(this.options.bin as string, args, options, (err) => {
         if (err) {
           return reject(err);

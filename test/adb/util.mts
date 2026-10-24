@@ -1,5 +1,4 @@
 import Stream from 'stream';
-import Bluebird from 'bluebird';
 import { use, expect } from 'chai';
 import simonChai from 'sinon-chai';
 use(simonChai);
@@ -9,16 +8,12 @@ const util = utilModule.default;
 
 describe('util', function () {
   return describe('readAll(stream)', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise', function () {
       const stream = new Stream.PassThrough();
       const promise = util.readAll(stream);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      // expect(promise.isCancellable()).to.be.true;
-      // promise.catch(Bluebird.CancellationError, function () {
-      //});
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      stream.end();
+      return promise;
     });
     return it('should read all remaining content until the stream ends', function (done) {
       const stream = new Stream.PassThrough();

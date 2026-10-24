@@ -12,7 +12,6 @@ import {
 } from './command/host';
 import TcpUsbServer from './tcpusb/server';
 import Device from '../Device';
-import Bluebird from 'bluebird';
 import { ClientOptions } from '../ClientOptions';
 import SocketOptions from '../SocketOptions';
 import Tracker from './tracker';
@@ -39,7 +38,7 @@ export default class Client extends EventEmitter {
     return new TcpUsbServer(this, serial, options);
   }
 
-  public connection(): Bluebird<Connection> {
+  public connection(): Promise<Connection> {
     const connection = new Connection(this.options);
     // Reemit unhandled connection errors, so they can be handled externally.
     // If not handled at all, these will crash node.
@@ -47,11 +46,11 @@ export default class Client extends EventEmitter {
     return connection.connect();
   }
 
-  public version(): Bluebird<number> {
+  public version(): Promise<number> {
     return this.connection().then((conn) => new HostVersionCommand(conn).execute());
   }
 
-  public connect(host: string, port = 5555): Bluebird<string> {
+  public connect(host: string, port = 5555): Promise<string> {
     if (host.indexOf(':') !== -1) {
       const [h, portString] = host.split(':', 2);
       host = h;
@@ -63,7 +62,7 @@ export default class Client extends EventEmitter {
     return this.connection().then((conn) => new HostConnectCommand(conn).execute(host, port));
   }
 
-  public disconnect(host: string, port = 5555): Bluebird<DeviceClient> {
+  public disconnect(host: string, port = 5555): Promise<DeviceClient> {
     if (host.indexOf(':') !== -1) {
       const [h, portString] = host.split(':', 2);
       host = h;
@@ -77,19 +76,19 @@ export default class Client extends EventEmitter {
       .then((deviceId) => new DeviceClient(this, deviceId));
   }
 
-  public listDevices(): Bluebird<Device[]> {
+  public listDevices(): Promise<Device[]> {
     return this.connection().then((conn) => new HostDevicesCommand(conn).execute());
   }
 
-  public listDevicesWithPaths(): Bluebird<DeviceWithPath[]> {
+  public listDevicesWithPaths(): Promise<DeviceWithPath[]> {
     return this.connection().then((conn) => new HostDevicesWithPathsCommand(conn).execute());
   }
 
-  public trackDevices(): Bluebird<Tracker> {
+  public trackDevices(): Promise<Tracker> {
     return this.connection().then((conn) => new HostTrackDevicesCommand(conn).execute());
   }
 
-  public kill(): Bluebird<boolean> {
+  public kill(): Promise<boolean> {
     return this.connection().then((conn) => new HostKillCommand(conn).execute());
   }
 

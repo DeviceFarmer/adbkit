@@ -2,11 +2,10 @@ import LineTransform from '../../linetransform';
 import Protocol from '../../protocol';
 import Parser from '../../parser';
 import Command from '../../command';
-import Bluebird from 'bluebird';
 import { Duplex } from 'stream';
 
 export default class ScreencapCommand extends Command<Duplex> {
-  execute(): Bluebird<Duplex> {
+  execute(): Promise<Duplex> {
     this._send('shell:echo && screencap -p 2>/dev/null');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
@@ -19,8 +18,11 @@ export default class ScreencapCommand extends Command<Duplex> {
               transform.write(chunk);
               return this.parser.raw().pipe(transform);
             })
-            .catch(Parser.PrematureEOFError, () => {
-              throw Error('No support for the screencap command');
+            .catch((err) => {
+              if (err instanceof Parser.PrematureEOFError) {
+                throw Error('No support for the screencap command');
+              }
+              throw err;
             });
         }
         case Protocol.FAIL:

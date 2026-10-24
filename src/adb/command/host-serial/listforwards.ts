@@ -1,10 +1,9 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
 import Forward from '../../../Forward';
-import Bluebird from 'bluebird';
 
 export default class ListForwardsCommand extends Command<Forward[]> {
-  execute(serial: string): Bluebird<Forward[]> {
+  execute(serial: string): Promise<Forward[]> {
     this._send(`host-serial:${serial}:list-forward`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {

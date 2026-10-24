@@ -177,6 +177,18 @@ d\toffline`),
       });
       return this.tracker.end();
     });
+    it('should stop even when called between two reads', function (done) {
+      // 'changeSet' fires after a read completes and before the next one
+      // starts, so the cancel has to stick for reads started afterwards.
+      const spy = Sinon.spy();
+      this.tracker.on('error', spy);
+      this.tracker.once('changeSet', () => this.tracker.end());
+      this.tracker.on('end', function () {
+        expect(spy).to.not.have.been.called;
+        done();
+      });
+      this.writer.write(Protocol.encodeData('a\tdevice\n'));
+    });
     return it('should not cause an error to be emit', function (done) {
       const spy = Sinon.spy();
       this.tracker.on('error', spy);

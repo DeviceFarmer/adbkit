@@ -109,7 +109,8 @@ java.lang.IllegalArgumentException: Unknown package: foo
       conn.getSocket().causeRead('Hello. Is it me you are looking for?\r\n');
       return conn.getSocket().causeEnd();
     });
-    cmd.execute('foo').catch(Parser.PrematureEOFError, function () {
+    cmd.execute('foo').catch(function (err) {
+      expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
       done();
     });
   });

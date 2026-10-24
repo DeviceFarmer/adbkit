@@ -21,7 +21,7 @@ export { default as TrackerChangeSet } from './src/TrackerChangeSet';
 export { default as WithToString } from './src/WithToString';
 
 export { default as Client } from './src/adb/client';
-export { default as DeviceClient } from './src/adb/DeviceClient';
+export { default as DeviceClient, MonkeyClient, WaitOptions } from './src/adb/DeviceClient';
 export { default as ShellCommand } from './src/adb/command/host-transport/shell';
 
 export { KeyCodes } from './src/adb/keycode';

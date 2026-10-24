@@ -1,5 +1,5 @@
 import Stream from 'stream';
-import Bluebird from 'bluebird';
+import { setTimeout as delay } from 'node:timers/promises';
 import { use, expect } from 'chai';
 import simonChai from 'sinon-chai';
 use(simonChai);
@@ -21,14 +21,18 @@ describe('Parser', function () {
     });
   });
   describe('readAll()', function () {
-    it('should return a cancellable Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readAll();
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should read all remaining content until the stream ends', function (done) {
       const stream = new Stream.PassThrough();
@@ -54,14 +58,18 @@ describe('Parser', function () {
     });
   });
   describe('readBytes(howMany)', function () {
-    it('should return a cancellable Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readBytes(1);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should read as many bytes as requested', function (done) {
       const stream = new Stream.PassThrough();
@@ -84,7 +92,7 @@ describe('Parser', function () {
         expect(buf.toString()).to.equal('BYTES');
         done();
       });
-      Bluebird.delay(50).then(function () {
+      delay(50).then(function () {
         return stream.write('BYTES');
       });
     });
@@ -92,7 +100,7 @@ describe('Parser', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       stream.write('FOO');
-      Bluebird.delay(50).then(function () {
+      delay(50).then(function () {
         return parser.readBytes(2).then(function (buf) {
           expect(buf.length).to.equal(2);
           expect(buf.toString()).to.equal('FO');
@@ -104,7 +112,8 @@ describe('Parser', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       stream.write('F');
-      parser.readBytes(10).catch(Parser.PrematureEOFError, function (err) {
+      parser.readBytes(10).catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         expect(err.missingBytes).to.equal(9);
         done();
       });
@@ -112,15 +121,19 @@ describe('Parser', function () {
     });
   });
   describe('readByteFlow(maxHowMany, targetStream)', function () {
-    it('should return a cancellable Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const target = new Stream.PassThrough();
       const promise = parser.readByteFlow(1, target);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should read as many bytes as requested', function (done) {
       const stream = new Stream.PassThrough();
@@ -160,14 +173,18 @@ describe('Parser', function () {
     });
   });
   describe('readAscii(howMany)', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readAscii(1);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should read as many ascii characters as requested', function (done) {
       const stream = new Stream.PassThrough();
@@ -183,7 +200,8 @@ describe('Parser', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       stream.write('FOO');
-      parser.readAscii(7).catch(Parser.PrematureEOFError, function (err) {
+      parser.readAscii(7).catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         expect(err.missingBytes).to.equal(4);
         done();
       });
@@ -191,14 +209,18 @@ describe('Parser', function () {
     });
   });
   describe('readValue()', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readValue();
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should read a protocol value as a Buffer', function (done) {
       const stream = new Stream.PassThrough();
@@ -224,7 +246,8 @@ describe('Parser', function () {
     return it('should reject with Parser.PrematureEOFError if stream ends before the value can be read', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.readValue().catch(Parser.PrematureEOFError, function () {
+      parser.readValue().catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         done();
       });
       stream.write('00ffabc');
@@ -232,19 +255,24 @@ describe('Parser', function () {
     });
   });
   describe('readError()', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readError();
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should reject with Parser.FailError using the value', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.readError().catch(Parser.FailError, function (err) {
+      parser.readError().catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.FailError);
         expect(err.message).to.equal("Failure: 'epic failure'");
         done();
       });
@@ -253,7 +281,8 @@ describe('Parser', function () {
     return it('should reject with Parser.PrematureEOFError if stream ends before the error can be read', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.readError().catch(Parser.PrematureEOFError, function () {
+      parser.readError().catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         done();
       });
       stream.write('000cepic');
@@ -261,14 +290,18 @@ describe('Parser', function () {
     });
   });
   describe('searchLine(re)', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.searchLine(/foo/);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should return the re.exec match of the matching line', function (done) {
       const stream = new Stream.PassThrough();
@@ -284,7 +317,8 @@ describe('Parser', function () {
     return it('should reject with Parser.PrematureEOFError if stream ends before a line is found', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.searchLine(/nope/).catch(Parser.PrematureEOFError, function () {
+      parser.searchLine(/nope/).catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         done();
       });
       stream.write('foo bar');
@@ -292,14 +326,18 @@ describe('Parser', function () {
     });
   });
   describe('readLine()', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readLine();
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should skip a line terminated by \\n', function (done) {
       const stream = new Stream.PassThrough();
@@ -333,7 +371,8 @@ describe('Parser', function () {
     return it('should reject with Parser.PrematureEOFError if stream ends before a line is found', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.readLine().catch(Parser.PrematureEOFError, function () {
+      parser.readLine().catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         done();
       });
       stream.write('foo bar');
@@ -341,14 +380,18 @@ describe('Parser', function () {
     });
   });
   describe('readUntil(code)', function () {
-    it('should return a cancellable Bluebird Promise', function (done) {
+    it('should return a native Promise that parser.cancel() rejects', function () {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
       const promise = parser.readUntil(0xa0);
-      expect(promise).to.be.an.instanceOf(Bluebird);
-      promise.cancel();
-      expect(promise.isCancelled()).to.be.true;
-      done();
+      expect(promise).to.be.an.instanceOf(Promise);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
     });
     it('should return any characters before given value', function (done) {
       const stream = new Stream.PassThrough();
@@ -362,7 +405,8 @@ describe('Parser', function () {
     return it('should reject with Parser.PrematureEOFError if stream ends before a line is found', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.readUntil('z'.charCodeAt(0)).catch(Parser.PrematureEOFError, function () {
+      parser.readUntil('z'.charCodeAt(0)).catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.PrematureEOFError);
         done();
       });
       stream.write('ho ho');
@@ -381,15 +425,59 @@ describe('Parser', function () {
       return raw.write('foo');
     });
   });
-  return describe('unexpected(data, expected)', function () {
+  describe('unexpected(data, expected)', function () {
     return it('should reject with Parser.UnexpectedDataError', function (done) {
       const stream = new Stream.PassThrough();
       const parser = new Parser(stream);
-      parser.unexpected('foo', "'bar' or end of stream").catch(Parser.UnexpectedDataError, function (err) {
+      parser.unexpected('foo', "'bar' or end of stream").catch(function (err) {
+        expect(err).to.be.an.instanceOf(Parser.UnexpectedDataError);
         expect(err.message).to.equal("Unexpected 'foo', was expecting 'bar' or end of stream");
         expect(err.unexpected).to.equal('foo');
         expect(err.expected).to.equal("'bar' or end of stream");
         done();
+      });
+    });
+  });
+  describe('cancel()', function () {
+    it('should reject the pending read and remove its listeners', function () {
+      const stream = new Stream.PassThrough();
+      const parser = new Parser(stream);
+      const promise = parser.readBytes(4);
+      expect(stream.listenerCount('readable')).to.equal(1);
+      parser.cancel();
+      return promise.then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => {
+          expect(err).to.be.an.instanceOf(Parser.CancellationError);
+          expect(stream.listenerCount('readable')).to.equal(0);
+          expect(stream.listenerCount('end')).to.equal(0);
+          expect(stream.listenerCount('error')).to.equal(0);
+        },
+      );
+    });
+    it('should reject reads started after the cancel', function () {
+      const stream = new Stream.PassThrough();
+      const parser = new Parser(stream);
+      parser.cancel();
+      expect(parser.isCancelled()).to.be.true;
+      stream.write('FOO');
+      return parser.readAscii(3).then(
+        () => {
+          throw new Error('Expected a cancellation');
+        },
+        (err) => expect(err).to.be.an.instanceOf(Parser.CancellationError),
+      );
+    });
+    it('should leave end() working', function () {
+      const stream = new Stream.PassThrough();
+      const parser = new Parser(stream);
+      const read = parser.readAll().catch((err) => err);
+      parser.cancel();
+      return Promise.all([read, parser.end()]).then(([err, ended]) => {
+        expect(err).to.be.an.instanceOf(Parser.CancellationError);
+        expect(ended).to.be.true;
       });
     });
   });

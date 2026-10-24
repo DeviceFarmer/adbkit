@@ -37,7 +37,6 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 #### Checking for NFC support
 
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
@@ -45,10 +44,13 @@ const client = Adb.createClient();
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        const supportedDevices = await Bluebird.filter(devices, async (device) => {
-            const features = await client.getFeatures(device.id);
-            return features['android.hardware.nfc'];
-        });
+        const supported = await Promise.all(
+            devices.map(async (device) => {
+                const features = await client.getDevice(device.id).getFeatures();
+                return features['android.hardware.nfc'];
+            }),
+        );
+        const supportedDevices = devices.filter((device, i) => supported[i]);
         console.log('The following devices support NFC:', supportedDevices);
     } catch (err) {
         console.error('Something went wrong:', err.stack);
@@ -59,7 +61,6 @@ const test = async () => {
 #### Installing an APK
 
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
@@ -68,7 +69,7 @@ const apk = 'vendor/app.apk';
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        await Bluebird.map(devices, (device) => client.install(device.id, apk));
+        await Promise.all(devices.map((device) => client.getDevice(device.id).install(apk)));
         console.log(`Installed ${apk} on all connected devices`);
     } catch (err) {
         console.error('Something went wrong:', err.stack);
@@ -97,7 +98,6 @@ const test = async () => {
 #### Pulling a file from all connected devices
 
 ```typescript
-import Bluebird from 'bluebird';
 import fs from 'fs';
 import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
@@ -105,21 +105,23 @@ const client = Adb.createClient();
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        await Bluebird.map(devices, async (device) => {
-            const transfer = await client.pull(device.id, '/system/build.prop');
-            const fn = `/tmp/${device.id}.build.prop`;
-            await new Bluebird((resolve, reject) => {
-                transfer.on('progress', (stats) =>
-                    console.log(`[${device.id}] Pulled ${stats.bytesTransferred} bytes so far`),
-                );
-                transfer.on('end', () => {
-                    console.log(`[${device.id}] Pull complete`);
-                    resolve(device.id);
+        await Promise.all(
+            devices.map(async (device) => {
+                const transfer = await client.pull(device.id, '/system/build.prop');
+                const fn = `/tmp/${device.id}.build.prop`;
+                await new Promise((resolve, reject) => {
+                    transfer.on('progress', (stats) =>
+                        console.log(`[${device.id}] Pulled ${stats.bytesTransferred} bytes so far`),
+                    );
+                    transfer.on('end', () => {
+                        console.log(`[${device.id}] Pull complete`);
+                        resolve(device.id);
+                    });
+                    transfer.on('error', reject);
+                    transfer.pipe(fs.createWriteStream(fn));
                 });
-                transfer.on('error', reject);
-                transfer.pipe(fs.createWriteStream(fn));
-            });
-        });
+            }),
+        );
         console.log('Done pulling /system/build.prop from all connected devices');
     } catch (err) {
         console.error('Something went wrong:', err.stack);
@@ -130,26 +132,27 @@ const test = async () => {
 #### Pushing a file to all connected devices
 
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        await Bluebird.map(devices, async (device) => {
-            const transfer = await client.push(device.id, 'temp/foo.txt', '/data/local/tmp/foo.txt');
-            await new Bluebird(function (resolve, reject) {
-                transfer.on('progress', (stats) =>
-                    console.log(`[${device.id}] Pushed ${stats.bytesTransferred} bytes so far`),
-                );
-                transfer.on('end', () => {
-                    console.log('[${device.id}] Push complete');
-                    resolve();
+        await Promise.all(
+            devices.map(async (device) => {
+                const transfer = await client.push(device.id, 'temp/foo.txt', '/data/local/tmp/foo.txt');
+                await new Promise(function (resolve, reject) {
+                    transfer.on('progress', (stats) =>
+                        console.log(`[${device.id}] Pushed ${stats.bytesTransferred} bytes so far`),
+                    );
+                    transfer.on('end', () => {
+                        console.log('[${device.id}] Push complete');
+                        resolve();
+                    });
+                    transfer.on('error', reject);
                 });
-                transfer.on('error', reject);
-            });
-        });
+            }),
+        );
         console.log('Done pushing foo.txt to all connected devices');
     } catch (err) {
         console.error('Something went wrong:', err.stack);
@@ -160,23 +163,24 @@ const test = async () => {
 #### List files in a folder
 
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        await Bluebird.map(devices, async (device) => {
-            const files = await client.readdir(device.id, '/sdcard');
-            // Synchronous, so we don't have to care about returning at the
-            // right time
-            files.forEach((file) => {
-                if (file.isFile()) {
-                    console.log(`[${device.id}] Found file "${file.name}"`);
-                }
-            });
-        });
+        await Promise.all(
+            devices.map(async (device) => {
+                const files = await client.readdir(device.id, '/sdcard');
+                // Synchronous, so we don't have to care about returning at the
+                // right time
+                files.forEach((file) => {
+                    if (file.isFile()) {
+                        console.log(`[${device.id}] Found file "${file.name}"`);
+                    }
+                });
+            }),
+        );
         console.log('Done checking /sdcard files on connected devices');
     } catch (err) {
         console.error('Something went wrong:', err.stack);
@@ -254,26 +258,27 @@ Connects to the given device, which must have its ADB daemon running in tcp mode
 Note: be careful with using `client.listDevices()` together with `client.tcpip()` and other similar methods that modify the connection with ADB. You might have the same device twice in your device list (i.e. one device connected via both USB and TCP), which can cause havoc if run simultaneously.
 
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
     try {
         const devices = await client.listDevices();
-        await Bluebird.map(devices, async (device) => {
-            const device = client.getDevice(device.id);
-            const port = await device.tcpip();
-            // Switching to TCP mode causes ADB to lose the device for a
-            // moment, so let's just wait till we get it back.
-            await device.waitForDevice();
-            const ip = await device.getDHCPIpAddress();
-            const deviceTCP = await client.connect(ip, port);
-            // It can take a moment for the connection to happen.
-            await deviceTCP.waitForDevice();
-            await deviceTCP.forward('tcp:9222', 'localabstract:chrome_devtools_remote');
-            console.log(`Setup devtools on "${id}"`);
-        });
+        await Promise.all(
+            devices.map(async (device) => {
+                const device = client.getDevice(device.id);
+                const port = await device.tcpip();
+                // Switching to TCP mode causes ADB to lose the device for a
+                // moment, so let's just wait till we get it back.
+                await device.waitForDevice();
+                const ip = await device.getDHCPIpAddress();
+                const deviceTCP = await client.connect(ip, port);
+                // It can take a moment for the connection to happen.
+                await deviceTCP.waitForDevice();
+                await deviceTCP.forward('tcp:9222', 'localabstract:chrome_devtools_remote');
+                console.log(`Setup devtools on "${id}"`);
+            }),
+        );
     } catch (err) {
         console.error('Something went wrong:', err.stack);
     }
@@ -750,7 +755,6 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 
 * Read the output of an instantaneous command
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
@@ -783,13 +787,12 @@ client
 
 * Progressively read the output of a long-running command and terminate it
 ```typescript
-import Bluebird from 'bluebird';
 import Adb from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 client.listDevices()
   .then(function(devices) {
-    return Bluebird.map(devices, function(device) {
+    return Promise.all(devices.map(function(device) {
       const device = client.getDevice(device.id);
       return device.shell('logcat') // logcat just for illustration,
                                     // prefer client.openLogcat in real use 
@@ -808,7 +811,7 @@ client.listDevices()
             console.log('100 lines read already, bye')
           })
         })
-    })
+    }))
   })
   .then(function() {
     console.log('Done.')
@@ -932,24 +935,22 @@ Puts the device's ADB daemon back into USB mode. Reverses `client.tcpip()`. Same
 -   Resolves with: `true`
 
 
-#### device.waitBootComplete()
+#### device.waitBootComplete([options])
 
 Waits until the device has finished booting. Note that the device must already be seen by ADB. This is roughly analogous to periodically checking `adb shell getprop sys.boot_completed`.
 
--   **callback(err)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` if the device has completed booting, `Error` otherwise (can occur if the connection dies while checking).
+-   **options** Optional. The following options are supported:
+    -   **signal** An [`AbortSignal`][node-abortsignal] that aborts the wait. The promise then rejects with `signal.reason` and the connection is closed. For a timeout, pass `AbortSignal.timeout(ms)`, which rejects with a `TimeoutError`.
 -   Returns: `Promise`
 -   Resolves with: `true`
 
-#### device.waitForDevice()
+#### device.waitForDevice([options])
 
 Waits until ADB can see the device. Note that you must know the serial in advance. Other than that, works like `adb -s serial wait-for-device`. If you're planning on reacting to random devices being plugged in and out, consider using `client.trackDevices()` instead.
 
--   **callback(err, id)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` if the device has completed booting, `Error` otherwise (can occur if the connection dies while checking).
-    -   **id** The device ID. Can be useful for chaining.
+-   **options** Optional. Same as for `device.waitBootComplete()`: **signal** aborts the wait.
 -   Returns: `Promise`
--   Resolves with: `id` (see callback)
+-   Resolves with: `id` The device ID. Can be useful for chaining.
 
 #### device.attach():
 Reattaches ADB to the device's ADB USB interface. This re-enables communication between ADB and device, reversing `client.detach()`.
@@ -1083,6 +1084,21 @@ Cancels the transfer by ending the connection. Can be useful for reading endless
 
 -   Returns: The pullTransfer instance.
 
+# Incompatible changes in version 4.x
+
+Version 4 drops [Bluebird](https://github.com/petkaantonov/bluebird). Every method that returned a Bluebird promise now returns a native `Promise`, so Bluebird-only methods such as `.timeout()`, `.delay()`, `.return()`, `.tap()`, `.spread()`, `.nodeify()` and `.cancel()` are no longer available on the results. Node.js 22 or newer is required.
+
+Cancellation, which used to rely on Bluebird, is now explicit:
+
+-   `tracker.end()` (from `client.trackDevices()` and `device.trackJdwp()`) stops tracking and closes the connection. The JDWP tracker now also emits `end`.
+-   `pushTransfer.cancel()` and `pullTransfer.cancel()` stop the transfer and close the sync connection, as documented. A cancelled pull transfer ends, so pipes from it finish.
+-   `device.waitBootComplete()` and `device.waitForDevice()` take an `AbortSignal`, for example `device.waitBootComplete({ signal: AbortSignal.timeout(60000) })`.
+-   The internal `Parser` has a `cancel()` method, which rejects its pending and future reads with `Parser.CancellationError`.
+
+The methods that still accept a Node-style callback (`sync.stat()`, `sync.sta2()`, `sync.readdir()`, `adb.util.readAll()` and `adb.util.parsePublicKey()`) keep doing so.
+
+`device.openMonkey()` resolves with the adbkit-monkey client; its type is now whatever `@devicefarmer/adbkit-monkey` declares instead of `Duplex`.
+
 # Incompatible changes in version 2.x
 
 Previously, we made extensive use of callbacks in almost every feature. While this normally works okay, ADB connections can be quite fickle, and it was starting to become difficult to handle every possible error. For example, we'd often fail to properly clean up after ourselves when a connection suddenly died in an unexpected place, causing memory and resource leaks.
@@ -1141,6 +1157,7 @@ Copyright © The OpenSTF Project. All Rights Reserved.
 [node-net]: http://nodejs.org/api/net.html
 [node-fs]: http://nodejs.org/api/fs.html
 [node-fs-stats]: http://nodejs.org/api/fs.html#fs_class_fs_stats
+[node-abortsignal]: https://nodejs.org/api/globals.html#class-abortsignal
 [node-gm]: https://github.com/aheckmann/gm
 [graphicsmagick]: http://www.graphicsmagick.org/
 [imagemagick]: http://www.imagemagick.org/

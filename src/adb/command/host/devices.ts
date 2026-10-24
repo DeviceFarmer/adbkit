@@ -1,10 +1,9 @@
 import Command from '../../command';
 import Protocol from '../../protocol';
 import Device from '../../../Device';
-import Bluebird from 'bluebird';
 
 export default class HostDevicesCommand extends Command<Device[]> {
-  execute(): Bluebird<Device[]> {
+  execute(): Promise<Device[]> {
     this._send('host:devices');
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
@@ -18,7 +17,7 @@ export default class HostDevicesCommand extends Command<Device[]> {
     });
   }
 
-  public _readDevices(): Bluebird<Device[]> {
+  public _readDevices(): Promise<Device[]> {
     return this.parser.readValue().then(this._parseDevices);
   }
 

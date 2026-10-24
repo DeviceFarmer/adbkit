@@ -2,15 +2,15 @@ import Parser from './parser';
 import Auth from './auth';
 import { Callback } from '../Callback';
 import ExtendedPublicKey from '../ExtendedPublicKey';
-import Bluebird from 'bluebird';
 import { Duplex } from 'stream';
+import { nodeify } from './promise';
 
 export default class Util {
-  public static readAll(stream: Duplex, callback?: Callback<Buffer>): Bluebird<Buffer> {
-    return new Parser(stream).readAll().nodeify(callback);
+  public static readAll(stream: Duplex, callback?: Callback<Buffer>): Promise<Buffer> {
+    return nodeify(new Parser(stream).readAll(), callback);
   }
 
-  public static parsePublicKey(keyString: string, callback?: Callback<ExtendedPublicKey>): Bluebird<ExtendedPublicKey> {
-    return Auth.parsePublicKey(keyString).nodeify(callback);
+  public static parsePublicKey(keyString: string, callback?: Callback<ExtendedPublicKey>): Promise<ExtendedPublicKey> {
+    return nodeify(Auth.parsePublicKey(keyString), callback);
   }
 }

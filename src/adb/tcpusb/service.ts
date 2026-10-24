@@ -1,7 +1,6 @@
 import d from 'debug';
 import { EventEmitter } from 'events';
 import Packet from './packet';
-import Bluebird from 'bluebird';
 import Protocol from '../protocol';
 import Client from '../client';
 import Socket from './socket';
@@ -72,27 +71,32 @@ export default class Service extends EventEmitter {
     return this;
   }
 
-  public handle(packet: Packet): Bluebird<Service | boolean> {
-    return Bluebird.try<Service | boolean>(() => {
-      switch (packet.command) {
-        case Packet.A_OPEN:
-          return this._handleOpenPacket(packet);
-        case Packet.A_OKAY:
-          return this._handleOkayPacket(packet);
-        case Packet.A_WRTE:
-          return this._handleWritePacket(packet);
-        case Packet.A_CLSE:
-          return this._handleClosePacket(packet);
-        default:
-          throw new Error(`Unexpected packet ${packet.command}`);
-      }
+  public handle(packet: Packet): Promise<Service | boolean> {
+    // Runs synchronously, like bluebird's Promise.try did.
+    return new Promise<Service | boolean>((resolve) => {
+      resolve(this._dispatch(packet));
     }).catch((err) => {
       this.emit('error', err);
       return this.end();
     });
   }
 
-  private _handleOpenPacket(packet): Bluebird<boolean> {
+  private _dispatch(packet: Packet): Promise<Service | boolean> | Service | boolean {
+    switch (packet.command) {
+      case Packet.A_OPEN:
+        return this._handleOpenPacket(packet);
+      case Packet.A_OKAY:
+        return this._handleOkayPacket(packet);
+      case Packet.A_WRTE:
+        return this._handleWritePacket(packet);
+      case Packet.A_CLSE:
+        return this._handleClosePacket(packet);
+      default:
+        throw new Error(`Unexpected packet ${packet.command}`);
+    }
+  }
+
+  private _handleOpenPacket(packet): Promise<boolean> {
     debug('I:A_OPEN', packet);
     // With delayed acks, arg1 is how much the client lets us send before its first A_OKAY; 0 means it has them off.
     this.window = new SendWindow(this.socket.delayedAck && packet.arg1 > 0, packet.arg1);
@@ -124,7 +128,7 @@ export default class Service extends EventEmitter {
         });
       })
       .then(() => {
-        return new Bluebird<boolean>((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
           this.transport.socket
             .on('readable', () => this._tryPush())
             .on('end', resolve)

@@ -1,10 +1,9 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
 import { Duplex } from 'stream';
-import Bluebird from 'bluebird';
 
 export default class LogCommand extends Command<Duplex> {
-  execute(name: string): Bluebird<Duplex> {
+  execute(name: string): Promise<Duplex> {
     this._send(`log:${name}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
