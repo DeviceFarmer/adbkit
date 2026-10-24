@@ -157,8 +157,12 @@ export default class Sync extends EventEmitter {
 
   private _writeData(stream: Readable, timeStamp: number): PushTransfer {
     const transfer = new PushTransfer();
-    // Rejects the writer from the outside: on cancel, or when the reader
-    // fails. Replaces bluebird's writer.cancel().
+    // Cancellation is scoped to this transfer: the reply read gets its own
+    // AbortSignal and the writer can be rejected from the outside, both with
+    // `cancelled`, so a cancel never affects other operations on this Sync.
+    // Replaces bluebird's writer.cancel() and reader.cancel().
+    const cancelled = new Parser.CancellationError();
+    const reader = new AbortController();
     let stopWriter: (err: Error) => void = () => undefined;
     const writeData = () => {
       let readableListener: () => void;
@@ -239,14 +243,15 @@ export default class Sync extends EventEmitter {
       });
     };
     const readReply = () => {
-      return this.parser.readAscii(4).then((reply) => {
+      const signal = reader.signal;
+      return this.parser.readAscii(4, signal).then((reply) => {
         switch (reply) {
           case Protocol.OKAY:
-            return this.parser.readBytes(4).then(function () {
+            return this.parser.readBytes(4, signal).then(function () {
               return true;
             });
           case Protocol.FAIL:
-            return this._readError();
+            return this._readError(signal);
           default:
             return this.parser.unexpected(reply, 'OKAY or FAIL');
         }
@@ -256,37 +261,46 @@ export default class Sync extends EventEmitter {
     // writer-reader arrangement right now, it's not immediately obvious
     // that the code is correct and it may or may not have some failing
     // edge cases. Refactor pending.
+    // Clean up before emitting 'error': without a listener the emit throws.
     writeData()
       .catch((err) => {
-        if (err instanceof Parser.CancellationError) {
-          this.connection.end();
+        if (err === cancelled) {
           return;
         }
+        reader.abort(cancelled);
         transfer.emit('error', err);
-        this.parser.cancel();
       })
       .catch(warnUnhandled);
     readReply()
       .catch((err) => {
-        if (err instanceof Parser.CancellationError) {
+        if (err === cancelled) {
           return true;
         }
+        stopWriter(cancelled);
         transfer.emit('error', err);
-        stopWriter(new Parser.CancellationError());
       })
       .finally(() => {
+        transfer.removeListener('cancel', cancelListener);
         return transfer.end();
       })
       .catch(warnUnhandled);
-    transfer.on('cancel', () => {
-      stopWriter(new Parser.CancellationError());
-      this.parser.cancel();
-    });
+    const cancelListener = () => {
+      stopWriter(cancelled);
+      reader.abort(cancelled);
+      // Part of the file may have been sent, so the protocol state is
+      // unknown; the connection can't be reused.
+      this.connection.end();
+    };
+    transfer.on('cancel', cancelListener);
     return transfer;
   }
 
   private _readData(): PullTransfer {
     const transfer = new PullTransfer();
+    // Scoped to this transfer, like in _writeData().
+    const cancelled = new Parser.CancellationError();
+    const reader = new AbortController();
+    const signal = reader.signal;
     const readEnd = (afterEnd?) => {
       transfer.removeListener('cancel', cancelListener);
       const retEnd = transfer.end();
@@ -297,22 +311,22 @@ export default class Sync extends EventEmitter {
       }
     };
     const readNext = () => {
-      return this.parser.readAscii(4).then((reply) => {
+      return this.parser.readAscii(4, signal).then((reply) => {
         switch (reply) {
           case Protocol.DATA:
-            return this.parser.readBytes(4).then((lengthData) => {
+            return this.parser.readBytes(4, signal).then((lengthData) => {
               const length = lengthData.readUInt32LE(0);
-              return this.parser.readByteFlow(length, transfer).then(() => {
+              return this.parser.readByteFlow(length, transfer, signal).then(() => {
                 return readNext();
               });
             });
           case Protocol.DONE:
-            return this.parser.readBytes(4).then(function () {
+            return this.parser.readBytes(4, signal).then(function () {
               return readEnd();
             });
           case Protocol.FAIL:
             return readEnd(() => {
-              return this._readError();
+              return this._readError(signal);
             });
           default:
             return readEnd(() => {
@@ -323,27 +337,28 @@ export default class Sync extends EventEmitter {
     };
     readNext()
       .catch((err: Error) => {
-        if (err instanceof Parser.CancellationError) {
+        if (err === cancelled) {
           // The protocol state is unknown mid-transfer, so the connection
           // can't be reused. End the transfer too, so pipes from it finish.
           this.connection.end();
           readEnd();
           return;
         }
+        transfer.removeListener('cancel', cancelListener);
         transfer.emit('error', err);
       })
       .catch(warnUnhandled);
-    const cancelListener = () => this.parser.cancel();
+    const cancelListener = () => reader.abort(cancelled);
     transfer.on('cancel', cancelListener);
     return transfer;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _readError(): Promise<any> {
+  private _readError(signal?: AbortSignal): Promise<any> {
     return this.parser
-      .readBytes(4)
+      .readBytes(4, signal)
       .then((length: Buffer) => {
-        return this.parser.readBytes(length.readUInt32LE(0)).then((buf: Buffer) => {
+        return this.parser.readBytes(length.readUInt32LE(0), signal).then((buf: Buffer) => {
           throw new Parser.FailError(buf.toString());
         });
       })

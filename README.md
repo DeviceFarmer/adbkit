@@ -8,7 +8,7 @@ Internally, we use this library to drive a multitude of Android devices from a v
 
 ## Requirements
 
--   [Node.js][nodejs] 22 or newer
+-   [Node.js][nodejs] 22.12 or newer
 -   The `adb` command line tool
 
 Please note that although it may happen at some point, **this project is NOT an implementation of the ADB _server_**. The target host (where the devices are connected) must still have ADB installed and either already running (e.g. via `adb start-server`) or available in `$PATH`. An attempt will be made to start the server locally via the aforementioned command if the initial connection fails. This is the only case where we fall back to the `adb` binary.
@@ -1096,14 +1096,14 @@ Each has its type declarations. For compatibility, the same modules also resolve
 
 # Incompatible changes in version 4.x
 
-Version 4 drops [Bluebird](https://github.com/petkaantonov/bluebird). Every method that returned a Bluebird promise now returns a native `Promise`, so Bluebird-only methods such as `.timeout()`, `.delay()`, `.return()`, `.tap()`, `.spread()`, `.nodeify()` and `.cancel()` are no longer available on the results. Node.js 22 or newer is required.
+Version 4 drops [Bluebird](https://github.com/petkaantonov/bluebird). Every method that returned a Bluebird promise now returns a native `Promise`, so Bluebird-only methods such as `.timeout()`, `.delay()`, `.return()`, `.tap()`, `.spread()`, `.nodeify()` and `.cancel()` are no longer available on the results. Node.js 22.12 or newer is required.
 
 Cancellation, which used to rely on Bluebird, is now explicit:
 
--   `tracker.end()` (from `client.trackDevices()` and `device.trackJdwp()`) stops tracking and closes the connection. The JDWP tracker now also emits `end`.
--   `pushTransfer.cancel()` and `pullTransfer.cancel()` stop the transfer and close the sync connection, as documented. A cancelled pull transfer ends, so pipes from it finish.
--   `device.waitBootComplete()` and `device.waitForDevice()` take an `AbortSignal`, for example `device.waitBootComplete({ signal: AbortSignal.timeout(60000) })`.
--   The internal `Parser` has a `cancel()` method, which rejects its pending and future reads with `Parser.CancellationError`.
+-   `tracker.end()` (from `client.trackDevices()` and `device.trackJdwp()`) stops tracking and closes the connection, also when called from an event listener. The JDWP tracker now also emits `end`, and it keeps reporting pid changes instead of only the first list.
+-   `pushTransfer.cancel()` and `pullTransfer.cancel()` stop the transfer and close the sync connection, as documented. A cancelled pull transfer ends, so pipes from it finish. Cancelling a transfer that has already finished does nothing.
+-   `device.waitBootComplete()` and `device.waitForDevice()` take an `AbortSignal`, for example `device.waitBootComplete({ signal: AbortSignal.timeout(60000) })`. An abort rejects right away, even while connecting.
+-   The internal `Parser`'s reads take an optional `AbortSignal`, which cancels just that read (it rejects with `signal.reason`). `parser.cancel()` gives up the whole parser: its pending and future reads reject with `Parser.CancellationError`.
 
 The methods that still accept a Node-style callback (`sync.stat()`, `sync.sta2()`, `sync.readdir()`, `adb.util.readAll()` and `adb.util.parsePublicKey()`) keep doing so.
 

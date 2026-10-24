@@ -40,13 +40,16 @@ export default class MonkeyCommand extends Command<Duplex> {
   }
 
   private _searchMonkeyLine(): Promise<Duplex> {
-    const timer = setTimeout(() => this.parser.cancel(), MONKEY_LINE_TIMEOUT);
+    // Cancels only this search; the stream is handed to the caller intact.
+    const timedOut = new Parser.CancellationError();
+    const search = new AbortController();
+    const timer = setTimeout(() => search.abort(timedOut), MONKEY_LINE_TIMEOUT);
     return this.parser
-      .searchLine(/^:Monkey:/)
+      .searchLine(/^:Monkey:/, search.signal)
       .then(
         () => this.parser.raw(),
         (err) => {
-          if (err instanceof Parser.CancellationError) {
+          if (err === timedOut) {
             return this.parser.raw();
           }
           throw err;

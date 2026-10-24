@@ -292,3 +292,22 @@ describe('TcpUsb Socket known public keys', function () {
     expect(result).to.deep.equal({ outcome: 'ended', errors: [] });
   });
 });
+
+describe('TcpUsb Socket errors', function () {
+  it("should end even when nobody listens for 'error'", async function () {
+    const warnings: unknown[] = [];
+    const emitWarning = process.emitWarning;
+    process.emitWarning = ((warning: unknown) => warnings.push(warning)) as typeof process.emitWarning;
+    try {
+      const { socket, receive } = setup();
+      const ended = new Promise((resolve) => socket.once('end', resolve));
+      receive(0x12345678, 0, 0);
+      await ended;
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(warnings).to.have.length(1);
+      expect((warnings[0] as Error).message).to.match(/Unknown command/);
+    } finally {
+      process.emitWarning = emitWarning;
+    }
+  });
+});

@@ -87,7 +87,9 @@ export interface WaitOptions {
 
 /**
  * Connects, then runs `run` on the connection until it settles or `signal`
- * aborts. On abort the pending read is cancelled and the connection ended.
+ * aborts. An abort rejects with `signal.reason` right away, even while
+ * connecting or while the socket is stalled; the connection, which belongs
+ * to this call alone, is then torn down in the background.
  */
 function abortable<T>(
   signal: AbortSignal | undefined,
@@ -100,21 +102,43 @@ function abortable<T>(
   if (signal.aborted) {
     return Promise.reject(signal.reason);
   }
-  return connect().then((conn) => {
-    if (signal.aborted) {
-      conn.end();
-      throw signal.reason;
-    }
+  return new Promise<T>((resolve, reject) => {
+    let conn: Connection | undefined;
+    const teardown = (c: Connection) => {
+      // Gives up the whole connection: its pending read is released even if
+      // the remote never answers or closes.
+      c.parser.cancel();
+      c.end();
+    };
     const onAbort = () => {
-      conn.parser.cancel();
-      conn.end();
+      reject(signal.reason);
+      if (conn) {
+        teardown(conn);
+      }
     };
     signal.addEventListener('abort', onAbort, { once: true });
-    return run(conn)
-      .catch((err) => {
-        throw signal.aborted ? signal.reason : err;
+    connect()
+      .then((c) => {
+        conn = c;
+        if (signal.aborted) {
+          teardown(c);
+          throw signal.reason;
+        }
+        return run(c);
       })
-      .finally(() => signal.removeEventListener('abort', onAbort));
+      // After an abort the promise is already rejected, so settling does
+      // nothing; handling both outcomes also keeps the background operation
+      // from rejecting unhandled.
+      .then(
+        (value) => {
+          signal.removeEventListener('abort', onAbort);
+          resolve(value);
+        },
+        (err) => {
+          signal.removeEventListener('abort', onAbort);
+          reject(err);
+        },
+      );
   });
 }
 

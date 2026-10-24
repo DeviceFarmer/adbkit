@@ -74,10 +74,11 @@ export default class Parser {
   }
 
   /**
-   * Cancels the parser: every pending read rejects with
+   * Tears the parser down for good: every pending read rejects with
    * `Parser.CancellationError`, and so does every read started afterwards.
-   * This replaces bluebird's cancellation for the long-running readers
-   * (trackers, sync transfers, timeouts). It doesn't touch the stream; end
+   * Use it only when the whole connection is being given up, as a tracker's
+   * `end()` does. To cancel a single operation on a shared connection, pass
+   * an `AbortSignal` to its reads instead. It doesn't touch the stream; end
    * or destroy it separately. `end()` keeps working after a cancel.
    */
   public cancel(): void {
@@ -132,11 +133,20 @@ export default class Parser {
 
   /**
    * Runs one read: attaches the listeners, tries to read right away, and
-   * detaches everything once the read settles or the parser is cancelled.
+   * detaches everything once the read settles, the parser is cancelled or
+   * `signal` aborts. An aborted read rejects with `signal.reason`, so the
+   * caller that aborted can recognise its own cancellation.
    */
-  private _read<T>(handlers: (resolve: Resolve<T>, reject: Reject) => ReadHandlers): Promise<T> {
+  private _read<T>(handlers: (resolve: Resolve<T>, reject: Reject) => ReadHandlers, signal?: AbortSignal): Promise<T> {
     if (this.cancelled) {
       return Promise.reject(new Parser.CancellationError());
+    }
+    if (signal?.aborted) {
+      return Promise.reject(signal.reason);
+    }
+    if (this.stream.readableEnded) {
+      // The stream ended between two reads, while nobody listened for 'end'.
+      this.ended = true;
     }
     let cleanup: (() => void) | undefined;
     return new Promise<T>((resolve, reject) => {
@@ -151,7 +161,10 @@ export default class Parser {
       this.stream.on('end', end);
       this.stream.on('timeout', timeoutListener);
       this.pending.add(reject);
+      const abortListener = () => reject(signal.reason);
+      signal?.addEventListener('abort', abortListener, { once: true });
       cleanup = () => {
+        signal?.removeEventListener('abort', abortListener);
         this.stream.removeListener('readable', readable);
         this.stream.removeListener('error', errorListener);
         this.stream.removeListener('end', end);
@@ -166,87 +179,96 @@ export default class Parser {
     return this.stream;
   }
 
-  public readAll(): Promise<Buffer> {
-    let all = Buffer.alloc(0);
-    return this._read<Buffer>((resolve) => ({
-      readable: () => {
-        let chunk;
-        while ((chunk = this.stream.read())) {
-          all = Buffer.concat([all, chunk]);
-        }
-        if (this.ended) {
-          resolve(all);
-        }
-      },
-      end: () => {
-        this.ended = true;
-        resolve(all);
-      },
-    }));
-  }
-
-  public readAscii(howMany: number): Promise<string> {
-    return this.readBytes(howMany).then((chunk) => chunk.toString('ascii'));
-  }
-
-  public readBytes(howMany: number): Promise<Buffer> {
-    return this._read<Buffer>((resolve, reject) => ({
-      readable: () => {
-        if (howMany) {
-          const chunk = this.stream.read(howMany);
-          if (chunk) {
-            // If the stream ends while still having unread bytes, the read call
-            // will ignore the limit and just return what it's got.
-            howMany -= chunk.length;
-            if (howMany === 0) {
-              return resolve(chunk);
-            }
-          }
-          if (this.ended) {
-            return reject(new Parser.PrematureEOFError(howMany));
-          }
-        } else {
-          return resolve(Buffer.alloc(0));
-        }
-      },
-      end: () => {
-        this.ended = true;
-        reject(new Parser.PrematureEOFError(howMany));
-      },
-    }));
-  }
-
-  public readByteFlow(howMany: number, targetStream: Duplex): Promise<void> {
-    return this._read<void>((resolve, reject) => ({
-      readable: () => {
-        if (howMany) {
-          // Try to get the exact amount we need first. If unsuccessful, take
-          // whatever is available, which will be less than the needed amount.
-          // avoid chunk is undefined.
+  public readAll(signal?: AbortSignal): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+    return this._read<Buffer>(
+      (resolve) => ({
+        readable: () => {
           let chunk;
-          while ((chunk = this.stream.read(howMany) || this.stream.read())) {
-            howMany -= chunk.length;
-            targetStream.write(chunk);
-            if (howMany === 0) {
-              return resolve();
-            }
+          while ((chunk = this.stream.read())) {
+            chunks.push(chunk);
           }
           if (this.ended) {
-            return reject(new Parser.PrematureEOFError(howMany));
+            resolve(Buffer.concat(chunks));
           }
-        } else {
-          return resolve();
-        }
-      },
-      end: () => {
-        this.ended = true;
-        reject(new Parser.PrematureEOFError(howMany));
-      },
-    }));
+        },
+        end: () => {
+          this.ended = true;
+          resolve(Buffer.concat(chunks));
+        },
+      }),
+      signal,
+    );
   }
 
-  public readError(): Promise<never> {
-    return this.readValue()
+  public readAscii(howMany: number, signal?: AbortSignal): Promise<string> {
+    return this.readBytes(howMany, signal).then((chunk) => chunk.toString('ascii'));
+  }
+
+  public readBytes(howMany: number, signal?: AbortSignal): Promise<Buffer> {
+    return this._read<Buffer>(
+      (resolve, reject) => ({
+        readable: () => {
+          if (howMany) {
+            const chunk = this.stream.read(howMany);
+            if (chunk) {
+              // If the stream ends while still having unread bytes, the read call
+              // will ignore the limit and just return what it's got.
+              howMany -= chunk.length;
+              if (howMany === 0) {
+                return resolve(chunk);
+              }
+            }
+            if (this.ended) {
+              return reject(new Parser.PrematureEOFError(howMany));
+            }
+          } else {
+            return resolve(Buffer.alloc(0));
+          }
+        },
+        end: () => {
+          this.ended = true;
+          reject(new Parser.PrematureEOFError(howMany));
+        },
+      }),
+      signal,
+    );
+  }
+
+  public readByteFlow(howMany: number, targetStream: Duplex, signal?: AbortSignal): Promise<void> {
+    return this._read<void>(
+      (resolve, reject) => ({
+        readable: () => {
+          if (howMany) {
+            // Try to get the exact amount we need first. If unsuccessful, take
+            // whatever is available, which will be less than the needed amount.
+            // avoid chunk is undefined.
+            let chunk;
+            while ((chunk = this.stream.read(howMany) || this.stream.read())) {
+              howMany -= chunk.length;
+              targetStream.write(chunk);
+              if (howMany === 0) {
+                return resolve();
+              }
+            }
+            if (this.ended) {
+              return reject(new Parser.PrematureEOFError(howMany));
+            }
+          } else {
+            return resolve();
+          }
+        },
+        end: () => {
+          this.ended = true;
+          reject(new Parser.PrematureEOFError(howMany));
+        },
+      }),
+      signal,
+    );
+  }
+
+  public readError(signal?: AbortSignal): Promise<never> {
+    return this.readValue(signal)
       .then(function (value) {
         throw new Parser.FailError(value.toString());
       })
@@ -259,17 +281,17 @@ export default class Parser {
       });
   }
 
-  public readValue(): Promise<Buffer> {
-    return this.readAscii(4).then((value) => {
+  public readValue(signal?: AbortSignal): Promise<Buffer> {
+    return this.readAscii(4, signal).then((value) => {
       const length = Protocol.decodeLength(value);
-      return this.readBytes(length);
+      return this.readBytes(length, signal);
     });
   }
 
-  public readUntil(code: number): Promise<Buffer> {
+  public readUntil(code: number, signal?: AbortSignal): Promise<Buffer> {
     let skipped = Buffer.alloc(0);
     const read = () => {
-      return this.readBytes(1).then(function (chunk) {
+      return this.readBytes(1, signal).then(function (chunk) {
         if (chunk[0] === code) {
           return skipped;
         } else {
@@ -281,19 +303,19 @@ export default class Parser {
     return read();
   }
 
-  searchLine(re: RegExp): Promise<RegExpExecArray> {
-    return this.readLine().then((line) => {
+  searchLine(re: RegExp, signal?: AbortSignal): Promise<RegExpExecArray> {
+    return this.readLine(signal).then((line) => {
       const match = re.exec(line.toString());
       if (match) {
         return match;
       } else {
-        return this.searchLine(re);
+        return this.searchLine(re, signal);
       }
     });
   }
 
-  public readLine(): Promise<Buffer> {
-    return this.readUntil(0x0a).then(function (line) {
+  public readLine(signal?: AbortSignal): Promise<Buffer> {
+    return this.readUntil(0x0a, signal).then(function (line) {
       // '\n'
       if (line[line.length - 1] === 0x0d) {
         // '\r'

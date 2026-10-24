@@ -19,7 +19,6 @@ export default class JdwpTracker extends EventEmitter {
   private pids = [];
   private pidMap = Object.create(null);
   private reader: Promise<unknown>;
-  private reading = true;
   private ended = false;
 
   constructor(private command: Command<JdwpTracker>) {
@@ -29,19 +28,17 @@ export default class JdwpTracker extends EventEmitter {
     this.pidMap = Object.create(null);
     this.reader = this.read()
       .catch((err) => {
-        if (err instanceof Parser.PrematureEOFError) {
-          return this._emitEnd();
-        }
-        if (err instanceof Parser.CancellationError) {
-          this.command.connection.end();
-          return this._emitEnd();
-        }
+        // The loop only stops on an error: the remote closed the connection
+        // (PrematureEOFError), end() cancelled the parser, or something broke.
         this.command.connection.end();
-        this.emit('error', err);
-        return this._emitEnd();
-      })
-      .finally(() => {
-        this.reading = false;
+        if (err instanceof Parser.PrematureEOFError || err instanceof Parser.CancellationError) {
+          return this._emitEnd();
+        }
+        try {
+          this.emit('error', err);
+        } finally {
+          this._emitEnd();
+        }
       })
       .catch(warnUnhandled);
   }
@@ -73,6 +70,10 @@ export default class JdwpTracker extends EventEmitter {
     return super.emit(event, ...args);
   }
 
+  /**
+   * Reads pid lists until the connection closes or `end()` is called. Only
+   * settles by rejecting.
+   */
   read(): Promise<JdwpTracker> {
     return this.command.parser.readValue().then((list) => {
       const pids = list.toString().split('\n');
@@ -80,7 +81,8 @@ export default class JdwpTracker extends EventEmitter {
       if (maybeEmpty) {
         pids.push(maybeEmpty);
       }
-      return this.update(pids);
+      this.update(pids);
+      return this.read();
     });
   }
 
@@ -95,8 +97,10 @@ export default class JdwpTracker extends EventEmitter {
       if (!this.pidMap[pid]) {
         changeSet.added.push(pid);
         this.emit('add', pid);
-        newMap[pid] = pid;
       }
+      // Every current pid, not only the new ones; otherwise the next list
+      // reports the surviving pids as removed.
+      newMap[pid] = pid;
     }
     const ref = this.pids;
     for (let j = 0, len1 = ref.length; j < len1; j++) {
@@ -117,12 +121,12 @@ export default class JdwpTracker extends EventEmitter {
    * emits 'end'.
    */
   end(): JdwpTracker {
-    if (this.reading) {
-      // The read loop ends the connection and emits 'end' once cancelled.
+    if (!this.ended) {
+      // Tears down the whole connection, which belongs to this tracker. The
+      // cancel is sticky, so it also stops the loop when called from a
+      // 'changeSet', 'add' or 'remove' listener, between two reads. The loop
+      // then ends the connection and emits 'end'.
       this.command.parser.cancel();
-    } else if (!this.ended) {
-      this.command.connection.end();
-      this._emitEnd();
     }
     return this;
   }

@@ -83,4 +83,40 @@ describe('DeviceClient', function () {
       expect(getEventListeners(controller.signal, 'abort')).to.have.length(0);
     });
   });
+  describe('abort while stalled', function () {
+    it('should reject at once while waitBootComplete waits on a socket that never answers', function () {
+      const ctx = setup();
+      // A stalled connection: ending it doesn't make the remote close, so
+      // the socket never emits 'end'.
+      ctx.conn.end = Sinon.spy(() => ctx.conn);
+      const socket = ctx.conn.getSocket();
+      socket.end = () => socket;
+      const controller = new AbortController();
+      const reason = new Error('boot timeout');
+      const promise = ctx.device.waitBootComplete({ signal: controller.signal });
+      setImmediate(() => {
+        ctx.conn.getSocket().causeRead(Protocol.OKAY);
+        setImmediate(() => controller.abort(reason));
+      });
+      return rejected(promise).then((err) => {
+        expect(err).to.equal(reason);
+        expect(ctx.conn.end).to.have.been.called;
+      });
+    });
+    it('should reject at once while still connecting, and close the late connection', async function () {
+      const conn = new MockConnection();
+      Sinon.spy(conn, 'end');
+      let connected: (c: unknown) => void = () => undefined;
+      const client = { connection: () => new Promise((resolve) => (connected = resolve)) };
+      const device = new DeviceClient(client, 'abba');
+      const controller = new AbortController();
+      const reason = new Error('gave up');
+      const promise = device.waitForDevice({ signal: controller.signal });
+      controller.abort(reason);
+      expect(await rejected(promise)).to.equal(reason);
+      connected(conn);
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(conn.end).to.have.been.called;
+    });
+  });
 });

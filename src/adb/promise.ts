@@ -36,3 +36,14 @@ export function nodeify<T>(promise: Promise<T>, callback?: Callback<T>): Promise
 export function warnUnhandled(err: unknown): void {
   process.emitWarning(err instanceof Error ? err : new Error(String(err)));
 }
+
+/**
+ * Calls `fn` synchronously and returns its result as a promise; a throw
+ * becomes a rejection. Same as bluebird's `Promise.try` and the native
+ * `Promise.try` (Node.js 24 and newer). Unlike `Promise.resolve().then(fn)`
+ * it doesn't defer `fn`, which matters where the order of handling depends
+ * on it, such as the tcpusb packets.
+ */
+export function promiseTry<T>(fn: () => T | PromiseLike<T>): Promise<T> {
+  return new Promise<T>((resolve) => resolve(fn()));
+}

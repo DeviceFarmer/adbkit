@@ -6,8 +6,8 @@ import Auth from './adb/auth';
 import PacketReader from './adb/tcpusb/packetreader';
 
 async function main(): Promise<void> {
-  // commander 15 is ESM-only. A dynamic import loads it on every Node.js 22,
-  // while require() of an ES module needs 22.12 or newer.
+  // commander 15 is ESM-only; import() it rather than relying on require()
+  // of an ES module.
   const { Command } = await import('commander');
   const program = new Command();
 

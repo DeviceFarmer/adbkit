@@ -64,6 +64,8 @@ describe('MonkeyCommand', function () {
     const stream = await result;
     expect(stream).to.equal(socket);
     expect(socket.listenerCount('readable')).to.equal(0);
+    // Only the search was cancelled, not the parser.
+    expect(conn.parser.isCancelled()).to.be.false;
     // Output arriving after the timeout stays in the stream for the caller.
     socket.causeRead(':Monkey: late\n');
     await new Promise((resolve) => setImmediate(resolve));

@@ -344,6 +344,92 @@ describe('Sync', function () {
       }, 10);
     });
   });
+  describe('cancel() after the transfer finished', function () {
+    // Replies to the commands of one sync connection, in order.
+    const okay = () => Buffer.concat([Buffer.from(Protocol.OKAY), Buffer.alloc(4)]);
+    const fail = (message: string) => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(message.length, 0);
+      return Buffer.concat([Buffer.from(Protocol.FAIL), length, Buffer.from(message)]);
+    };
+    // Resolves with the transfer's error, or null on 'end'. Rejects if the
+    // transfer finishes before the reply was even sent.
+    const push = (sync, conn, reply: Buffer) =>
+      new Promise<Error | null>((resolve, reject) => {
+        let replied = false;
+        const settle = (value: Error | null) =>
+          replied ? resolve(value) : reject(new Error(`Finished before the reply: ${value}`));
+        const stream = new Stream.PassThrough();
+        const transfer = sync.pushStream(stream, '/foo');
+        transfer.on('error', (err) => settle(err));
+        transfer.on('end', () => settle(null));
+        stream.end(Buffer.alloc(10));
+        setTimeout(() => {
+          replied = true;
+          conn.getSocket().causeRead(reply);
+        }, 10);
+      });
+    it('should leave the Sync usable for the next push, stat and readdir', async function () {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      // First push completes, then a late cancel() (say, a timeout racing it).
+      let first;
+      const firstDone = new Promise((resolve) => {
+        const stream = new Stream.PassThrough();
+        first = sync.pushStream(stream, '/foo');
+        first.on('end', resolve);
+        stream.end(Buffer.alloc(10));
+        setTimeout(() => conn.getSocket().causeRead(okay()), 10);
+      });
+      await firstDone;
+      first.cancel();
+      expect(first.listenerCount('cancel')).to.equal(0);
+      // A second push still waits for the real reply.
+      expect(await push(sync, conn, okay())).to.be.null;
+      // stat and readdir still work on the same connection.
+      const stat = Buffer.alloc(16);
+      stat.write(Protocol.STAT, 0);
+      stat.writeUInt32LE(0o100644, 4);
+      stat.writeUInt32LE(10, 8);
+      setTimeout(() => conn.getSocket().causeRead(stat), 10);
+      const stats = await sync.stat('/foo');
+      expect(stats.isFile()).to.be.true;
+      expect(stats.size).to.equal(10);
+      setTimeout(() => conn.getSocket().causeRead(Buffer.concat([Buffer.from(Protocol.DONE), Buffer.alloc(16)])), 10);
+      expect(await sync.readdir('/')).to.eql([]);
+      // And a failing push reports the device's error. A FAIL ends the sync
+      // connection, so this comes last.
+      expect(await push(sync, conn, fail('read-only file system'))).to.be.an.instanceOf(Parser.FailError);
+    });
+    it('should leave the Sync usable after a pull finished', async function () {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const transfer = sync.pull('/foo');
+      const done = new Promise((resolve) => transfer.on('finish', resolve));
+      conn.getSocket().causeRead(Buffer.concat([Buffer.from(Protocol.DONE), Buffer.alloc(4)]));
+      await done;
+      transfer.cancel();
+      expect(await push(sync, conn, okay())).to.be.null;
+    });
+  });
+  describe('pushFile() of a missing file', function () {
+    it("should end the transfer without an 'error' listener", function (done) {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const emitWarning = Sinon.stub(process, 'emitWarning');
+      const transfer = sync.pushFile('/nonexistent/adbkit-test.apk', '/foo');
+      transfer.on('end', function () {
+        emitWarning.restore();
+        try {
+          expect(emitWarning).to.have.been.calledOnce;
+          expect(emitWarning.firstCall.args[0].code).to.equal('ENOENT');
+          done();
+        } catch (err) {
+          done(err);
+        }
+      });
+    });
+  });
   describe('cancel()', function () {
     it('should end a push transfer, its connection and the stream listeners', function (done) {
       const conn = new MockConnection();

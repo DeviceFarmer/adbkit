@@ -2,6 +2,7 @@ import d from 'debug';
 import { EventEmitter } from 'events';
 import Packet from './packet';
 import Protocol from '../protocol';
+import { promiseTry } from '../promise';
 import Client from '../client';
 import Socket from './socket';
 import ReadableStream = NodeJS.ReadableStream;
@@ -72,12 +73,11 @@ export default class Service extends EventEmitter {
   }
 
   public handle(packet: Packet): Promise<Service | boolean> {
-    // Runs synchronously, like bluebird's Promise.try did.
-    return new Promise<Service | boolean>((resolve) => {
-      resolve(this._dispatch(packet));
-    }).catch((err) => {
+    return promiseTry(() => this._dispatch(packet)).catch((err) => {
+      // End first: without an 'error' listener the emit throws.
+      const ended = this.end();
       this.emit('error', err);
-      return this.end();
+      return ended;
     });
   }
 

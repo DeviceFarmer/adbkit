@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
+import { promisify } from 'util';
 import d from 'debug';
 import PacketReader from './packetreader';
 import RollingCounter from './rollingcounter';
 import Packet from './packet';
 import Auth from '../auth';
-import { warnUnhandled } from '../promise';
+import { promiseTry, warnUnhandled } from '../promise';
 import Client from '../client';
 import * as Net from 'net';
 import ServiceMap from './servicemap';
@@ -51,6 +52,8 @@ class UnauthorizedError extends Error {
     Error.captureStackTrace(this, Socket.UnauthorizedError);
   }
 }
+
+const randomBytes = promisify(crypto.randomBytes);
 
 export default class Socket extends EventEmitter {
   public static AuthError = AuthError;
@@ -112,8 +115,10 @@ export default class Socket extends EventEmitter {
   }
 
   private _error(err: Error): Socket {
+    // End first: without an 'error' listener the emit throws.
+    this.end();
     this.emit('error', err);
-    return this.end();
+    return this;
   }
 
   private _handle(packet: Packet): Promise<boolean> {
@@ -121,11 +126,7 @@ export default class Socket extends EventEmitter {
       return Promise.resolve(false);
     }
     this.emit('userActivity', packet);
-    // Runs the handler synchronously, like bluebird's Promise.try did; the
-    // order of the window, ack and open handling depends on it.
-    return new Promise<boolean>((resolve) => {
-      resolve(this._dispatch(packet));
-    })
+    return promiseTry(() => this._dispatch(packet))
       .catch((err) => {
         if (err instanceof Socket.AuthError || err instanceof Socket.UnauthorizedError) {
           this.end();
@@ -229,7 +230,7 @@ export default class Socket extends EventEmitter {
           .then((key) => {
             if (!this.options.auth) return;
             const auth = this.options.auth;
-            return new Promise((resolve) => resolve(auth(key))).catch(() => {
+            return promiseTry(() => auth(key)).catch(() => {
               debug('Connection rejected by user-defined auth handler');
               throw new Socket.AuthError('Rejected by user-defined handler');
             });
@@ -365,9 +366,7 @@ export default class Socket extends EventEmitter {
   }
 
   private _createToken(): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      crypto.randomBytes(TOKEN_LENGTH, (err, buf) => (err ? reject(err) : resolve(buf)));
-    });
+    return randomBytes(TOKEN_LENGTH);
   }
 
   private _skipNull(data: Buffer): Buffer {

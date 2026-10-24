@@ -481,4 +481,26 @@ describe('Parser', function () {
       });
     });
   });
+  describe('reads with an AbortSignal', function () {
+    it('should reject only the aborted read, with the signal reason', function () {
+      const stream = new Stream.PassThrough();
+      const parser = new Parser(stream);
+      const controller = new AbortController();
+      const reason = new Error('mine');
+      const aborted = parser.readBytes(4, controller.signal).catch((err) => err);
+      controller.abort(reason);
+      return aborted.then((err) => {
+        expect(err).to.equal(reason);
+        expect(stream.listenerCount('readable')).to.equal(0);
+        expect(parser.isCancelled()).to.be.false;
+        stream.write('FOO\n');
+        return parser.readLine().then((line) => expect(line.toString()).to.equal('FOO'));
+      });
+    });
+    it('should reject at once with an already aborted signal', function () {
+      const parser = new Parser(new Stream.PassThrough());
+      const reason = new Error('early');
+      return parser.searchLine(/x/, AbortSignal.abort(reason)).catch((err) => expect(err).to.equal(reason));
+    });
+  });
 });
