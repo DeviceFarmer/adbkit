@@ -3,6 +3,5 @@
 /index.js
 /index.d.ts
 /*.tgz
-package-lock.json
 /dist
 *.log

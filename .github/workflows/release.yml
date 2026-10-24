@@ -105,9 +105,8 @@ jobs:
       - name: Take npm to a version that can publish with OIDC
         run: npm install -g npm@^11.5.1
 
-      # No lockfile is committed, so npm ci has nothing to install from.
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       # npm 7 and later no longer run the prepublish script on publish, so the
       # build and the tests run here explicitly. prepublishOnly repeats them on
