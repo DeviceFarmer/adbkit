@@ -1084,6 +1084,16 @@ Cancels the transfer by ending the connection. Can be useful for reading endless
 
 -   Returns: The pullTransfer instance.
 
+# Deep imports
+
+The package defines `exports`, so only the entry point and these internals can be imported:
+
+-   `@devicefarmer/adbkit/adb/parser` (`Parser`, also exported from the entry point)
+-   `@devicefarmer/adbkit/adb/sync/pushtransfer` (`PushTransfer`)
+-   `@devicefarmer/adbkit/adb/tcpusb/server` (the TCP-USB bridge `Server`)
+
+Each has its type declarations. For compatibility, the same modules also resolve under their `dist/src/.../*.js` paths.
+
 # Incompatible changes in version 4.x
 
 Version 4 drops [Bluebird](https://github.com/petkaantonov/bluebird). Every method that returned a Bluebird promise now returns a native `Promise`, so Bluebird-only methods such as `.timeout()`, `.delay()`, `.return()`, `.tap()`, `.spread()`, `.nodeify()` and `.cancel()` are no longer available on the results. Node.js 22 or newer is required.
@@ -1098,6 +1108,8 @@ Cancellation, which used to rely on Bluebird, is now explicit:
 The methods that still accept a Node-style callback (`sync.stat()`, `sync.sta2()`, `sync.readdir()`, `adb.util.readAll()` and `adb.util.parsePublicKey()`) keep doing so.
 
 `device.openMonkey()` resolves with the adbkit-monkey client; its type is now whatever `@devicefarmer/adbkit-monkey` declares instead of `Duplex`.
+
+The package now defines `exports`, so internals other than those listed under [Deep imports](#deep-imports) can no longer be imported.
 
 # Incompatible changes in version 2.x
 

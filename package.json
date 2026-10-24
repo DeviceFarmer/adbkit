@@ -31,6 +31,37 @@
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./adb/parser": {
+      "types": "./dist/src/adb/parser.d.ts",
+      "default": "./dist/src/adb/parser.js"
+    },
+    "./adb/sync/pushtransfer": {
+      "types": "./dist/src/adb/sync/pushtransfer.d.ts",
+      "default": "./dist/src/adb/sync/pushtransfer.js"
+    },
+    "./adb/tcpusb/server": {
+      "types": "./dist/src/adb/tcpusb/server.d.ts",
+      "default": "./dist/src/adb/tcpusb/server.js"
+    },
+    "./dist/src/adb/parser.js": {
+      "types": "./dist/src/adb/parser.d.ts",
+      "default": "./dist/src/adb/parser.js"
+    },
+    "./dist/src/adb/sync/pushtransfer.js": {
+      "types": "./dist/src/adb/sync/pushtransfer.d.ts",
+      "default": "./dist/src/adb/sync/pushtransfer.js"
+    },
+    "./dist/src/adb/tcpusb/server.js": {
+      "types": "./dist/src/adb/tcpusb/server.d.ts",
+      "default": "./dist/src/adb/tcpusb/server.js"
+    },
+    "./package.json": "./package.json"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DeviceFarmer/adbkit.git"
