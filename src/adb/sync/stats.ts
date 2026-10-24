@@ -1,6 +1,15 @@
 import * as Fs from 'fs';
 
-export default class Stats extends Fs.Stats {
+// Calling the fs.Stats constructor is deprecated (DEP0180), so Stats doesn't
+// extend it. Instead its prototype chains to fs.Stats.prototype, which keeps
+// `instanceof fs.Stats` and the isFile()/isDirectory()/mtime helpers working.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+interface Stats extends Fs.Stats {
+  sizeBig: bigint;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+class Stats {
   // The following constant were extracted from `man 2 stat` on Ubuntu 12.10.
   public static S_IFMT = 0o170000; // bit mask for the file type bit fields
 
@@ -36,13 +45,26 @@ export default class Stats extends Fs.Stats {
 
   public static S_IRGRP = 0o0040; // group has read permission
 
-  sizeBig: bigint;
-
   constructor(mode: number, sizeBig: bigint, mtime: number) {
-    super();
+    // Same own properties as the deprecated `new fs.Stats()` used to set.
+    this.dev = undefined;
+    this.nlink = undefined;
+    this.uid = undefined;
+    this.gid = undefined;
+    this.rdev = undefined;
+    this.blksize = undefined;
+    this.ino = undefined;
+    this.blocks = undefined;
+    this.atimeMs = undefined;
+    this.ctimeMs = undefined;
+    this.birthtimeMs = undefined;
     this.mode = Number(mode);
     this.size = Number(sizeBig);
     this.sizeBig = sizeBig;
     this.mtimeMs = mtime * 1000;
   }
 }
+
+Object.setPrototypeOf(Stats.prototype, Fs.Stats.prototype);
+
+export default Stats;
