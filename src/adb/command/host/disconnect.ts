@@ -8,7 +8,7 @@ import Bluebird from 'bluebird';
 // "disconnected 192.168.2.2:5555"
 
 const RE_OK = /^$/;
-const RE_DISC = /^disconnected.*$/
+const RE_DISC = /^disconnected.*$/;
 
 export default class HostDisconnectCommand extends Command<string> {
   execute(host: string, port: number): Bluebird<string> {
