@@ -69,9 +69,7 @@ const debug = d('adb:client');
 const NoUserOptionError = (err: Error) => err.message.indexOf('--user') !== -1;
 
 /**
- * The client returned by `openMonkey()`. It is whatever adbkit-monkey's
- * `connectStream()` returns: untyped (`any`) with adbkit-monkey 1.x, and the
- * typed monkey client once adbkit-monkey ships its TypeScript major.
+ * The client returned by `openMonkey()`: adbkit-monkey's typed `Client`.
  */
 export type MonkeyClient = ReturnType<typeof Monkey.connectStream>;
 

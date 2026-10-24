@@ -77,8 +77,8 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@devicefarmer/adbkit-logcat": "^2.1.2",
-    "@devicefarmer/adbkit-monkey": "~1.2.1",
+    "@devicefarmer/adbkit-logcat": "^3.0.0",
+    "@devicefarmer/adbkit-monkey": "^2.0.0",
     "commander": "^15.0.0",
     "debug": "~4.4.3",
     "node-forge": "^1.4.0",
