@@ -1,5 +1,23 @@
 # Changelog
 
+## 4.0.0 (2026-10-25)
+
+* Support adb reverse through the TcpUsb bridge by @jozenstar in https://github.com/DeviceFarmer/adbkit/pull/550
+* Raise the TcpUsb bridge's max payload to 1 MiB by @jozenstar in https://github.com/DeviceFarmer/adbkit/pull/551
+* Support adb's delayed_ack in the TcpUsb bridge by @jozenstar in https://github.com/DeviceFarmer/adbkit/pull/552
+* Don't crash the TcpUsb bridge on a signature no known key verifies by @jozenstar in https://github.com/DeviceFarmer/adbkit/pull/554
+* Bump mocha from 10.2.0 to 12.0.3 by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/556
+* feat!: native promises, package exports, ESLint 10 and Node 22 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/567
+* Bump debug from 4.3.7 to 4.4.3 by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/561
+* chore(deps): move to adbkit-logcat 3 and adbkit-monkey 2 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/568
+* fix(tcpusb): check AUTH signatures strictly with OpenSSL by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/570
+
+### New Contributors
+
+* @jozenstar made their first contribution in https://github.com/DeviceFarmer/adbkit/pull/550
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v3.3.9...v4.0.0
+
 ## 3.3.9 (2026-07-08)
 
 * Update OS image from Ubuntu 20.04 to 22.04 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/546
