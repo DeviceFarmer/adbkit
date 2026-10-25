@@ -222,7 +222,7 @@ describe('TcpUsb Socket banner', function () {
 
 describe('TcpUsb Socket known public keys', function () {
   const token = Buffer.alloc(20, 7);
-  const pair = () => forge.pki.rsa.generateKeyPair({ bits: 1024, e: 0x10001 });
+  const pair = (e = 0x10001) => forge.pki.rsa.generateKeyPair({ bits: 1024, e });
   // adb signs the 20-byte token as if it were a SHA-1 digest.
   const sign = (key: forge.pki.rsa.PrivateKey) => {
     const md = forge.md.sha1.create();
@@ -236,8 +236,20 @@ describe('TcpUsb Socket known public keys', function () {
     const struct = Buffer.alloc(4 + 4 + len + len + 4);
     struct.writeUInt32LE(len / 4, 0);
     n.copy(struct, 8);
-    struct.writeUInt32LE(0x10001, 8 + len + len);
+    struct.writeUInt32LE(key.e.intValue(), 8 + len + len);
     return Buffer.from(`${struct.toString('base64')}\0`);
+  };
+
+  // Signs a DigestInfo with garbage after the algorithm's NULL parameters, which node-forge <= 1.4.0 accepts and
+  // which lets anyone forge signatures for exponent 3 keys (GHSA-86w9-cpqp-85rv).
+  const signWithGarbage = (key: forge.pki.rsa.PrivateKey) => {
+    const algorithm = Buffer.from('300e06052b0e03021a05000403414141', 'hex');
+    const body = Buffer.concat([algorithm, Buffer.from([0x04, token.length]), token]);
+    const digestInfo = Buffer.concat([Buffer.from([0x30, body.length]), body]);
+    const padding = Buffer.alloc(128 - 3 - digestInfo.length, 0xff);
+    const block = Buffer.concat([Buffer.from([0, 1]), padding, Buffer.from([0]), digestInfo]);
+    const signature = new forge.jsbn.BigInteger(block.toString('hex'), 16).modPow(key.d, key.n);
+    return Buffer.from(signature.toString(16).padStart(256, '0'), 'hex');
   };
 
   // Sends one AUTH packet (and optionally the public key), then reports whether the bridge accepted the client,
@@ -289,6 +301,34 @@ describe('TcpUsb Socket known public keys', function () {
   it('should close the connection when the public key did not make the signature', async function () {
     const [client, other] = [pair(), pair()];
     const result = await authenticate([], sign(client.privateKey), adbPublicKey(other.publicKey));
+    expect(result).to.deep.equal({ outcome: 'ended', errors: [] });
+  });
+  it('should not accept a signature that was changed', async function () {
+    const client = pair();
+    const signature = sign(client.privateKey);
+    signature[signature.length - 1] ^= 1;
+    expect(await authenticate([client.publicKey], signature)).to.deep.equal({ outcome: 'challenged', errors: [] });
+  });
+
+  it('should accept a signature from an exponent 3 key', async function () {
+    const client = pair(3);
+    expect(await authenticate([], sign(client.privateKey), adbPublicKey(client.publicKey))).to.deep.equal({
+      outcome: 'accepted',
+      errors: [],
+    });
+  });
+
+  it('should not accept garbage in the DigestInfo from a known key', async function () {
+    const client = pair(3);
+    const signature = signWithGarbage(client.privateKey);
+    expect(client.publicKey.verify(token.toString('binary'), signature.toString('binary'))).to.equal(true);
+    expect(await authenticate([client.publicKey], signature)).to.deep.equal({ outcome: 'challenged', errors: [] });
+  });
+
+  it('should close the connection on garbage in the DigestInfo with the public key', async function () {
+    const client = pair(3);
+    const signature = signWithGarbage(client.privateKey);
+    const result = await authenticate([], signature, adbPublicKey(client.publicKey));
     expect(result).to.deep.equal({ outcome: 'ended', errors: [] });
   });
 });

@@ -25,10 +25,25 @@ const AUTH_RSAPUBLICKEY = 3;
 const TOKEN_LENGTH = 20;
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '::1'];
 
-// node-forge throws instead of returning false for a signature it can't verify (another key, wrong length).
-function verifies(key: ExtendedPublicKey, digest: string, sig: string): boolean {
+// The DER prefix of a SHA-1 DigestInfo. adb signs the 20-byte token as if it were a SHA-1 digest.
+const SHA1_DIGEST_INFO = Buffer.from('3021300906052b0e03021a05000414', 'hex');
+
+function base64url(n: ExtendedPublicKey['n']): string {
+  const hex = n.toString(16);
+  return Buffer.from(hex.length % 2 ? `0${hex}` : hex, 'hex').toString('base64url');
+}
+
+// Checked with OpenSSL instead of node-forge, whose PKCS#1 v1.5 parsing lets garbage through and so accepts
+// forged signatures for exponent 3 keys (GHSA-86w9-cpqp-85rv). OpenSSL strips the padding strictly and what's
+// left has to be exactly the DigestInfo of the token. It throws for a signature of the wrong length.
+function verifies(key: ExtendedPublicKey, token: Buffer, signature: Buffer): boolean {
   try {
-    return key.verify(digest, sig);
+    const publicKey = crypto.createPublicKey({
+      key: { kty: 'RSA', n: base64url(key.n), e: base64url(key.e) },
+      format: 'jwk',
+    });
+    const decrypted = crypto.publicDecrypt({ key: publicKey, padding: crypto.constants.RSA_PKCS1_PADDING }, signature);
+    return decrypted.equals(Buffer.concat([SHA1_DIGEST_INFO, token]));
   } catch (err) {
     debug(`Signature check failed: ${(err as Error).message}`);
     return false;
@@ -197,11 +212,9 @@ export default class Socket extends EventEmitter {
           throw new Socket.AuthError('Missing signature');
         }
 
-        const digest = this.token.toString('binary');
-        const sig = this.signature.toString('binary');
         for (const key of this.options.knownPublicKeys ?? []) {
           // If signature matches one of the known public keys, we can safely accept the connection
-          if (verifies(key, digest, sig)) return this._acceptConnection();
+          if (verifies(key, this.token, this.signature)) return this._acceptConnection();
         }
 
         debug('O:A_AUTH');
@@ -218,9 +231,7 @@ export default class Socket extends EventEmitter {
         debug(`Received RSA public key '${packet.data.toString('base64')}'`);
         return Auth.parsePublicKey(this._skipNull(packet.data).toString())
           .then((key) => {
-            const digest = this.token.toString('binary');
-            const sig = this.signature.toString('binary');
-            if (!verifies(key, digest, sig)) {
+            if (!verifies(key, this.token, this.signature)) {
               debug('Signature mismatch');
               throw new Socket.AuthError('Signature mismatch');
             }
