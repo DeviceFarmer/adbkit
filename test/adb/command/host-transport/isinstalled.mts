@@ -35,6 +35,21 @@ describe('IsInstalledCommand', function () {
       expect(found).to.be.true;
     });
   });
+  it('should read the output to the end when the package is found', function () {
+    const conn = new MockConnection();
+    const cmd = new IsInstalledCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead('package:/data/app/foo/base.apk\n');
+      conn.getSocket().causeRead('package:/data/app/foo/split_config.arm64_v8a.apk\n');
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute('foo').then(function (found) {
+      expect(found).to.be.true;
+      expect(conn.getSocket().readableEnded).to.be.true;
+      expect(conn.getSocket().readableLength).to.equal(0);
+    });
+  });
   it('should resolve with false if no package returned', function () {
     const conn = new MockConnection();
     const cmd = new IsInstalledCommand(conn);

@@ -13,7 +13,8 @@ export default class IsInstalledCommand extends Command<boolean> {
             .then((reply) => {
               switch (reply) {
                 case 'package:':
-                  return true;
+                  // Read the rest of the output, so that the socket can close.
+                  return this.parser.readAll().then(() => true);
                 default:
                   return this.parser.unexpected(reply, "'package:'");
               }
