@@ -344,6 +344,101 @@ describe('Sync', function () {
       }, 10);
     });
   });
+  describe('pushStream() to a slow device', function () {
+    // A socket the device reads slowly. It holds on to every write until the
+    // test lets it through, and asks for a drain above 16 KiB.
+    class SlowSocket extends Stream.Duplex {
+      held: Array<() => void> = [];
+      maxBuffered = 0;
+      sawDone = false;
+      constructor() {
+        super({ highWaterMark: 16 * 1024 });
+      }
+      _read(): void {
+        // empty
+      }
+      _write(chunk: Buffer, _encoding: string, callback: (error?: Error | null) => void): void {
+        this.maxBuffered = Math.max(this.maxBuffered, this.writableLength);
+        if (chunk.toString('ascii', 0, 4) === Protocol.DONE) {
+          this.sawDone = true;
+        }
+        this.held.push(() => callback(null));
+      }
+      release(): void {
+        const held = this.held;
+        this.held = [];
+        held.forEach((callback) => callback());
+      }
+    }
+    const SIZE = 1024 * 1024;
+    const setup = () => {
+      const conn = new MockConnection();
+      const socket = new SlowSocket();
+      const baseline = { drain: socket.listenerCount('drain'), close: socket.listenerCount('close') };
+      // Writes go to the slow socket, replies come from the mock one.
+      conn.socket = socket;
+      const sync = new Sync(conn);
+      const stream = new Stream.PassThrough();
+      const transfer = sync.pushStream(stream, '/foo', 0o644);
+      stream.end(Buffer.alloc(SIZE, 1));
+      return { conn, socket, baseline, stream, transfer };
+    };
+    const tick = () => new Promise((resolve) => setTimeout(resolve, 5));
+    const expectNoSocketListeners = (socket: SlowSocket, baseline: { drain: number; close: number }) => {
+      expect(socket.listenerCount('drain')).to.equal(baseline.drain);
+      expect(socket.listenerCount('close')).to.equal(baseline.close);
+    };
+    it("should wait for 'drain' instead of buffering the whole stream", async function () {
+      const { conn, socket, baseline, transfer } = setup();
+      const ended = new Promise<void>((resolve, reject) => {
+        transfer.on('end', resolve);
+        transfer.on('error', reject);
+      });
+      await tick();
+      // Stuck behind the device: at most one 64 KiB chunk plus headers is
+      // buffered, not the whole megabyte.
+      expect(socket.writableLength).to.be.above(0);
+      expect(socket.writableLength).to.be.below(2 * 65536);
+      expect(transfer.stats.bytesTransferred).to.equal(0);
+      // Let the device read everything.
+      while (!socket.sawDone) {
+        socket.release();
+        await tick();
+      }
+      socket.release();
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead(Buffer.alloc(4));
+      await ended;
+      expect(socket.maxBuffered).to.be.below(2 * 65536);
+      expect(transfer.stats.bytesTransferred).to.equal(SIZE);
+      expectNoSocketListeners(socket, baseline);
+    });
+    it("should stop waiting for 'drain' when the transfer is cancelled", async function () {
+      const { socket, baseline, stream, transfer } = setup();
+      const ended = new Promise<void>((resolve, reject) => {
+        transfer.on('end', resolve);
+        transfer.on('error', reject);
+      });
+      await tick();
+      expect(socket.listenerCount('drain')).to.be.above(baseline.drain);
+      transfer.cancel();
+      await ended;
+      expectNoSocketListeners(socket, baseline);
+      expect(stream.listenerCount('readable')).to.equal(0);
+    });
+    it("should emit 'error' when the socket closes while waiting for 'drain'", async function () {
+      const { socket, baseline, transfer } = setup();
+      const failed = new Promise<Error>((resolve, reject) => {
+        transfer.on('error', resolve);
+        transfer.on('end', () => reject(new Error("'end' without 'error'")));
+      });
+      await tick();
+      expect(socket.listenerCount('close')).to.be.above(baseline.close);
+      socket.destroy();
+      expect(await failed).to.be.an.instanceOf(Error);
+      expectNoSocketListeners(socket, baseline);
+    });
+  });
   describe('cancel() after the transfer finished', function () {
     // Replies to the commands of one sync connection, in order.
     const okay = () => Buffer.concat([Buffer.from(Protocol.OKAY), Buffer.alloc(4)]);

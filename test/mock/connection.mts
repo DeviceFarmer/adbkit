@@ -1,3 +1,4 @@
+import type { Socket } from 'net';
 import ConnectionModule from '../../dist/src/adb/connection.js';
 import ParserModule from '../../dist/src/adb/parser.js';
 import MockDuplex from './duplex.mts';
@@ -11,6 +12,9 @@ export default class MockConnection extends Connection {
   constructor() {
     super();
     this.parser = new Parser(this._socket);
+    // Like a real Connection, expose the socket that writes go to. Sync
+    // checks it for backpressure.
+    this.socket = this._socket as unknown as Socket;
   }
 
   public getSocket(): MockDuplex {
@@ -22,9 +26,8 @@ export default class MockConnection extends Connection {
     return this;
   }
 
-  // public write(data: string | Uint8Array, callback?: (err?: Error) => void): this {
   public write(chunk: string | Uint8Array, cb?: (error: Error | null | undefined) => void): this {
-    this._socket.write(chunk, cb);
+    this.socket.write(chunk, cb);
     return this;
   }
 

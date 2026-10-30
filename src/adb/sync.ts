@@ -11,6 +11,7 @@ import PullTransfer from './sync/pulltransfer';
 import Connection from './connection';
 import { Callback } from '../Callback';
 import { Readable } from 'stream';
+import { Socket } from 'net';
 import { nodeify, warnUnhandled } from './promise';
 
 const TEMP_PATH = '/data/local/tmp';
@@ -169,7 +170,8 @@ export default class Sync extends EventEmitter {
       let connErrorListener: (err: Error) => void;
       let endListener: () => void;
       let errorListener: (err: Error) => void;
-      let drainListener: (() => void) | undefined;
+      // Ends a pending wait for 'drain' and removes its listeners.
+      let stopWaitingForDrain: (() => void) | undefined;
       let finished = false;
 
       return new Promise<void>((resolve, reject) => {
@@ -191,14 +193,35 @@ export default class Sync extends EventEmitter {
           });
         };
         stream.on('end', endListener);
-        const waitForDrain = () => {
-          return new Promise<void>((drained) => {
-            drainListener = () => {
-              this.connection.removeListener('drain', drainListener);
-              drainListener = undefined;
+        // Connection.write() returns the connection, not socket.write()'s
+        // result, so ask the socket itself whether its buffer is full.
+        // Listens on the socket because the connection only forwards 'drain'
+        // from connect(). No 'error' listener: Connection forwards socket
+        // errors only while it is the sole listener, and connErrorListener
+        // handles them. 'close' always follows an error.
+        const waitForDrain = (socket: Socket) => {
+          return new Promise<void>((drained, closed) => {
+            if (socket.destroyed) {
+              closed(new Error('Connection closed while pushing'));
+              return;
+            }
+            const stop = () => {
+              socket.removeListener('drain', onDrain);
+              socket.removeListener('close', onClose);
+              stopWaitingForDrain = undefined;
+            };
+            const onDrain = () => {
+              stop();
               drained();
             };
-            this.connection.on('drain', drainListener);
+            const onClose = () => {
+              stop();
+              closed(new Error('Connection closed while pushing'));
+            };
+            socket.on('drain', onDrain);
+            socket.on('close', onClose);
+            // On fail or cancel, settle so the writer chain can see `finished`.
+            stopWaitingForDrain = onDrain;
           });
         };
         const track = () => transfer.pop();
@@ -206,18 +229,20 @@ export default class Sync extends EventEmitter {
           if (finished) {
             return Promise.resolve();
           }
-          let chunk: Buffer;
-          if ((chunk = stream.read(DATA_MAX_LENGTH) || stream.read())) {
-            this._sendCommandWithLength(Protocol.DATA, chunk.length);
-            transfer.push(chunk.length);
-            if (this.connection.write(chunk, track)) {
-              return writeNext();
-            } else {
-              return waitForDrain().then(writeNext);
-            }
-          } else {
+          // A mocked Connection may not have a socket.
+          const socket: Socket | undefined = this.connection.socket;
+          // Check before reading, the SEND and DATA headers count too.
+          if (socket?.writableNeedDrain) {
+            return waitForDrain(socket).then(writeNext);
+          }
+          const chunk: Buffer | null = stream.read(DATA_MAX_LENGTH) || stream.read();
+          if (!chunk) {
             return Promise.resolve();
           }
+          this._sendCommandWithLength(Protocol.DATA, chunk.length);
+          transfer.push(chunk.length);
+          this.connection.write(chunk, track);
+          return writeNext();
         };
         readableListener = () => {
           writer = writer.then(writeNext).catch(fail);
@@ -237,9 +262,7 @@ export default class Sync extends EventEmitter {
         stream.removeListener('readable', readableListener);
         stream.removeListener('error', errorListener);
         this.connection.removeListener('error', connErrorListener);
-        if (drainListener) {
-          this.connection.removeListener('drain', drainListener);
-        }
+        stopWaitingForDrain?.();
       });
     };
     const readReply = () => {
