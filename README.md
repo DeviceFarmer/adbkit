@@ -376,6 +376,24 @@ Forwards socket connections from the ADB server host (local) to the device (remo
 -   Returns: `Promise`
 -   Resolves with: `true`
 
+#### device.forwardTcp(local, remote)
+
+Like `device.forward()`, but for a `tcp:<port>` local endpoint, and resolves with the port the forward listens on. Pass `tcp:0` to let the ADB server pick a free port. This is analogous to `adb forward tcp:0 <remote>`, which prints the port.
+
+-   **local** `tcp:<port>`, where `<port>` may be `0`. Any other local endpoint is rejected.
+-   **remote** A string representing the remote endpoint on the device. Same format as `device.forward()`'s `remote` argument.
+-   Returns: `Promise`
+-   Resolves with: `port` (the port number on the ADB host)
+
+##### Example
+
+```js
+const port = await device.forwardTcp('tcp:0', 'localabstract:chrome_devtools_remote');
+console.log(`Chrome devtools on http://localhost:${port}`);
+// ...
+await device.removeForward(`tcp:${port}`);
+```
+
 #### device.framebuffer([format])
 
 Fetches the current **raw** framebuffer (i.e. what is visible on the screen) from the device, and optionally converts it into something more usable by using [GraphicsMagick][graphicsmagick]'s `gm` command, which must be available in `$PATH` if conversion is desired. Note that we don't bother supporting really old framebuffer formats such as RGB_565. If for some mysterious reason you happen to run into a `>=2.3` device that uses RGB_565, let us know.
@@ -699,6 +717,21 @@ Attempts to remount the `/system` partition in read-write mode. This will usuall
 
 -   **callback(err)** Optional. Use this or the returned `Promise`.
     -   **err** `null` when successful, `Error` otherwise.
+-   Returns: `Promise`
+-   Resolves with: `true`
+
+#### device.removeAllForwards()
+
+Removes all forwards of the device. This is analogous to `adb -s <serial> forward --remove-all`, except that it leaves the forwards of other devices alone. The ADB server's own `killforward-all` removes the forwards of every device, whatever serial it's sent with, so this lists the device's forwards and removes them one by one instead.
+
+-   Returns: `Promise`
+-   Resolves with: `true`
+
+#### device.removeForward(local)
+
+Removes a forward created with `device.forward()` or `device.forwardTcp()`. This is analogous to `adb forward --remove <local>`. Rejects if no forward listens on `local`.
+
+-   **local** The local endpoint of the forward, as `device.listForwards()` reports it. For a forward created with `tcp:0`, that is `tcp:<port>`, with the port `device.forwardTcp()` resolved with.
 -   Returns: `Promise`
 -   Resolves with: `true`
 
