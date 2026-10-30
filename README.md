@@ -376,6 +376,22 @@ Forwards socket connections from the ADB server host (local) to the device (remo
 -   Returns: `Promise`
 -   Resolves with: `true`
 
+#### device.forwardTcp(local, remote)
+
+Like `device.forward()`, but for a `tcp:<port>` local endpoint, and resolves with the port the forward listens on. Pass `tcp:0` to let the ADB server pick a free port. This is analogous to `adb forward tcp:0 <remote>`, which prints the port.
+
+-   **local** `tcp:<port>`, where `<port>` may be `0`. Any other local endpoint is rejected.
+-   **remote** A string representing the remote endpoint on the device. Same format as `device.forward()`'s `remote` argument.
+-   Returns: `Promise`
+-   Resolves with: `port` (the port number on the ADB host)
+
+##### Example
+
+```js
+const port = await device.forwardTcp('tcp:0', 'localabstract:chrome_devtools_remote');
+console.log(`Chrome devtools on http://localhost:${port}`);
+```
+
 #### device.framebuffer([format])
 
 Fetches the current **raw** framebuffer (i.e. what is visible on the screen) from the device, and optionally converts it into something more usable by using [GraphicsMagick][graphicsmagick]'s `gm` command, which must be available in `$PATH` if conversion is desired. Note that we don't bother supporting really old framebuffer formats such as RGB_565. If for some mysterious reason you happen to run into a `>=2.3` device that uses RGB_565, let us know.

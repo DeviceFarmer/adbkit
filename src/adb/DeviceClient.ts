@@ -39,6 +39,7 @@ import {
   AttachCommand,
   DetachCommand,
   ForwardCommand,
+  ForwardTcpCommand,
   GetDevicePathCommand,
   GetSerialNoCommand,
   GetStateCommand,
@@ -240,6 +241,17 @@ export default class DeviceClient {
    */
   public forward(local: string, remote: string): Promise<boolean> {
     return this.connection().then((conn) => new ForwardCommand(conn).execute(this.serial, local, remote));
+  }
+
+  /**
+   * Like `forward()`, but for a `tcp:<port>` local endpoint, and resolves with the port the ADB server listens on. Use `tcp:0` to let the server pick a free port. This is analogous to `adb forward tcp:0 <remote>`, which prints the port.
+   *
+   * @param local `tcp:<port>`, where `<port>` may be `0`. Any other local endpoint is rejected.
+   * @param remote A string representing the remote endpoint on the device. Same format as `forward()`'s `remote` argument.
+   * @returns The port the forward listens on.
+   */
+  public forwardTcp(local: string, remote: string): Promise<number> {
+    return this.connection().then((conn) => new ForwardTcpCommand(conn).execute(this.serial, local, remote));
   }
 
   /**
