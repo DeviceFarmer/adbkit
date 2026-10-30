@@ -10,7 +10,9 @@ export default class ReverseCommand extends Command<boolean> {
           return this.parser.readAscii(4).then((reply) => {
             switch (reply) {
               case Protocol.OKAY:
-                return true;
+                // A new tcp: reverse is followed by the port the device bound.
+                // Read it to the end, so that the socket can close.
+                return this.parser.readAll().then(() => true);
               case Protocol.FAIL:
                 return this.parser.readError();
               default:
