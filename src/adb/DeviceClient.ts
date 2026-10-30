@@ -43,6 +43,7 @@ import {
   GetDevicePathCommand,
   GetSerialNoCommand,
   GetStateCommand,
+  KillForwardCommand,
   ListForwardsCommand,
   WaitForDeviceCommand,
 } from './command/host-serial';
@@ -252,6 +253,42 @@ export default class DeviceClient {
    */
   public forwardTcp(local: string, remote: string): Promise<number> {
     return this.connection().then((conn) => new ForwardTcpCommand(conn).execute(this.serial, local, remote));
+  }
+
+  /**
+   * Removes a forward created with `forward()` or `forwardTcp()`. This is analogous to `adb forward --remove <local>`. Rejects if no forward listens on `local`.
+   *
+   * @param local The local endpoint of the forward, as `listForwards()` reports it. For a forward created with `tcp:0`, that is `tcp:<port>` with the port `forwardTcp()` resolved with.
+   * @returns true
+   */
+  public removeForward(local: string): Promise<boolean> {
+    return this.connection().then((conn) => new KillForwardCommand(conn).execute(this.serial, local));
+  }
+
+  /**
+   * Removes all forwards of this device. This is analogous to `adb -s <serial> forward --remove-all`, except that it leaves the forwards of other devices alone: the ADB server's `killforward-all` removes the forwards of every device, whatever serial it's sent with.
+   *
+   * @returns true
+   */
+  public removeAllForwards(): Promise<boolean> {
+    return this.listForwards()
+      .then((forwards) => {
+        const own = forwards.filter((forward) => forward.serial === this.serial);
+        return own.reduce<Promise<unknown>>(
+          (previous, forward) =>
+            previous.then(() =>
+              this.removeForward(forward.local).catch((err) => {
+                // Removed by someone else since it was listed.
+                if (err instanceof Parser.FailError && /not found/.test(err.message)) {
+                  return;
+                }
+                throw err;
+              }),
+            ),
+          Promise.resolve(),
+        );
+      })
+      .then(() => true);
   }
 
   /**

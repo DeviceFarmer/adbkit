@@ -5,5 +5,6 @@ export { default as ForwardTcpCommand } from './forwardtcp';
 export { default as GetDevicePathCommand } from './getdevicepath';
 export { default as GetSerialNoCommand } from './getdevicepath';
 export { default as GetStateCommand } from './getstate';
+export { default as KillForwardCommand } from './killforward';
 export { default as ListForwardsCommand } from './listforwards';
 export { default as WaitForDeviceCommand } from './waitfordevice';
