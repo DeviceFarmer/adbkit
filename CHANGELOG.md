@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.1 (2026-11-01)
+
+* Bump typescript-eslint from 8.72.0 to 8.72.1 in the dev-dependencies group by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/572
+* feat(forward): resolve tcp:0 ports, remove forwards, and close leaked sockets by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/574
+* fix(sync): wait for 'drain' when pushing to a slow device by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/575
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v4.0.0...v4.0.1
+
 ## 4.0.0 (2026-10-25)
 
 * Support adb reverse through the TcpUsb bridge by @jozenstar in https://github.com/DeviceFarmer/adbkit/pull/550
