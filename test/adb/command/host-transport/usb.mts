@@ -24,6 +24,17 @@ describe('UsbCommand', function () {
       expect(val).to.be.true;
     });
   });
+  it('should resolve with true when adbd restarts before its message arrives', function () {
+    const conn = new MockConnection();
+    const cmd = new UsbCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute().then(function (val) {
+      expect(val).to.be.true;
+    });
+  });
   return it('should reject on unexpected reply', function (done) {
     const conn = new MockConnection();
     const cmd = new UsbCommand(conn);

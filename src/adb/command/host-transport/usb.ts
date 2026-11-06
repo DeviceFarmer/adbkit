@@ -10,10 +10,14 @@ export default class UsbCommand extends Command<boolean> {
       switch (reply) {
         case Protocol.OKAY:
           return this.parser.readAll().then(function (value) {
-            if (RE_OK.test(value.toString())) {
+            const output = value.toString().trim();
+            // adbd restarts right after writing its message, and the message
+            // sometimes doesn't make it, although the switch happened. adb
+            // itself ignores the output, so no output counts as success too.
+            if (output === '' || RE_OK.test(output)) {
               return true;
             } else {
-              throw new Error(value.toString().trim());
+              throw new Error(output);
             }
           });
         case Protocol.FAIL:

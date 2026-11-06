@@ -34,6 +34,32 @@ describe('TcpIpCommand', function () {
       expect(port).to.equal(5555);
     });
   });
+  it('should resolve with the port when adbd restarts before its message arrives', function () {
+    const conn = new MockConnection();
+    const cmd = new TcpIpCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute(5555).then(function (port) {
+      expect(port).to.equal(5555);
+    });
+  });
+  it('should reject with the message adbd gives for an invalid port', function () {
+    const conn = new MockConnection();
+    const cmd = new TcpIpCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead('invalid port 0\n');
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute(0).then(
+      () => {
+        throw new Error('Expected a rejection');
+      },
+      (err) => expect(err.message).to.equal('invalid port 0'),
+    );
+  });
   return it('should reject on unexpected reply', function (done) {
     const conn = new MockConnection();
     const cmd = new TcpIpCommand(conn);
