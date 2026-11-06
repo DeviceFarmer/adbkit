@@ -25,19 +25,39 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
     return value
       .toString('ascii')
       .split('\n')
-      .filter((e) => e)
-      .map((line) => {
-        // For some reason, the columns are separated by spaces instead of tabs
-        const [id, type, path, product, model, device, transportId] = line.split(/\s+/);
-        return {
-          id,
-          type: type as 'emulator' | 'device' | 'offline',
-          path,
-          product,
-          model,
-          device,
-          transportId,
-        };
-      });
+      .map((line) => line.trim())
+      .filter((line) => line)
+      .map(parseDevice);
   }
+}
+
+// The key:value fields adb may print after the state, in any order, each
+// only when known: `usb:` (the device path, missing for emulators, network
+// devices and on Windows), `product:`, `model:`, `device:` and
+// `transport_id:`.
+const FIELD = /^(usb|product|model|device|transport_id):(.*)$/;
+
+function parseDevice(line: string): DeviceWithPath {
+  // The columns are separated by spaces instead of tabs. The state can
+  // contain spaces too, e.g. "no permissions (...); see [http://...]".
+  const [id, ...tokens] = line.split(/\s+/);
+  const state: string[] = [];
+  const fields: Record<string, string> = {};
+  for (const token of tokens) {
+    const field = state.length > 0 ? FIELD.exec(token) : null;
+    if (field) {
+      fields[field[1]] = field[2];
+    } else if (Object.keys(fields).length === 0) {
+      state.push(token);
+    }
+  }
+  return {
+    id,
+    type: state.join(' ') as DeviceWithPath['type'],
+    path: fields.usb === undefined ? undefined : `usb:${fields.usb}`,
+    product: fields.product,
+    model: fields.model,
+    device: fields.device,
+    transportId: fields.transport_id,
+  };
 }
