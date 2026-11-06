@@ -7,10 +7,12 @@ import MockConnection from '../mock/connection.mts';
 import ProtocolModule from '../../dist/src/adb/protocol.js';
 import DeviceClientModule from '../../dist/src/adb/DeviceClient.js';
 import ParserModule from '../../dist/src/adb/parser.js';
+import SyncModule from '../../dist/src/adb/sync.js';
 
 const Protocol = ProtocolModule.default;
 const DeviceClient = DeviceClientModule.default;
 const Parser = ParserModule.default;
+const Sync = SyncModule.default;
 
 describe('DeviceClient', function () {
   const setup = () => {
@@ -151,6 +153,34 @@ describe('DeviceClient', function () {
       const failure = new Error('boom');
       Sinon.stub(device, 'removeForward').rejects(failure);
       expect(await rejected(device.removeAllForwards())).to.equal(failure);
+    });
+  });
+
+  describe('pull(path)', function () {
+    const pull = async (reply: Buffer) => {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      Sinon.spy(sync, 'end');
+      const device = new DeviceClient({ connection: Sinon.stub() }, 'abba');
+      Sinon.stub(device, 'syncService').resolves(sync);
+      const transfer = await device.pull('/foo');
+      const closed = new Promise((resolve) => transfer.on('close', resolve));
+      transfer.on('error', () => undefined);
+      transfer.resume();
+      conn.getSocket().causeRead(reply);
+      await closed;
+      return sync;
+    };
+    it('should end the sync connection when the pull succeeds', async function () {
+      const sync = await pull(Buffer.concat([Buffer.from(Protocol.DONE), Buffer.alloc(4)]));
+      expect(sync.end).to.have.been.calledOnce;
+    });
+    it('should end the sync connection when the pull fails', async function () {
+      const message = Buffer.from('open failed: Permission denied');
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(message.length, 0);
+      const sync = await pull(Buffer.concat([Buffer.from(Protocol.FAIL), length, message]));
+      expect(sync.end).to.have.been.calledOnce;
     });
   });
 });

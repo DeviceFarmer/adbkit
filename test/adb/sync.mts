@@ -344,6 +344,100 @@ describe('Sync', function () {
       }, 10);
     });
   });
+  describe('pull() without a device', function () {
+    const data = (payload: Buffer) => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(payload.length, 0);
+      return Buffer.concat([Buffer.from(Protocol.DATA), length, payload]);
+    };
+    const fail = (message: string) => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(message.length, 0);
+      return Buffer.concat([Buffer.from(Protocol.FAIL), length, Buffer.from(message)]);
+    };
+    // Pulls '/foo', feeding `reply` to the transfer, and records what it
+    // emits. The transfer is consumed, so 'end' fires if it ends.
+    const pull = (reply: Buffer) => {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const transfer = sync.pull('/foo');
+      const events: string[] = [];
+      const chunks: Buffer[] = [];
+      transfer.on('data', (chunk: Buffer) => chunks.push(chunk));
+      for (const event of ['end', 'finish', 'close']) {
+        transfer.on(event, () => events.push(event));
+      }
+      const failed = new Promise<Error>((resolve) => {
+        transfer.on('error', (err: Error) => {
+          events.push('error');
+          resolve(err);
+        });
+      });
+      setTimeout(() => conn.getSocket().causeRead(reply), 10);
+      return { conn, transfer, events, chunks, failed };
+    };
+    // Lets any 'end', 'finish' or 'close' that was going to follow the error fire.
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+    it("should emit 'error' and 'close', but neither 'end' nor 'finish', when the file can't be read", async function () {
+      const { events, chunks, failed } = pull(fail('open failed: No such file or directory'));
+      const err = await failed;
+      expect(err).to.be.an.instanceOf(Parser.FailError);
+      expect(err.message).to.contain('open failed: No such file or directory');
+      await settle();
+      expect(events).to.eql(['error', 'close']);
+      expect(chunks).to.have.length(0);
+    });
+    it("should deliver the data, then emit 'error' without 'end' on a FAIL after DATA", async function () {
+      const { events, chunks, failed } = pull(
+        Buffer.concat([data(Buffer.from('partial')), fail('read failed: I/O error')]),
+      );
+      const err = await failed;
+      expect(err).to.be.an.instanceOf(Parser.FailError);
+      expect(err.message).to.contain('read failed: I/O error');
+      await settle();
+      expect(Buffer.concat(chunks).toString()).to.equal('partial');
+      expect(events).to.eql(['error', 'close']);
+    });
+    it("should emit 'error' without 'end' on an unexpected reply", async function () {
+      const { events, failed } = pull(Buffer.from('QUIT'));
+      const err = await failed;
+      expect(err).to.be.an.instanceOf(Parser.UnexpectedDataError);
+      await settle();
+      expect(events).to.eql(['error', 'close']);
+    });
+    it('should reject stream.promises.finished() instead of resolving it on a FAIL', async function () {
+      const { transfer } = pull(Buffer.concat([data(Buffer.from('partial')), fail('read failed: I/O error')]));
+      const err = await Stream.promises.finished(transfer).then(
+        () => null,
+        (e) => e,
+      );
+      expect(err).to.be.an.instanceOf(Parser.FailError);
+    });
+    it("should end after DATA and DONE without 'error'", async function () {
+      const done = Buffer.concat([Buffer.from(Protocol.DONE), Buffer.alloc(4)]);
+      const { transfer, events, chunks } = pull(Buffer.concat([data(Buffer.from('whole')), done]));
+      await new Promise((resolve) => transfer.on('end', resolve));
+      await settle();
+      expect(Buffer.concat(chunks).toString()).to.equal('whole');
+      expect(events).to.have.members(['finish', 'end', 'close']);
+    });
+    it("should only warn about a FAIL without an 'error' listener", async function () {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const emitWarning = Sinon.stub(process, 'emitWarning');
+      try {
+        const transfer = sync.pull('/foo');
+        transfer.resume();
+        conn.getSocket().causeRead(fail('open failed: Permission denied'));
+        await settle();
+        expect(emitWarning).to.have.been.calledOnce;
+        expect(emitWarning.firstCall.args[0]).to.be.an.instanceOf(Parser.FailError);
+      } finally {
+        emitWarning.restore();
+      }
+    });
+  });
   describe('pushStream() to a slow device', function () {
     // A socket the device reads slowly. It holds on to every write until the
     // test lets it through, and asks for a drain above 16 KiB.

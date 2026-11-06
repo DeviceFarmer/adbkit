@@ -324,14 +324,9 @@ export default class Sync extends EventEmitter {
     const cancelled = new Parser.CancellationError();
     const reader = new AbortController();
     const signal = reader.signal;
-    const readEnd = (afterEnd?) => {
+    const readEnd = () => {
       transfer.removeListener('cancel', cancelListener);
-      const retEnd = transfer.end();
-      if (afterEnd) {
-        return afterEnd();
-      } else {
-        return retEnd;
-      }
+      return transfer.end();
     };
     const readNext = () => {
       return this.parser.readAscii(4, signal).then((reply) => {
@@ -347,14 +342,13 @@ export default class Sync extends EventEmitter {
             return this.parser.readBytes(4, signal).then(function () {
               return readEnd();
             });
+          // On a FAIL or an unexpected reply, don't end the transfer: 'end'
+          // tells the consumer that the whole file arrived. The error is
+          // emitted below instead.
           case Protocol.FAIL:
-            return readEnd(() => {
-              return this._readError(signal);
-            });
+            return this._readError(signal);
           default:
-            return readEnd(() => {
-              return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
-            });
+            return this.parser.unexpected(reply, 'DATA, DONE or FAIL');
         }
       });
     };
@@ -368,7 +362,14 @@ export default class Sync extends EventEmitter {
           return;
         }
         transfer.removeListener('cancel', cancelListener);
-        transfer.emit('error', err);
+        // Like a failed Node stream: 'error', then 'close', and no 'end'.
+        // Emitting instead of destroy(err) keeps an error nobody listens
+        // for a warning (via warnUnhandled) rather than a crash.
+        try {
+          transfer.emit('error', err);
+        } finally {
+          transfer.destroy();
+        }
       })
       .catch(warnUnhandled);
     const cancelListener = () => reader.abort(cancelled);

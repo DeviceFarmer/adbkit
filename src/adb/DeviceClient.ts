@@ -688,7 +688,8 @@ export default class DeviceClient {
    * @returns A `PullTransfer` instance.
    */
   public pull(path: string): Promise<PullTransfer> {
-    return this.syncService().then((sync) => sync.pull(path).on('end', () => sync.end()));
+    // 'close' follows both 'end' and 'error'.
+    return this.syncService().then((sync) => sync.pull(path).on('close', () => sync.end()));
   }
 
   /**
