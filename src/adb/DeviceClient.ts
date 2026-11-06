@@ -354,10 +354,11 @@ export default class DeviceClient {
   /**
    * Puts the device into root mode which may be needed by certain shell commands. A remount is generally required after a successful root call. **Note that this will only work if your device supports this feature. Production devices almost never do.**
    *
+   * @param target Optional. What to reboot into, as in `adb reboot <target>`: for example `'bootloader'`, `'recovery'`, `'sideload'` or `'fastboot'`. Passed to adbd as is, so what each target does depends on the device. Omit it for a normal reboot. If the device refuses the target (an emulator refuses `'recovery'`), adbd keeps the connection open and the returned promise doesn't settle, like `adb reboot <target>`.
    * @return true
    */
-  public reboot(): Promise<boolean> {
-    return this.transport().then((transport) => new RebootCommand(transport).execute());
+  public reboot(target?: string): Promise<boolean> {
+    return this.transport().then((transport) => new RebootCommand(transport).execute(target));
   }
 
   /**

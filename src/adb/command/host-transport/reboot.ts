@@ -2,8 +2,8 @@ import Protocol from '../../protocol';
 import Command from '../../command';
 
 export default class RebootCommand extends Command<boolean> {
-  execute(): Promise<boolean> {
-    this._send('reboot:');
+  execute(target = ''): Promise<boolean> {
+    this._send(`reboot:${target}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
         case Protocol.OKAY:
