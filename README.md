@@ -15,8 +15,6 @@ Please note that although it may happen at some point, **this project is NOT an 
 
 When targeting a remote host, starting the server is entirely your responsibility.
 
-Alternatively, you may want to consider using the Chrome [ADB][chrome-adb] extension, as it includes the ADB server and can be started/stopped quite easily.
-
 For Linux users, adb need `plugdev` group acess, So you may need to add your current user to `plugdev` group.
 `sudo usermod -a -G plugdev $USER`
 
@@ -28,6 +26,16 @@ Install via NPM:
 npm install --save @devicefarmer/adbkit
 ```
 
+Import the `Adb` named export, which works from both ES modules and CommonJS:
+
+```typescript
+import { Adb } from '@devicefarmer/adbkit';
+// or, in CommonJS:
+const { Adb } = require('@devicefarmer/adbkit');
+```
+
+Avoid the default import (`import Adb from '@devicefarmer/adbkit'`). The package is CommonJS, so the default import is `Adb` only in TypeScript compiled to CommonJS or in a bundler. In Node.js ES modules it is the whole module object, and `Adb.createClient` is `undefined`.
+
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
 
 ### Examples
@@ -37,7 +45,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 #### Checking for NFC support
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -61,7 +69,7 @@ const test = async () => {
 #### Installing an APK
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const apk = 'vendor/app.apk';
@@ -80,7 +88,7 @@ const test = async () => {
 #### Tracking devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const test = async () => {
@@ -99,7 +107,7 @@ const test = async () => {
 
 ```typescript
 import fs from 'fs';
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -132,7 +140,7 @@ const test = async () => {
 #### Pushing a file to all connected devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -163,7 +171,7 @@ const test = async () => {
 #### List files in a folder
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -258,7 +266,7 @@ Connects to the given device, which must have its ADB daemon running in tcp mode
 Note: be careful with using `client.listDevices()` together with `client.tcpip()` and other similar methods that modify the connection with ADB. You might have the same device twice in your device list (i.e. one device connected via both USB and TCP), which can cause havoc if run simultaneously.
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -516,7 +524,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 import request from 'request';
 import { Readable } from 'stream';
 
@@ -788,7 +796,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 
 * Read the output of an instantaneous command
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -820,7 +828,7 @@ client
 
 * Progressively read the output of a long-running command and terminate it
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 client.listDevices()
@@ -1164,7 +1172,6 @@ Test coverage was also massively improved, although we've still got ways to go.
     -   [SERVICES.TXT][adb-services] (ADB socket protocol)
 -   [Android ADB Protocols][adb-protocols] (a blog post explaining the protocol)
 -   [adb.js][adb-js] (another Node.js ADB implementation)
--   [ADB Chrome extension][chrome-adb]
 
 ## Releasing
 
@@ -1193,7 +1200,6 @@ Copyright © The OpenSTF Project. All Rights Reserved.
 [adb-services]: https://github.com/android/platform_system_core/blob/master/adb/SERVICES.TXT
 [adb-protocols]: http://blogs.kgsoft.co.uk/2013_03_15_prg.htm
 [file_sync_service.h]: https://github.com/android/platform_system_core/blob/master/adb/file_sync_service.h
-[chrome-adb]: https://chrome.google.com/webstore/detail/adb/dpngiggdglpdnjdoaefidgiigpemgage
 [node-debug]: https://npmjs.org/package/debug
 [net-connect]: http://nodejs.org/api/net.html#net_net_connect_options_connectionlistener
 [node-events]: http://nodejs.org/api/events.html

@@ -14,6 +14,11 @@ describe('package exports', function () {
     expect(adb.default.createClient).to.be.a('function');
     expect(adb.Parser).to.equal(require('@devicefarmer/adbkit/adb/parser').default);
   });
+  it('should give ES modules the Adb named export the README imports', async function () {
+    const esm = await import('@devicefarmer/adbkit');
+    expect(esm.Adb.createClient).to.be.a('function');
+    expect(esm.Adb).to.equal(require('@devicefarmer/adbkit').Adb);
+  });
   for (const [subpath, name] of [
     ['adb/parser', 'Parser'],
     ['adb/sync/pushtransfer', 'PushTransfer'],
