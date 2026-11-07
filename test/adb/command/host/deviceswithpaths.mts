@@ -120,6 +120,32 @@ describe('HostDevicesWithPathsCommand', function () {
     expect(device.path).to.equal('usb:1-1');
     expect(device.transportId).to.equal('4');
   });
+  it("should keep '(no serial number)' whole as the id", async function () {
+    const [device] = await list('(no serial number)     device usb:1-1 product:P model:M device:D transport_id:7\n');
+    expect(device).to.eql({
+      id: '(no serial number)',
+      type: 'device',
+      path: 'usb:1-1',
+      product: 'P',
+      model: 'M',
+      device: 'D',
+      transportId: '7',
+    });
+  });
+  it('should keep spaces in product and device, which adb does not replace', async function () {
+    const [device] = await list(
+      'ABC                    device usb:1-1 product:My Product model:My_Model device:my device x transport_id:3\n',
+    );
+    expect(device).to.eql({
+      id: 'ABC',
+      type: 'device',
+      path: 'usb:1-1',
+      product: 'My Product',
+      model: 'My_Model',
+      device: 'my device x',
+      transportId: '3',
+    });
+  });
   it('should resolve with an empty list when no device is attached', async function () {
     expect(await list('')).to.eql([]);
   });
