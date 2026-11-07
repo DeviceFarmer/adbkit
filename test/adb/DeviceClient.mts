@@ -125,6 +125,29 @@ describe('DeviceClient', function () {
     });
   });
 
+  describe('reboot([target])', function () {
+    for (const [args, service] of [
+      [[], 'reboot:'],
+      [['recovery'], 'reboot:recovery'],
+      [[undefined], 'reboot:'],
+      // A callback, as the README used to document, isn't a target.
+      [[() => undefined], 'reboot:'],
+    ] as const) {
+      it(`should send '${service}' for reboot(${args.map((a) => (typeof a === 'string' ? `'${a}'` : typeof a)).join()})`, async function () {
+        const { conn, device } = setup();
+        const writes: string[] = [];
+        conn.getSocket().on('write', (chunk) => writes.push(chunk.toString()));
+        setImmediate(() => {
+          conn.getSocket().causeRead(Protocol.OKAY);
+          conn.getSocket().causeEnd();
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect(await device.reboot(...(args as any[]))).to.be.true;
+        expect(writes).to.eql([Protocol.encodeData(service).toString()]);
+      });
+    }
+  });
+
   describe('removeAllForwards()', function () {
     const forwards = [
       { serial: 'abba', local: 'tcp:1', remote: 'tcp:2' },

@@ -705,14 +705,15 @@ A convenience shortcut for `sync.readdir()`, mainly for one-off use cases. The c
 -   Returns: `Promise`
 -   Resolves with: See `sync.readdir()` for details.
 
-#### device.reboot()
+#### device.reboot([target])
 
-Reboots the device. Similar to `adb reboot`. Note that the method resolves when ADB reports that the device has been rebooted (i.e. the reboot command was successful), not when the device becomes available again.
+Reboots the device. Similar to `adb reboot [target]`. Note that the method resolves when ADB reports that the device has been rebooted (i.e. the reboot command was successful), not when the device becomes available again.
 
--   **callback(err)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise.
+-   **target** Optional. What to reboot into, for example `'bootloader'`, `'recovery'`, `'sideload'` or `'fastboot'`. It's passed to the device as is (`reboot:<target>`), so what each target does depends on the device. Omit it for a normal reboot. If the device refuses the target, adbd keeps the connection open and the promise doesn't settle, just like `adb reboot <target>` doesn't return. On an Android emulator, for example, `'bootloader'` simply reboots back into Android, while `'recovery'` doesn't reboot at all, because the emulator has no `/misc` partition.
 -   Returns: `Promise`
 -   Resolves with: `true`
+
+`device.reboot()` doesn't take a callback. Anything other than a string, such as a function, is ignored and the device reboots normally.
 
 #### device.remount()
 
