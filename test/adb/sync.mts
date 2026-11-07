@@ -422,6 +422,27 @@ describe('Sync', function () {
       expect(Buffer.concat(chunks).toString()).to.equal('whole');
       expect(events).to.have.members(['finish', 'end', 'close']);
     });
+    it('should neither emit nor warn when the consumer destroys the transfer early', async function () {
+      const conn = new MockConnection();
+      Sinon.spy(conn, 'end');
+      const sync = new Sync(conn);
+      const emitWarning = Sinon.stub(process, 'emitWarning');
+      try {
+        const transfer = sync.pull('/foo');
+        const errors: Error[] = [];
+        transfer.on('error', (err: Error) => errors.push(err));
+        transfer.on('data', () => transfer.destroy());
+        // The FAIL right behind the first chunk arrives after the destroy.
+        conn.getSocket().causeRead(Buffer.concat([data(Buffer.from('first chunk')), fail('read failed: I/O error')]));
+        await settle();
+        expect(transfer.destroyed).to.be.true;
+        expect(errors).to.eql([]);
+        expect(emitWarning).to.not.have.been.called;
+        expect(conn.end).to.have.been.called;
+      } finally {
+        emitWarning.restore();
+      }
+    });
     it("should only warn about a FAIL without an 'error' listener", async function () {
       const conn = new MockConnection();
       const sync = new Sync(conn);
@@ -602,14 +623,17 @@ describe('Sync', function () {
     });
   });
   describe('pushFile() of a missing file', function () {
-    it("should end the transfer without an 'error' listener", function (done) {
+    it("should close the transfer, without 'end', and only warn without an 'error' listener", function (done) {
       const conn = new MockConnection();
       const sync = new Sync(conn);
       const emitWarning = Sinon.stub(process, 'emitWarning');
       const transfer = sync.pushFile('/nonexistent/adbkit-test.apk', '/foo');
-      transfer.on('end', function () {
+      const ended = Sinon.spy();
+      transfer.on('end', ended);
+      transfer.on('close', function () {
         emitWarning.restore();
         try {
+          expect(ended).to.not.have.been.called;
           expect(emitWarning).to.have.been.calledOnce;
           expect(emitWarning.firstCall.args[0].code).to.equal('ENOENT');
           done();
@@ -617,6 +641,96 @@ describe('Sync', function () {
           done(err);
         }
       });
+    });
+  });
+  describe('pushFile() that fails', function () {
+    it('should close the file it opened', async function () {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const createReadStream = Sinon.spy(Fs, 'createReadStream');
+      try {
+        // Big enough that the FAIL arrives before the file was read to the end.
+        const file = new URL('../../package-lock.json', import.meta.url).pathname;
+        const transfer = sync.pushFile(file, '/system/foo');
+        const stream = createReadStream.firstCall.returnValue;
+        transfer.on('error', () => undefined);
+        const closed = new Promise((resolve) => transfer.on('close', resolve));
+        const message = Buffer.from("couldn't create file: Read-only file system");
+        const length = Buffer.alloc(4);
+        length.writeUInt32LE(message.length, 0);
+        conn.getSocket().causeRead(Buffer.concat([Buffer.from(Protocol.FAIL), length, message]));
+        await closed;
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(stream.destroyed).to.be.true;
+      } finally {
+        createReadStream.restore();
+      }
+    });
+  });
+  describe('pushStream() events', function () {
+    const okay = () => Buffer.concat([Buffer.from(Protocol.OKAY), Buffer.alloc(4)]);
+    const fail = (message: string) => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(message.length, 0);
+      return Buffer.concat([Buffer.from(Protocol.FAIL), length, Buffer.from(message)]);
+    };
+    // Pushes 10 bytes and records the transfer's events until 'close'.
+    const push = (act: (conn: MockConnection, stream: Stream.PassThrough, transfer) => void) => {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      const stream = new Stream.PassThrough();
+      const transfer = sync.pushStream(stream, '/foo');
+      const events: string[] = [];
+      let error: Error | undefined;
+      transfer.on('end', () => events.push('end'));
+      transfer.on('finish', () => events.push('finish'));
+      transfer.on('error', (err: Error) => {
+        error = err;
+        events.push('error');
+      });
+      const closed = new Promise<void>((resolve) =>
+        transfer.on('close', () => {
+          events.push('close');
+          // Let anything that would follow 'close' show up.
+          setTimeout(resolve, 20);
+        }),
+      );
+      act(conn, stream, transfer);
+      return closed.then(() => ({ events, error, stream }));
+    };
+
+    it("should emit 'end' and then 'close' on success", async function () {
+      const { events } = await push((conn, stream) => {
+        stream.end(Buffer.alloc(10));
+        setTimeout(() => conn.getSocket().causeRead(okay()), 10);
+      });
+      expect(events).to.eql(['end', 'close']);
+    });
+    it("should emit 'error' and then 'close', without 'end', when the device answers FAIL", async function () {
+      const { events, error } = await push((conn, stream) => {
+        stream.end(Buffer.alloc(10));
+        setTimeout(() => conn.getSocket().causeRead(fail("couldn't create file: Read-only file system")), 10);
+      });
+      expect(error).to.be.an.instanceOf(Parser.FailError);
+      expect(error.message).to.contain('Read-only file system');
+      expect(events).to.eql(['error', 'close']);
+    });
+    it("should emit 'error' and then 'close', without 'end', when the source stream fails", async function () {
+      const failure = new Error('disk on fire');
+      const { events, error, stream } = await push((conn, stream) => {
+        stream.write(Buffer.alloc(10));
+        setTimeout(() => stream.destroy(failure), 10);
+      });
+      expect(error).to.equal(failure);
+      expect(events).to.eql(['error', 'close']);
+      expect(stream.listenerCount('readable')).to.equal(0);
+    });
+    it("should still emit 'end' and then 'close' when cancelled", async function () {
+      const { events } = await push((conn, stream, transfer) => {
+        stream.write(Buffer.alloc(10));
+        setTimeout(() => transfer.cancel(), 10);
+      });
+      expect(events).to.eql(['end', 'close']);
     });
   });
   describe('cancel()', function () {

@@ -700,7 +700,8 @@ export default class DeviceClient {
    * @param mode See `sync.push()` for details.
    */
   public push(contents: string | Readable, path: string, mode?: number): Promise<PushTransfer> {
-    return this.syncService().then((sync) => sync.push(contents, path, mode).on('end', () => sync.end()));
+    // 'close' follows both 'end' and 'error'.
+    return this.syncService().then((sync) => sync.push(contents, path, mode).on('close', () => sync.end()));
   }
 
   /**

@@ -1,3 +1,4 @@
+import Stream from 'stream';
 import { getEventListeners } from 'events';
 import Sinon from 'sinon';
 import { use, expect } from 'chai';
@@ -153,6 +154,35 @@ describe('DeviceClient', function () {
       const failure = new Error('boom');
       Sinon.stub(device, 'removeForward').rejects(failure);
       expect(await rejected(device.removeAllForwards())).to.equal(failure);
+    });
+  });
+
+  describe('push(contents, path)', function () {
+    const push = async (reply: Buffer) => {
+      const conn = new MockConnection();
+      const sync = new Sync(conn);
+      Sinon.spy(sync, 'end');
+      const device = new DeviceClient({ connection: Sinon.stub() }, 'abba');
+      Sinon.stub(device, 'syncService').resolves(sync);
+      const stream = new Stream.PassThrough();
+      const transfer = await device.push(stream, '/foo');
+      const closed = new Promise((resolve) => transfer.on('close', resolve));
+      transfer.on('error', () => undefined);
+      stream.end(Buffer.alloc(10));
+      setTimeout(() => conn.getSocket().causeRead(reply), 10);
+      await closed;
+      return sync;
+    };
+    it('should end the sync connection when the push succeeds', async function () {
+      const sync = await push(Buffer.concat([Buffer.from(Protocol.OKAY), Buffer.alloc(4)]));
+      expect(sync.end).to.have.been.calledOnce;
+    });
+    it('should end the sync connection when the push fails', async function () {
+      const message = Buffer.from('Read-only file system');
+      const length = Buffer.alloc(4);
+      length.writeUInt32LE(message.length, 0);
+      const sync = await push(Buffer.concat([Buffer.from(Protocol.FAIL), length, message]));
+      expect(sync.end).to.have.been.calledOnce;
     });
   });
 

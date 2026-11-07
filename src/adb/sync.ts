@@ -133,7 +133,10 @@ export default class Sync extends EventEmitter {
     if (!mode) {
       mode = DEFAULT_CHMOD;
     }
-    return this.pushStream(Fs.createReadStream(file), path, mode);
+    // The file stream is ours, so close it when the push fails or is
+    // cancelled before reading it to the end.
+    const stream = Fs.createReadStream(file);
+    return this.pushStream(stream, path, mode).on('close', () => stream.destroy());
   }
 
   public pushStream(stream: Readable, path: string, mode = DEFAULT_CHMOD): PushTransfer {
@@ -284,14 +287,22 @@ export default class Sync extends EventEmitter {
     // writer-reader arrangement right now, it's not immediately obvious
     // that the code is correct and it may or may not have some failing
     // edge cases. Refactor pending.
-    // Clean up before emitting 'error': without a listener the emit throws.
+    // Like a failed pull: 'error', then 'close', and no 'end'. Only the
+    // first error is reported; the other side is stopped with `cancelled`.
+    // Clean up before emitting 'error': without a listener the emit throws,
+    // and warnUnhandled turns that into a warning.
+    let failed = false;
+    const fail = (err: Error) => {
+      failed = true;
+      transfer.emit('error', err);
+    };
     writeData()
       .catch((err) => {
         if (err === cancelled) {
           return;
         }
         reader.abort(cancelled);
-        transfer.emit('error', err);
+        fail(err);
       })
       .catch(warnUnhandled);
     readReply()
@@ -300,11 +311,17 @@ export default class Sync extends EventEmitter {
           return true;
         }
         stopWriter(cancelled);
-        transfer.emit('error', err);
+        fail(err);
       })
+      .catch(warnUnhandled)
       .finally(() => {
         transfer.removeListener('cancel', cancelListener);
-        return transfer.end();
+        // After a success or a cancel, 'end'. A failure has already been
+        // emitted (by this chain or by the writer's, which settles first).
+        if (!failed) {
+          transfer.end();
+        }
+        transfer.emit('close');
       })
       .catch(warnUnhandled);
     const cancelListener = () => {
@@ -326,7 +343,15 @@ export default class Sync extends EventEmitter {
     const signal = reader.signal;
     const readEnd = () => {
       transfer.removeListener('cancel', cancelListener);
+      transfer.removeListener('close', closeListener);
       return transfer.end();
+    };
+    // Ends the connection and discards whatever the device still sends.
+    // Without the draining, unread data (from /dev/urandom, say) keeps the
+    // socket from ever seeing the end, and it stays open.
+    const closeConnection = () => {
+      this.connection.end();
+      this.parser.end().catch(() => undefined);
     };
     const readNext = () => {
       return this.parser.readAscii(4, signal).then((reply) => {
@@ -343,8 +368,9 @@ export default class Sync extends EventEmitter {
               return readEnd();
             });
           // On a FAIL or an unexpected reply, don't end the transfer: 'end'
-          // tells the consumer that the whole file arrived. The error is
-          // emitted below instead.
+          // tells the consumer that the transfer finished, with the whole
+          // file or because it was cancelled. The error is emitted below
+          // instead.
           case Protocol.FAIL:
             return this._readError(signal);
           default:
@@ -354,10 +380,19 @@ export default class Sync extends EventEmitter {
     };
     readNext()
       .catch((err: Error) => {
+        transfer.removeListener('close', closeListener);
+        if (transfer.destroyed) {
+          // The consumer destroyed the transfer before it finished. That's
+          // the abort they asked for, not an error to report, but the
+          // protocol state is unknown, so the connection can't be reused.
+          transfer.removeListener('cancel', cancelListener);
+          closeConnection();
+          return;
+        }
         if (err === cancelled) {
           // The protocol state is unknown mid-transfer, so the connection
           // can't be reused. End the transfer too, so pipes from it finish.
-          this.connection.end();
+          closeConnection();
           readEnd();
           return;
         }
@@ -374,6 +409,10 @@ export default class Sync extends EventEmitter {
       .catch(warnUnhandled);
     const cancelListener = () => reader.abort(cancelled);
     transfer.on('cancel', cancelListener);
+    // 'close' before the read loop finished means the consumer destroyed
+    // the transfer: stop reading.
+    const closeListener = () => reader.abort(cancelled);
+    transfer.on('close', closeListener);
     return transfer;
   }
 
