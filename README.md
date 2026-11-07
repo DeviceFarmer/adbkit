@@ -181,7 +181,7 @@ const test = async () => {
         const devices = await client.listDevices();
         await Promise.all(
             devices.map(async (device) => {
-                const files = await client.readdir(device.id, '/sdcard');
+                const files = await client.getDevice(device.id).readdir('/sdcard');
                 // Synchronous, so we don't have to care about returning at the
                 // right time
                 files.forEach((file) => {
@@ -802,30 +802,24 @@ import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
-client
-    .listDevices()
-    .then(function (devices) {
-      return Promise.map(devices, function (device) {
-        const device = client.getDevice(device.id);
-          return (
-              device
-                  .shell('echo $RANDOM')
-                  // Use the readAll() utility to read all the content without
-                  // having to deal with the readable stream. `output` will be a Buffer
-                  // containing all the output.
-                  .then(adb.util.readAll)
-                  .then(function (output) {
-                      console.log('[%s] %s', device.id, output.toString().trim());
-                  })
-          );
-      });
-    })
-    .then(function () {
+const test = async () => {
+    try {
+        const devices = await client.listDevices();
+        await Promise.all(
+            devices.map(async (device) => {
+                const conn = await client.getDevice(device.id).shell('echo $RANDOM');
+                // Use the readAll() utility to read all the content without
+                // having to deal with the readable stream. `output` will be a Buffer
+                // containing all the output.
+                const output = await Adb.util.readAll(conn);
+                console.log('[%s] %s', device.id, output.toString().trim());
+            }),
+        );
         console.log('Done.');
-    })
-    .catch(function (err) {
+    } catch (err) {
         console.error('Something went wrong:', err.stack);
-    });
+    }
+};
 ```
 
 * Progressively read the output of a long-running command and terminate it
@@ -833,35 +827,36 @@ client
 import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
-client.listDevices()
-  .then(function(devices) {
-    return Promise.all(devices.map(function(device) {
-      const device = client.getDevice(device.id);
-      return device.shell('logcat') // logcat just for illustration,
-                                    // prefer client.openLogcat in real use 
-        .then(function(conn) {
-          var line = 0
-          conn.on('data', function(data) {
-            // here `ps` on the device shows the running logcat process
-            console.log(data.toString())
-            line += 1
-            // close the stream and the running process
-            // on the device will be gone, gracefully
-            if (line > 100) conn.end()
-          });
-          conn.on('close', function() {
-            // here `ps` on the device shows the logcat process is gone
-            console.log('100 lines read already, bye')
-          })
-        })
-    }))
-  })
-  .then(function() {
-    console.log('Done.')
-  })
-  .catch(function(err) {
-    console.error('Something went wrong:', err.stack)
-  })
+const test = async () => {
+    try {
+        const devices = await client.listDevices();
+        await Promise.all(
+            devices.map(async (device) => {
+                // logcat just for illustration, prefer device.openLogcat() in real use
+                const conn = await client.getDevice(device.id).shell('logcat');
+                let chunks = 0;
+                await new Promise((resolve) => {
+                    conn.on('data', (data) => {
+                        // here `ps` on the device shows the running logcat process
+                        console.log(data.toString());
+                        chunks += 1;
+                        // close the stream and the running process
+                        // on the device will be gone, gracefully
+                        if (chunks === 100) conn.end();
+                    });
+                    conn.on('close', () => {
+                        // here `ps` on the device shows the logcat process is gone
+                        console.log(`[${device.id}] 100 chunks read already, bye`);
+                        resolve();
+                    });
+                });
+            }),
+        );
+        console.log('Done.');
+    } catch (err) {
+        console.error('Something went wrong:', err.stack);
+    }
+};
 ```
 
 
