@@ -15,8 +15,6 @@ Please note that although it may happen at some point, **this project is NOT an 
 
 When targeting a remote host, starting the server is entirely your responsibility.
 
-Alternatively, you may want to consider using the Chrome [ADB][chrome-adb] extension, as it includes the ADB server and can be started/stopped quite easily.
-
 For Linux users, adb need `plugdev` group acess, So you may need to add your current user to `plugdev` group.
 `sudo usermod -a -G plugdev $USER`
 
@@ -1164,7 +1162,6 @@ Test coverage was also massively improved, although we've still got ways to go.
     -   [SERVICES.TXT][adb-services] (ADB socket protocol)
 -   [Android ADB Protocols][adb-protocols] (a blog post explaining the protocol)
 -   [adb.js][adb-js] (another Node.js ADB implementation)
--   [ADB Chrome extension][chrome-adb]
 
 ## Releasing
 
@@ -1193,7 +1190,6 @@ Copyright © The OpenSTF Project. All Rights Reserved.
 [adb-services]: https://github.com/android/platform_system_core/blob/master/adb/SERVICES.TXT
 [adb-protocols]: http://blogs.kgsoft.co.uk/2013_03_15_prg.htm
 [file_sync_service.h]: https://github.com/android/platform_system_core/blob/master/adb/file_sync_service.h
-[chrome-adb]: https://chrome.google.com/webstore/detail/adb/dpngiggdglpdnjdoaefidgiigpemgage
 [node-debug]: https://npmjs.org/package/debug
 [net-connect]: http://nodejs.org/api/net.html#net_net_connect_options_connectionlistener
 [node-events]: http://nodejs.org/api/events.html
