@@ -1,7 +1,16 @@
-export { default } from './src/adb';
-export { default as Adb } from './src/adb';
+// The classes are imported first and then exported, instead of re-exported
+// with `export { default as X } from`. TypeScript compiles that form to
+// getters that Node's CommonJS named-export detection (cjs-module-lexer)
+// doesn't recognize on Node 22, so `import { Adb } from '@devicefarmer/adbkit'`
+// failed there with "Named export 'Adb' not found".
+import Adb from './src/adb';
+import Parser from './src/adb/parser';
+import Client from './src/adb/client';
+import DeviceClient from './src/adb/DeviceClient';
+import ShellCommand from './src/adb/command/host-transport/shell';
 
-export { default as Parser } from './src/adb/parser';
+export default Adb;
+export { Adb, Parser, Client, DeviceClient, ShellCommand };
 export { Callback } from './src/Callback';
 export { ClientOptions } from './src/ClientOptions';
 export { CpuStats, Loads } from './src/CpuStats';
@@ -20,8 +29,6 @@ export { default as StartServiceOptions, ExtraValue, ExtraObject, Extra } from '
 export { default as TrackerChangeSet } from './src/TrackerChangeSet';
 export { default as WithToString } from './src/WithToString';
 
-export { default as Client } from './src/adb/client';
-export { default as DeviceClient, MonkeyClient, WaitOptions } from './src/adb/DeviceClient';
-export { default as ShellCommand } from './src/adb/command/host-transport/shell';
+export { MonkeyClient, WaitOptions } from './src/adb/DeviceClient';
 
 export { KeyCodes } from './src/adb/keycode';

@@ -28,6 +28,16 @@ Install via NPM:
 npm install --save @devicefarmer/adbkit
 ```
 
+Import the `Adb` named export, which works from both ES modules and CommonJS:
+
+```typescript
+import { Adb } from '@devicefarmer/adbkit';
+// or, in CommonJS:
+const { Adb } = require('@devicefarmer/adbkit');
+```
+
+Avoid the default import (`import Adb from '@devicefarmer/adbkit'`). The package is CommonJS, so the default import is `Adb` only in TypeScript compiled to CommonJS or in a bundler. In Node.js ES modules it is the whole module object, and `Adb.createClient` is `undefined`.
+
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
 
 ### Examples
@@ -37,7 +47,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 #### Checking for NFC support
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -61,7 +71,7 @@ const test = async () => {
 #### Installing an APK
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const apk = 'vendor/app.apk';
@@ -80,7 +90,7 @@ const test = async () => {
 #### Tracking devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const test = async () => {
@@ -99,7 +109,7 @@ const test = async () => {
 
 ```typescript
 import fs from 'fs';
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -132,7 +142,7 @@ const test = async () => {
 #### Pushing a file to all connected devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -163,7 +173,7 @@ const test = async () => {
 #### List files in a folder
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -258,7 +268,7 @@ Connects to the given device, which must have its ADB daemon running in tcp mode
 Note: be careful with using `client.listDevices()` together with `client.tcpip()` and other similar methods that modify the connection with ADB. You might have the same device twice in your device list (i.e. one device connected via both USB and TCP), which can cause havoc if run simultaneously.
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -516,7 +526,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 import request from 'request';
 import { Readable } from 'stream';
 
@@ -788,7 +798,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 
 * Read the output of an instantaneous command
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -820,7 +830,7 @@ client
 
 * Progressively read the output of a long-running command and terminate it
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 client.listDevices()
