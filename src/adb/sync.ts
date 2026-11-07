@@ -426,7 +426,10 @@ export default class Sync extends EventEmitter {
         });
       })
       .finally(() => {
-        return this.parser.end();
+        // The FAIL is the error to report. A push may still be writing when
+        // the socket is ended here, and that write fails the end() with
+        // 'write after end', which would replace the FailError.
+        return this.parser.end().catch(() => undefined);
       });
   }
 

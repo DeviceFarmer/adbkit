@@ -715,6 +715,23 @@ describe('Sync', function () {
       expect(error.message).to.contain('Read-only file system');
       expect(events).to.eql(['error', 'close']);
     });
+    it("should report the device's FAIL, not 'write after end', when data is still being sent", async function () {
+      const { events, error } = await push((conn, stream) => {
+        const socket = conn.getSocket();
+        // Like a real socket whose peer is still open: ending our side
+        // doesn't end the readable side, so the parser keeps waiting.
+        socket.end = function (cb?: () => void) {
+          return Stream.Duplex.prototype.end.call(this, cb);
+        };
+        stream.write(Buffer.alloc(10));
+        setTimeout(() => socket.causeRead(fail('secure_mkdirs() failed: Read-only file system')), 10);
+        // More data after the FAIL was read and the socket ended.
+        setTimeout(() => stream.write(Buffer.alloc(10)), 20);
+      });
+      expect(error).to.be.an.instanceOf(Parser.FailError);
+      expect(error.message).to.contain('Read-only file system');
+      expect(events).to.eql(['error', 'close']);
+    });
     it("should emit 'error' and then 'close', without 'end', when the source stream fails", async function () {
       const failure = new Error('disk on fire');
       const { events, error, stream } = await push((conn, stream) => {
