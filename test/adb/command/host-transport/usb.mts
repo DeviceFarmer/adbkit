@@ -35,7 +35,19 @@ describe('UsbCommand', function () {
       expect(val).to.be.true;
     });
   });
-  return it('should reject on unexpected reply', function (done) {
+  it('should resolve with true when the message is cut off', function () {
+    const conn = new MockConnection();
+    const cmd = new UsbCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead('restarting in U');
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute().then(function (val) {
+      expect(val).to.be.true;
+    });
+  });
+  it("should reject on adbd's 'invalid port' error reply", function () {
     const conn = new MockConnection();
     const cmd = new UsbCommand(conn);
     setImmediate(function () {
@@ -43,9 +55,11 @@ describe('UsbCommand', function () {
       conn.getSocket().causeRead('invalid port\n');
       return conn.getSocket().causeEnd();
     });
-    cmd.execute().catch(function (err) {
-      expect(err.message).to.eql('invalid port');
-      done();
-    });
+    return cmd.execute().then(
+      () => {
+        throw new Error('Expected a rejection');
+      },
+      (err) => expect(err.message).to.equal('invalid port'),
+    );
   });
 });
