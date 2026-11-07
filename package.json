@@ -82,7 +82,7 @@
     "@types/node-forge": "^1.0.1",
     "commander": "^15.0.0",
     "debug": "~4.4.3",
-    "node-forge": "^1.4.0",
+    "node-forge": "^1.4.2",
     "split": "~1.0.1"
   },
   "devDependencies": {
