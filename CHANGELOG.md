@@ -1,5 +1,21 @@
 # Changelog
 
+## 4.1.0 (2026-11-07)
+
+* Bump the dev-dependencies group with 2 updates by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/577
+* fix(sync): emit 'error' then 'close', not 'end', when a pull or push fails by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/579
+* fix(types): ship @types/node-forge so consumers' type checks pass by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/581
+* fix(devices): parse devices -l fields by key, not by position by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/582
+* fix(tcpip): resolve tcpip() and usb() unless adbd replies with an error by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/583
+* feat(reboot): let reboot() take a target such as bootloader or recovery by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/584
+* docs: drop the Chrome ADB extension from the README by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/585
+* fix: let ES modules on Node 22 import { Adb } and the other classes by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/586
+* chore(deps): bump node-forge to 1.4.2 by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/587
+* Bump node-forge from 1.4.2 to 1.4.3 by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/578
+* Force patched minimatch and glob in dev dependencies by @koral-- in https://github.com/DeviceFarmer/adbkit/pull/588
+
+**Full Changelog**: https://github.com/DeviceFarmer/adbkit/compare/v4.0.1...v4.1.0
+
 ## 4.0.1 (2026-11-01)
 
 * Bump typescript-eslint from 8.72.0 to 8.72.1 in the dev-dependencies group by @dependabot[bot] in https://github.com/DeviceFarmer/adbkit/pull/572
