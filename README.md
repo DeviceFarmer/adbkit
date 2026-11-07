@@ -1107,7 +1107,7 @@ List of events:
 -   **progress** **(stats)** Emitted when a new chunk is received.
     -   **stats** An object with the following stats about the transfer:
         -   **bytesTransferred** The number of bytes transferred so far.
--   **error** **(err)** Emitted on error.
+-   **error** **(err)** Emitted on error, for example when the file can't be read. It's followed by `close`, not by `end`, so wait for `end` or `error`, or use `stream.promises.finished()` or `pipeline()`.
     -   **err** An `Error`.
 -   **end** Emitted when the transfer has successfully completed.
 
