@@ -26,6 +26,16 @@ Install via NPM:
 npm install --save @devicefarmer/adbkit
 ```
 
+Import the `Adb` named export, which works from both ES modules and CommonJS:
+
+```typescript
+import { Adb } from '@devicefarmer/adbkit';
+// or, in CommonJS:
+const { Adb } = require('@devicefarmer/adbkit');
+```
+
+Avoid the default import (`import Adb from '@devicefarmer/adbkit'`). The package is CommonJS, so the default import is `Adb` only in TypeScript compiled to CommonJS or in a bundler. In Node.js ES modules it is the whole module object, and `Adb.createClient` is `undefined`.
+
 We use [debug][node-debug], and our debug namespace is `adb`. Some of the dependencies may provide debug output of their own. To see the debug output, set the `DEBUG` environment variable. For example, run your program with `DEBUG=adb:* node app.js`.
 
 ### Examples
@@ -35,7 +45,7 @@ The examples may be a bit verbose, but that's because we're trying to keep them 
 #### Checking for NFC support
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
@@ -59,7 +69,7 @@ const test = async () => {
 #### Installing an APK
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const apk = 'vendor/app.apk';
@@ -78,7 +88,7 @@ const test = async () => {
 #### Tracking devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 const test = async () => {
@@ -98,7 +108,7 @@ const test = async () => {
 ```typescript
 import { pipeline } from 'stream/promises';
 import fs from 'fs';
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -128,7 +138,7 @@ const test = async () => {
 #### Pushing a file to all connected devices
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -160,7 +170,7 @@ const test = async () => {
 #### List files in a folder
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -168,7 +178,7 @@ const test = async () => {
         const devices = await client.listDevices();
         await Promise.all(
             devices.map(async (device) => {
-                const files = await client.readdir(device.id, '/sdcard');
+                const files = await client.getDevice(device.id).readdir('/sdcard');
                 // Synchronous, so we don't have to care about returning at the
                 // right time
                 files.forEach((file) => {
@@ -255,7 +265,7 @@ Connects to the given device, which must have its ADB daemon running in tcp mode
 Note: be careful with using `client.listDevices()` together with `client.tcpip()` and other similar methods that modify the connection with ADB. You might have the same device twice in your device list (i.e. one device connected via both USB and TCP), which can cause havoc if run simultaneously.
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 const client = Adb.createClient();
 
 const test = async () => {
@@ -517,7 +527,7 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
 This example requires the [request](https://www.npmjs.org/package/request) module. It also doesn't do any error handling (404 responses, timeouts, invalid URLs etc).
 
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 import request from 'request';
 import { Readable } from 'stream';
 
@@ -790,70 +800,65 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 
 * Read the output of an instantaneous command
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
 
-client
-    .listDevices()
-    .then(function (devices) {
-      return Promise.map(devices, function (device) {
-        const device = client.getDevice(device.id);
-          return (
-              device
-                  .shell('echo $RANDOM')
-                  // Use the readAll() utility to read all the content without
-                  // having to deal with the readable stream. `output` will be a Buffer
-                  // containing all the output.
-                  .then(adb.util.readAll)
-                  .then(function (output) {
-                      console.log('[%s] %s', device.id, output.toString().trim());
-                  })
-          );
-      });
-    })
-    .then(function () {
+const test = async () => {
+    try {
+        const devices = await client.listDevices();
+        await Promise.all(
+            devices.map(async (device) => {
+                const conn = await client.getDevice(device.id).shell('echo $RANDOM');
+                // Use the readAll() utility to read all the content without
+                // having to deal with the readable stream. `output` will be a Buffer
+                // containing all the output.
+                const output = await Adb.util.readAll(conn);
+                console.log('[%s] %s', device.id, output.toString().trim());
+            }),
+        );
         console.log('Done.');
-    })
-    .catch(function (err) {
+    } catch (err) {
         console.error('Something went wrong:', err.stack);
-    });
+    }
+};
 ```
 
 * Progressively read the output of a long-running command and terminate it
 ```typescript
-import Adb from '@devicefarmer/adbkit';
+import { Adb } from '@devicefarmer/adbkit';
 
 const client = Adb.createClient();
-client.listDevices()
-  .then(function(devices) {
-    return Promise.all(devices.map(function(device) {
-      const device = client.getDevice(device.id);
-      return device.shell('logcat') // logcat just for illustration,
-                                    // prefer client.openLogcat in real use 
-        .then(function(conn) {
-          var line = 0
-          conn.on('data', function(data) {
-            // here `ps` on the device shows the running logcat process
-            console.log(data.toString())
-            line += 1
-            // close the stream and the running process
-            // on the device will be gone, gracefully
-            if (line > 100) conn.end()
-          });
-          conn.on('close', function() {
-            // here `ps` on the device shows the logcat process is gone
-            console.log('100 lines read already, bye')
-          })
-        })
-    }))
-  })
-  .then(function() {
-    console.log('Done.')
-  })
-  .catch(function(err) {
-    console.error('Something went wrong:', err.stack)
-  })
+const test = async () => {
+    try {
+        const devices = await client.listDevices();
+        await Promise.all(
+            devices.map(async (device) => {
+                // logcat just for illustration, prefer device.openLogcat() in real use
+                const conn = await client.getDevice(device.id).shell('logcat');
+                let chunks = 0;
+                await new Promise((resolve) => {
+                    conn.on('data', (data) => {
+                        // here `ps` on the device shows the running logcat process
+                        console.log(data.toString());
+                        chunks += 1;
+                        // close the stream and the running process
+                        // on the device will be gone, gracefully
+                        if (chunks === 100) conn.end();
+                    });
+                    conn.on('close', () => {
+                        // here `ps` on the device shows the logcat process is gone
+                        console.log(`[${device.id}] 100 chunks read already, bye`);
+                        resolve();
+                    });
+                });
+            }),
+        );
+        console.log('Done.');
+    } catch (err) {
+        console.error('Something went wrong:', err.stack);
+    }
+};
 ```
 
 
