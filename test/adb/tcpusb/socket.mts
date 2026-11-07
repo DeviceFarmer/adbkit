@@ -1,3 +1,4 @@
+import * as Crypto from 'crypto';
 import * as Net from 'net';
 import forge from 'node-forge';
 import { expect } from 'chai';
@@ -240,8 +241,8 @@ describe('TcpUsb Socket known public keys', function () {
     return Buffer.from(`${struct.toString('base64')}\0`);
   };
 
-  // Signs a DigestInfo with garbage after the algorithm's NULL parameters, which node-forge <= 1.4.0 accepts and
-  // which lets anyone forge signatures for exponent 3 keys (GHSA-86w9-cpqp-85rv).
+  // Signs a DigestInfo with garbage after the algorithm's NULL parameters, which node-forge 1.4.0 accepts and
+  // which lets anyone forge signatures for exponent 3 keys (GHSA-86w9-cpqp-85rv). node-forge 1.4.2 throws on it.
   const signWithGarbage = (key: forge.pki.rsa.PrivateKey) => {
     const algorithm = Buffer.from('300e06052b0e03021a05000403414141', 'hex');
     const body = Buffer.concat([algorithm, Buffer.from([0x04, token.length]), token]);
@@ -321,7 +322,14 @@ describe('TcpUsb Socket known public keys', function () {
   it('should not accept garbage in the DigestInfo from a known key', async function () {
     const client = pair(3);
     const signature = signWithGarbage(client.privateKey);
-    expect(client.publicKey.verify(token.toString('binary'), signature.toString('binary'))).to.equal(true);
+    // The padding is valid and ends in the token; only the DigestInfo has garbage in it. Checked with OpenSSL,
+    // since newer node-forge versions throw on such a signature.
+    const decrypted = Crypto.publicDecrypt(
+      { key: forge.pki.publicKeyToPem(client.publicKey), padding: Crypto.constants.RSA_PKCS1_PADDING },
+      signature,
+    );
+    expect(decrypted.subarray(-token.length)).to.deep.equal(token);
+    expect(decrypted.includes(Buffer.from('AAA'))).to.equal(true);
     expect(await authenticate([client.publicKey], signature)).to.deep.equal({ outcome: 'challenged', errors: [] });
   });
 
