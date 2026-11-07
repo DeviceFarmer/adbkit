@@ -102,5 +102,9 @@
   },
   "engines": {
     "node": ">= 22.12"
+  },
+  "overrides": {
+    "glob": "^14.0.2",
+    "minimatch": "^11.0.1"
   }
 }
