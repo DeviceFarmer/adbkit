@@ -313,11 +313,15 @@ Gets the list of currently connected devices and emulators.
 
 #### client.listDevicesWithPaths()
 
-Like `client.listDevices()`, but includes the "path" of every device.
+Like `client.listDevices()`, but includes the "path" and the other fields of `adb devices -l`. adb prints each field only when it knows it, in no fixed order; a missing one is `undefined`.
 -   Returns: `Promise<devices>` An array of device objects. The device objects are plain JavaScript objects with the following properties:
     -   **id** See `client.listDevices()`.
     -   **type** See `client.listDevices()`.
-    -   **path** The device path. This can be something like `usb:FD120000` for real devices.
+    -   **path** The device path. This can be something like `usb:FD120000` or `usb:1-1` for real devices. `undefined` for emulators, network devices and on Windows.
+    -   **product** The product name, such as `sdk_gphone64_arm64`.
+    -   **model** The model, such as `Pixel_7`.
+    -   **device** The device name, such as `emu64a`.
+    -   **transportId** The transport ID, as a string.
 
 
 #### client.trackDevices()

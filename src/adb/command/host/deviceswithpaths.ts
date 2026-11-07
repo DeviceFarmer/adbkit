@@ -25,19 +25,53 @@ export default class HostDevicesWithPathsCommand extends Command<DeviceWithPath[
     return value
       .toString('ascii')
       .split('\n')
-      .filter((e) => e)
-      .map((line) => {
-        // For some reason, the columns are separated by spaces instead of tabs
-        const [id, type, path, product, model, device, transportId] = line.split(/\s+/);
-        return {
-          id,
-          type: type as 'emulator' | 'device' | 'offline',
-          path,
-          product,
-          model,
-          device,
-          transportId,
-        };
-      });
+      .map((line) => line.trim())
+      .filter((line) => line)
+      .map(parseDevice);
   }
+}
+
+// The key:value fields adb may print after the state, in any order, each
+// only when known: `usb:` (the device path, missing for emulators, network
+// devices and on Windows), `product:`, `model:`, `device:` and
+// `transport_id:`.
+const FIELD = /^(usb|product|model|device|transport_id):(.*)$/;
+
+// What adb prints, and host:devices returns, for a device with an empty
+// serial.
+const NO_SERIAL = '(no serial number)';
+
+function parseDevice(line: string): DeviceWithPath {
+  // The columns are separated by spaces instead of tabs. The state can
+  // contain spaces too, e.g. "no permissions (...); see [http://...]".
+  const id = line.startsWith(NO_SERIAL) ? NO_SERIAL : line.split(/\s+/)[0];
+  const tokens = line.slice(id.length).trim().split(/\s+/);
+  const state: string[] = [];
+  const fields: Record<string, string> = {};
+  let inFields = false;
+  let lastKey = '';
+  for (const token of tokens) {
+    // The first token is always (part of) the state.
+    const field = state.length > 0 ? FIELD.exec(token) : null;
+    if (field) {
+      inFields = true;
+      lastKey = field[1];
+      fields[lastKey] = field[2];
+    } else if (!inFields) {
+      state.push(token);
+    } else {
+      // adb replaces spaces in model: but not in product: or device:, so a
+      // token that isn't a field belongs to the previous field's value.
+      fields[lastKey] += ` ${token}`;
+    }
+  }
+  return {
+    id,
+    type: state.join(' ') as DeviceWithPath['type'],
+    path: fields.usb === undefined ? undefined : `usb:${fields.usb}`,
+    product: fields.product,
+    model: fields.model,
+    device: fields.device,
+    transportId: fields.transport_id,
+  };
 }
