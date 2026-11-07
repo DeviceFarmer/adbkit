@@ -98,6 +98,7 @@ const test = async () => {
 #### Pulling a file from all connected devices
 
 ```typescript
+import { pipeline } from 'stream/promises';
 import fs from 'fs';
 import Adb from '@devicefarmer/adbkit';
 const client = Adb.createClient();
@@ -107,19 +108,16 @@ const test = async () => {
         const devices = await client.listDevices();
         await Promise.all(
             devices.map(async (device) => {
-                const transfer = await client.pull(device.id, '/system/build.prop');
+                const transfer = await client.getDevice(device.id).pull('/system/build.prop');
                 const fn = `/tmp/${device.id}.build.prop`;
-                await new Promise((resolve, reject) => {
-                    transfer.on('progress', (stats) =>
-                        console.log(`[${device.id}] Pulled ${stats.bytesTransferred} bytes so far`),
-                    );
-                    transfer.on('end', () => {
-                        console.log(`[${device.id}] Pull complete`);
-                        resolve(device.id);
-                    });
-                    transfer.on('error', reject);
-                    transfer.pipe(fs.createWriteStream(fn));
-                });
+                transfer.on('progress', (stats) =>
+                    console.log(`[${device.id}] Pulled ${stats.bytesTransferred} bytes so far`),
+                );
+                // Rejects if the pull fails (the file may then be incomplete),
+                // and closes the file either way. transfer.pipe() would leave
+                // it open on an error.
+                await pipeline(transfer, fs.createWriteStream(fn));
+                console.log(`[${device.id}] Pull complete`);
             }),
         );
         console.log('Done pulling /system/build.prop from all connected devices');
@@ -140,13 +138,14 @@ const test = async () => {
         const devices = await client.listDevices();
         await Promise.all(
             devices.map(async (device) => {
-                const transfer = await client.push(device.id, 'temp/foo.txt', '/data/local/tmp/foo.txt');
+                const transfer = await client.getDevice(device.id).push('temp/foo.txt', '/data/local/tmp/foo.txt');
+                // A push ends with either 'end' or 'error', never both.
                 await new Promise(function (resolve, reject) {
                     transfer.on('progress', (stats) =>
                         console.log(`[${device.id}] Pushed ${stats.bytesTransferred} bytes so far`),
                     );
                     transfer.on('end', () => {
-                        console.log('[${device.id}] Push complete');
+                        console.log(`[${device.id}] Push complete`);
                         resolve();
                     });
                     transfer.on('error', reject);
@@ -1088,9 +1087,10 @@ List of events:
 -   **progress** **(stats)** Emitted when a chunk has been flushed to the ADB connection.
     -   **stats** An object with the following stats about the transfer:
         -   **bytesTransferred** The number of bytes transferred so far.
--   **error** **(err)** Emitted on error.
+-   **error** **(err)** Emitted on error, for example when the device can't write the file. It's followed by `close`, not by `end`, so wait for `end` or `error`.
     -   **err** An `Error`.
--   **end** Emitted when the transfer has successfully completed.
+-   **end** Emitted when the transfer has successfully completed, or was cancelled.
+-   **close** Emitted last, after `end` or `error`.
 
 #### pushTransfer.cancel()
 
@@ -1100,16 +1100,18 @@ Cancels the transfer by ending both the stream that is being pushed and the sync
 
 ### PullTransfer
 
-`PullTransfer` is a [`Stream`][node-stream]. Use [`fs.createWriteStream()`][node-fs] to pipe the stream to a file if necessary.
+`PullTransfer` is a [`Stream`][node-stream]. To save it to a file, use [`stream.pipeline()`][node-stream] with [`fs.createWriteStream()`][node-fs], as in the example above. `pipeline()` reports a failed pull and closes the file; `transfer.pipe()` does neither.
 
 List of events:
 
 -   **progress** **(stats)** Emitted when a new chunk is received.
     -   **stats** An object with the following stats about the transfer:
         -   **bytesTransferred** The number of bytes transferred so far.
--   **error** **(err)** Emitted on error.
+-   **error** **(err)** Emitted on error, for example when the file can't be read. It's followed by `close`, not by `end`, so wait for `end` or `error`, or use `stream.promises.finished()` or `pipeline()`.
     -   **err** An `Error`.
--   **end** Emitted when the transfer has successfully completed.
+-   **end** Emitted when the transfer has successfully completed, or was cancelled.
+
+Destroying the transfer before it ends (`transfer.destroy()`) stops the pull and closes the sync connection without an `error`.
 
 #### pullTransfer.cancel()
 
