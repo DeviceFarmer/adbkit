@@ -34,17 +34,59 @@ describe('TcpIpCommand', function () {
       expect(port).to.equal(5555);
     });
   });
-  return it('should reject on unexpected reply', function (done) {
+  it('should resolve with the port when adbd restarts before its message arrives', function () {
     const conn = new MockConnection();
     const cmd = new TcpIpCommand(conn);
     setImmediate(function () {
       conn.getSocket().causeRead(Protocol.OKAY);
-      conn.getSocket().causeRead('not sure what this could be\n');
       return conn.getSocket().causeEnd();
     });
-    cmd.execute(5555).catch(function (err) {
-      expect(err.message).to.eql('not sure what this could be');
-      done();
+    return cmd.execute(5555).then(function (port) {
+      expect(port).to.equal(5555);
     });
+  });
+  it('should reject with the message adbd gives for an invalid port', function () {
+    const conn = new MockConnection();
+    const cmd = new TcpIpCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead('invalid port 0\n');
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute(0).then(
+      () => {
+        throw new Error('Expected a rejection');
+      },
+      (err) => expect(err.message).to.equal('invalid port 0'),
+    );
+  });
+  for (const output of ['restar', 'restarting in TCP mode po', 'not sure what this could be\n']) {
+    it(`should resolve with the port on other output, such as ${JSON.stringify(output)}`, function () {
+      const conn = new MockConnection();
+      const cmd = new TcpIpCommand(conn);
+      setImmediate(function () {
+        conn.getSocket().causeRead(Protocol.OKAY);
+        conn.getSocket().causeRead(output);
+        return conn.getSocket().causeEnd();
+      });
+      return cmd.execute(5555).then(function (port) {
+        expect(port).to.equal(5555);
+      });
+    });
+  }
+  it("should reject with the message of older adbd versions, 'invalid port'", function () {
+    const conn = new MockConnection();
+    const cmd = new TcpIpCommand(conn);
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead('invalid port\n');
+      return conn.getSocket().causeEnd();
+    });
+    return cmd.execute(0).then(
+      () => {
+        throw new Error('Expected a rejection');
+      },
+      (err) => expect(err.message).to.equal('invalid port'),
+    );
   });
 });

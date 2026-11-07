@@ -1,7 +1,6 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-
-const RE_OK = /restarting in/;
+import { checkRestartReply } from './restartreply';
 
 export default class TcpIpCommand extends Command<number> {
   execute(port: number): Promise<number> {
@@ -10,11 +9,8 @@ export default class TcpIpCommand extends Command<number> {
       switch (reply) {
         case Protocol.OKAY:
           return this.parser.readAll().then(function (value) {
-            if (RE_OK.test(value.toString())) {
-              return port;
-            } else {
-              throw new Error(value.toString().trim());
-            }
+            checkRestartReply(value);
+            return port;
           });
         case Protocol.FAIL:
           return this.parser.readError();

@@ -1,7 +1,6 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
-
-const RE_OK = /restarting in/;
+import { checkRestartReply } from './restartreply';
 
 export default class UsbCommand extends Command<boolean> {
   execute(): Promise<boolean> {
@@ -10,11 +9,8 @@ export default class UsbCommand extends Command<boolean> {
       switch (reply) {
         case Protocol.OKAY:
           return this.parser.readAll().then(function (value) {
-            if (RE_OK.test(value.toString())) {
-              return true;
-            } else {
-              throw new Error(value.toString().trim());
-            }
+            checkRestartReply(value);
+            return true;
           });
         case Protocol.FAIL:
           return this.parser.readError();
