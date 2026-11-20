@@ -100,7 +100,10 @@ export interface ShellOptions {
  * Connects, then runs `run` on the connection until it settles or `signal`
  * aborts. An abort rejects with `signal.reason` right away, even while
  * connecting or while the socket is stalled; the connection, which belongs
- * to this call alone, is then torn down in the background.
+ * to this call alone, is then destroyed in the background. `connect` should
+ * only open the socket: anything that talks to the server, such as selecting
+ * the device's transport, belongs in `run`, so that an abort can close the
+ * socket while it waits for the answer.
  */
 function abortable<T>(
   signal: AbortSignal | undefined,
@@ -116,10 +119,10 @@ function abortable<T>(
   return new Promise<T>((resolve, reject) => {
     let conn: Connection | undefined;
     const teardown = (c: Connection) => {
-      // Gives up the whole connection: its pending read is released even if
-      // the remote never answers or closes.
+      // Gives up the whole connection: its pending read is released and the
+      // socket closed even if the remote never answers or closes its side.
       c.parser.cancel();
-      c.end();
+      c.destroy();
     };
     const onAbort = () => {
       reject(signal.reason);
@@ -156,8 +159,9 @@ function abortable<T>(
 /**
  * Keeps `signal` in charge of a stream that outlives the call that opened
  * it: an abort destroys the stream with `signal.reason`. The listener goes
- * away once the stream closes, so a long-lived signal doesn't collect one per
- * call.
+ * away as soon as the stream ends, finishes or closes, so a long-lived signal
+ * doesn't collect one per call. A stream nobody reads to the end or destroys
+ * keeps it, like it keeps its socket.
  */
 function destroyOnAbort(signal: AbortSignal, stream: Duplex): void {
   const onAbort = () => {
@@ -172,7 +176,16 @@ function destroyOnAbort(signal: AbortSignal, stream: Duplex): void {
     return;
   }
   signal.addEventListener('abort', onAbort, { once: true });
-  stream.once('close', () => signal.removeEventListener('abort', onAbort));
+  const events = ['end', 'finish', 'close'];
+  const release = () => {
+    signal.removeEventListener('abort', onAbort);
+    for (const event of events) {
+      stream.removeListener(event, release);
+    }
+  };
+  for (const event of events) {
+    stream.once(event, release);
+  }
 }
 
 export default class DeviceClient {
@@ -370,7 +383,14 @@ export default class DeviceClient {
    * return a new connextion to the current Host devices
    */
   public transport(): Promise<Connection> {
-    return this.connection().then((conn) => new HostTransportCommand(conn).execute(this.serial).then(() => conn));
+    return this.connection().then((conn) => this.selectTransport(conn).then(() => conn));
+  }
+
+  /**
+   * Switches a fresh connection to this device's transport.
+   */
+  private selectTransport(conn: Connection): Promise<boolean> {
+    return new HostTransportCommand(conn).execute(this.serial);
   }
 
   /**
@@ -380,20 +400,22 @@ export default class DeviceClient {
    *
    * @param options Optional. `signal` aborts the command, e.g. `{ signal: AbortSignal.timeout(10000) }`. Before the promise resolves, it rejects with `signal.reason` and the connection is closed. After it resolves, the stream is destroyed with `signal.reason` (it emits `'error'`, then `'close'`), which also stops the command on the device.
    *
-   * @returns A readable stream (`Socket` actually) containing the progressive `stdout` of the command. Use with `adb.util.readAll` to get a readable String from it.
+   * @returns A readable stream (`Socket` actually) containing the progressive `stdout` of the command. Use with `adb.util.readAll` to get a readable String from it. Read it to the end or destroy it, even when you don't need the output: until then its socket stays open (and, with a `signal`, so does the abort listener on the signal).
    */
   public shell(command: string | ArrayLike<WithToString>, options: ShellOptions = {}): Promise<Duplex> {
     const signal = options?.signal;
     return abortable(
       signal,
-      () => this.transport(),
-      (transport) =>
-        new ShellCommand(transport).execute(command).then((stream) => {
-          if (signal) {
-            destroyOnAbort(signal, stream);
-          }
-          return stream;
-        }),
+      () => this.connection(),
+      (conn) =>
+        this.selectTransport(conn)
+          .then(() => new ShellCommand(conn).execute(command))
+          .then((stream) => {
+            if (signal) {
+              destroyOnAbort(signal, stream);
+            }
+            return stream;
+          }),
     );
   }
 
@@ -778,9 +800,9 @@ export default class DeviceClient {
    */
   public waitBootComplete(options: WaitOptions = {}): Promise<boolean> {
     return abortable(
-      options.signal,
-      () => this.transport(),
-      (transport) => new WaitBootCompleteCommand(transport).execute(),
+      options?.signal,
+      () => this.connection(),
+      (conn) => this.selectTransport(conn).then(() => new WaitBootCompleteCommand(conn).execute()),
     );
   }
 
@@ -792,7 +814,7 @@ export default class DeviceClient {
    */
   public waitForDevice(options: WaitOptions = {}): Promise<string> {
     return abortable(
-      options.signal,
+      options?.signal,
       () => this.connection(),
       (conn) => new WaitForDeviceCommand(conn).execute(this.serial),
     );
