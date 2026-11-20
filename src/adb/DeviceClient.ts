@@ -85,6 +85,17 @@ export interface WaitOptions {
   signal?: AbortSignal;
 }
 
+export interface ShellOptions {
+  /**
+   * Aborts the command. Before `shell()` resolves, the returned promise
+   * rejects with `signal.reason` and the connection is closed. Afterwards,
+   * the output stream is destroyed with `signal.reason`: it emits `'error'`
+   * and then `'close'`, and closing the connection stops the command on the
+   * device. An already aborted signal rejects without connecting.
+   */
+  signal?: AbortSignal;
+}
+
 /**
  * Connects, then runs `run` on the connection until it settles or `signal`
  * aborts. An abort rejects with `signal.reason` right away, even while
@@ -140,6 +151,28 @@ function abortable<T>(
         },
       );
   });
+}
+
+/**
+ * Keeps `signal` in charge of a stream that outlives the call that opened
+ * it: an abort destroys the stream with `signal.reason`. The listener goes
+ * away once the stream closes, so a long-lived signal doesn't collect one per
+ * call.
+ */
+function destroyOnAbort(signal: AbortSignal, stream: Duplex): void {
+  const onAbort = () => {
+    // The error is the caller's own doing, so don't let it reach the
+    // Client's 'error' event, which the Connection forwards socket errors to
+    // when nobody else listens. Readers listening on the stream still get it.
+    stream.on('error', () => undefined);
+    stream.destroy(signal.reason);
+  };
+  if (signal.aborted) {
+    onAbort();
+    return;
+  }
+  signal.addEventListener('abort', onAbort, { once: true });
+  stream.once('close', () => signal.removeEventListener('abort', onAbort));
 }
 
 export default class DeviceClient {
@@ -345,10 +378,23 @@ export default class DeviceClient {
    *
    * @param command The shell command to execute. When `String`, the command is run as-is. When `Array`, the elements will be rudimentarily escaped (for convenience, not security) and joined to form a command.
    *
+   * @param options Optional. `signal` aborts the command, e.g. `{ signal: AbortSignal.timeout(10000) }`. Before the promise resolves, it rejects with `signal.reason` and the connection is closed. After it resolves, the stream is destroyed with `signal.reason` (it emits `'error'`, then `'close'`), which also stops the command on the device.
+   *
    * @returns A readable stream (`Socket` actually) containing the progressive `stdout` of the command. Use with `adb.util.readAll` to get a readable String from it.
    */
-  public shell(command: string | ArrayLike<WithToString>): Promise<Duplex> {
-    return this.transport().then((transport) => new ShellCommand(transport).execute(command));
+  public shell(command: string | ArrayLike<WithToString>, options: ShellOptions = {}): Promise<Duplex> {
+    const signal = options?.signal;
+    return abortable(
+      signal,
+      () => this.transport(),
+      (transport) =>
+        new ShellCommand(transport).execute(command).then((stream) => {
+          if (signal) {
+            destroyOnAbort(signal, stream);
+          }
+          return stream;
+        }),
+    );
   }
 
   /**

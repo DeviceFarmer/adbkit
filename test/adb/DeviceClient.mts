@@ -125,6 +125,81 @@ describe('DeviceClient', function () {
     });
   });
 
+  describe('shell(command, { signal })', function () {
+    const okay = (ctx: ReturnType<typeof setup>) => setImmediate(() => ctx.conn.getSocket().causeRead(Protocol.OKAY));
+
+    it('should reject with the reason without connecting when already aborted', async function () {
+      const ctx = setup();
+      const controller = new AbortController();
+      const reason = new Error('aborted early');
+      controller.abort(reason);
+      expect(await rejected(ctx.device.shell('echo', { signal: controller.signal }))).to.equal(reason);
+      expect(ctx.device.transport).to.not.have.been.called;
+    });
+    it('should reject with the reason and close the connection when aborted before ADB answers', async function () {
+      const ctx = setup();
+      const controller = new AbortController();
+      const reason = new Error('aborted');
+      const promise = ctx.device.shell('echo', { signal: controller.signal });
+      setImmediate(() => controller.abort(reason));
+      expect(await rejected(promise)).to.equal(reason);
+      expect(ctx.conn.end).to.have.been.called;
+      expect(getEventListeners(controller.signal, 'abort')).to.have.length(0);
+    });
+    it('should destroy the stream with the reason when aborted while the command runs', async function () {
+      const ctx = setup();
+      const controller = new AbortController();
+      const reason = new Error('stuck');
+      okay(ctx);
+      const stream = await ctx.device.shell('logcat', { signal: controller.signal });
+      ctx.conn.getSocket().causeRead('partial output\n');
+      const output = new Parser(stream).readAll();
+      const closed = new Promise((resolve) => stream.once('close', resolve));
+      controller.abort(reason);
+      expect(await rejected(output)).to.equal(reason);
+      await closed;
+      expect(stream.destroyed).to.be.true;
+      expect(getEventListeners(controller.signal, 'abort')).to.have.length(0);
+    });
+    it('should not crash when aborted while nobody reads the stream', async function () {
+      const ctx = setup();
+      const controller = new AbortController();
+      okay(ctx);
+      const stream = await ctx.device.shell('logcat', { signal: controller.signal });
+      const closed = new Promise((resolve) => stream.once('close', resolve));
+      controller.abort(new Error('stuck'));
+      await closed;
+      expect(stream.destroyed).to.be.true;
+    });
+    it('should drop the abort listener once the stream closes without an abort', async function () {
+      const ctx = setup();
+      const controller = new AbortController();
+      okay(ctx);
+      const stream = await ctx.device.shell('echo foo', { signal: controller.signal });
+      expect(getEventListeners(controller.signal, 'abort')).to.have.length(1);
+      ctx.conn.getSocket().causeRead('foo\n');
+      const output = new Parser(stream).readAll();
+      // A socket closes once both sides end; the mock only ends its readable
+      // side on its own.
+      stream.end();
+      expect((await output).toString()).to.equal('foo\n');
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(getEventListeners(controller.signal, 'abort')).to.have.length(0);
+      expect(stream.destroyed).to.be.true;
+    });
+    it('should work as before without options', async function () {
+      const ctx = setup();
+      const writes: string[] = [];
+      ctx.conn.getSocket().on('write', (chunk) => writes.push(chunk.toString()));
+      okay(ctx);
+      const stream = await ctx.device.shell(['echo', 'foo']);
+      ctx.conn.getSocket().causeRead('foo\n');
+      ctx.conn.getSocket().causeEnd();
+      expect((await new Parser(stream).readAll()).toString()).to.equal('foo\n');
+      expect(writes).to.eql([Protocol.encodeData("shell:'echo' 'foo'").toString()]);
+    });
+  });
+
   describe('reboot([target])', function () {
     for (const [args, service] of [
       [[], 'reboot:'],
