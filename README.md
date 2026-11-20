@@ -556,7 +556,7 @@ Gets the state of the device identified by the given serial number.
 
 #### device.install(apk[, options])
 
-Installs the APK on the device, replacing any previously installed version. This is roughly analogous to `adb install -r <apk>`. With options, it's like `adb install` with more flags, for example `adb install -r -d -g <apk>`.
+Installs the APK on the device. By default it replaces any previously installed version, roughly like `adb install -r <apk>`. With options, it's like `adb install` with more flags, for example `adb install -r -d -g <apk>`.
 
 Note that if the call seems to stall, you may have to accept a dialog on the phone first.
 
@@ -566,10 +566,11 @@ Note that if the call seems to stall, you may have to accept a dialog on the pho
     -   **allowDowngrade** Set to `true` to pass `-d`, which allows a lower version code than the installed one. Depending on the Android version and build, the device may only allow this for debuggable apps.
     -   **grantPermissions** Set to `true` to pass `-g`, which grants all the runtime permissions in the app's manifest. Android 6.0 and newer.
     -   **allowTestPackages** Set to `true` to pass `-t`, which allows an apk marked `android:testOnly`, such as one Android Studio builds for a run.
-    -   **args** An `Array` of more arguments for `pm install`, such as `['--user', '10']`. They come after the flags above. Each one is quoted, so an argument with spaces stays a single argument.
+    -   **args** An `Array` of more arguments for `pm install`, such as `['--user', '10']`. They come after the flags above. Each one is single-quoted, so the shell passes it on unchanged as one argument, spaces and special characters included.
 -   Returns: `Promise`
 -   Resolves with: `true`
--   Rejects with an `Error` if the device refuses the APK. Its `.code` property holds the reason the device reported. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, and newer Android versions add a description after it, as in `INSTALL_FAILED_VERSION_DOWNGRADE: Downgrade detected: ...`.
+-   Rejects with an `Error` if the device refuses the APK. Its `.code` property holds the reason the device reported. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, and newer Android versions add a description after it, as in `INSTALL_FAILED_VERSION_DOWNGRADE: Downgrade detected: ...`. If `pm` doesn't know a flag, as older Android versions don't know `-g` or `-t`, it prints a usage error instead, and the rejection has no `.code`.
+-   Rejects with a `TypeError`, before anything is sent, if `options` is an array or `args` isn't an array of strings.
 
 ##### Example - install an APK from a URL
 
@@ -617,7 +618,7 @@ const test = async () => {
 
 #### device.installRemote(apk[, options])
 
-Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
+Installs an APK file which must already be located on the device file system. By default it replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
 
 Note that if the call seems to stall, you may have to accept a dialog on the phone first.
 

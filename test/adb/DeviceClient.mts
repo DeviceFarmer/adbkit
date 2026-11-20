@@ -373,6 +373,23 @@ describe('DeviceClient', function () {
     }
   });
 
+  describe('installRemote(apk, bad options)', function () {
+    it('should reject with a TypeError, still remove the apk and end the connection', async function () {
+      const { conn, device } = setup();
+      const writes: string[] = [];
+      conn.getSocket().on('write', (chunk) => writes.push(chunk.toString()));
+      const rm = new Stream.PassThrough();
+      rm.end();
+      const shell = Sinon.stub(device, 'shell').resolves(rm);
+      const bad = { args: ['--user', undefined] } as never;
+      const err = await rejected(device.installRemote('/data/local/tmp/foo.apk', bad));
+      expect(err).to.be.an.instanceOf(TypeError);
+      expect(writes).to.eql([]);
+      expect(conn.end).to.have.been.called;
+      expect(shell).to.have.been.calledOnceWithExactly(['rm', '-f', '/data/local/tmp/foo.apk']);
+    });
+  });
+
   describe('startService(options)', function () {
     it('should retry once without --user when the device rejects the option', async function () {
       const device = new DeviceClient({ connection: Sinon.stub() }, 'abba');

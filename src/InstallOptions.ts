@@ -19,7 +19,7 @@ export default interface InstallOptions {
    */
   allowTestPackages?: boolean;
   /**
-   * More arguments for `pm install`, such as `['--user', '10']`. They come after the flags above and before the apk. Each one is quoted, so an argument with spaces stays a single argument, and none of them can run another shell command.
+   * More arguments for `pm install`, such as `['--user', '10']`. They come after the flags above and before the apk. Each one is single-quoted, so the shell passes it on unchanged as one argument, and none of them can run another shell command.
    */
   args?: string[];
 }

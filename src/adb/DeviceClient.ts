@@ -615,13 +615,13 @@ export default class DeviceClient {
   }
 
   /**
-   * Installs the APK on the device, replacing any previously installed version. This is roughly analogous to `adb install -r <apk>`, and with options to `adb install` with other flags, such as `adb install -r -d -g <apk>`.
+   * Installs the APK on the device. By default it replaces any previously installed version, roughly like `adb install -r <apk>`, and with options to `adb install` with other flags, such as `adb install -r -d -g <apk>`.
    *
    * Note that if the call seems to stall, you may have to accept a dialog on the phone first.
    *
    * @param apk When `String`, interpreted as a path to an APK file. When [`Stream`][node-stream], installs directly from the stream, which must be a valid APK.
    * @param options Optional. Flags for `pm install`: `allowDowngrade` (`-d`), `grantPermissions` (`-g`), `allowTestPackages` (`-t`), `reinstall: false` to leave out `-r`, and `args` for anything else. See `InstallOptions`.
-   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description.
+   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description. If `pm` doesn't know a flag, as on older Android versions, the error has no `code`. Rejects with a `TypeError` if `options` is an array or `args` isn't an array of strings.
    */
   public install(apk: string | Readable, options?: InstallOptions): Promise<boolean> {
     const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
@@ -644,13 +644,13 @@ export default class DeviceClient {
   }
 
   /**
-   * Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
+   * Installs an APK file which must already be located on the device file system. By default it replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
    *
    * Note that if the call seems to stall, you may have to accept a dialog on the phone first.
    *
    * @param apk The path to the APK file on the device. The file will be removed when the command completes.
    * @param options Optional. Flags for `pm install`, as for `install()`. See `InstallOptions`.
-   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description.
+   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description. If `pm` doesn't know a flag, as on older Android versions, the error has no `code`. Rejects with a `TypeError` if `options` is an array or `args` isn't an array of strings.
    */
   public installRemote(apk: string, options?: InstallOptions): Promise<boolean> {
     return this.transport().then((transport) => {
