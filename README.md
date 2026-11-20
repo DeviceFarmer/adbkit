@@ -554,17 +554,22 @@ Gets the state of the device identified by the given serial number.
 -   Returns: `Promise`
 -   Resolves with: `state` (see callback)
 
-#### device.install(apk)
+#### device.install(apk[, options])
 
-Installs the APK on the device, replacing any previously installed version. This is roughly analogous to `adb install -r <apk>`.
+Installs the APK on the device, replacing any previously installed version. This is roughly analogous to `adb install -r <apk>`. With options, it's like `adb install` with more flags, for example `adb install -r -d -g <apk>`.
 
 Note that if the call seems to stall, you may have to accept a dialog on the phone first.
 
 -   **apk** When `String`, interpreted as a path to an APK file. When [`Stream`][node-stream], installs directly from the stream, which must be a valid APK.
--   **callback(err)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise. It may have a `.code` property containing the error code reported by the device.
+-   **options** Optional. Flags for `pm install`. Without options, the command is `pm install -r <apk>`, as before. The following options are supported:
+    -   **reinstall** Passes `-r`, which replaces an installed version of the app and keeps its data. Defaults to `true`. Set it to `false` to leave `-r` out.
+    -   **allowDowngrade** Set to `true` to pass `-d`, which allows a lower version code than the installed one. Depending on the Android version and build, the device may only allow this for debuggable apps.
+    -   **grantPermissions** Set to `true` to pass `-g`, which grants all the runtime permissions in the app's manifest. Android 6.0 and newer.
+    -   **allowTestPackages** Set to `true` to pass `-t`, which allows an apk marked `android:testOnly`, such as one Android Studio builds for a run.
+    -   **args** An `Array` of more arguments for `pm install`, such as `['--user', '10']`. They come after the flags above. Each one is quoted, so an argument with spaces stays a single argument.
 -   Returns: `Promise`
 -   Resolves with: `true`
+-   Rejects with an `Error` if the device refuses the APK. Its `.code` property holds the reason the device reported, such as `'INSTALL_FAILED_VERSION_DOWNGRADE'`.
 
 ##### Example - install an APK from a URL
 
@@ -590,17 +595,37 @@ const test = async () => {
 }
 ```
 
-#### device.installRemote(apk)
+##### Example - downgrade an app and grant its permissions
+
+```typescript
+import { Adb } from '@devicefarmer/adbkit';
+
+const client = Adb.createClient();
+
+const test = async () => {
+  const device = client.getDevice('<serial>');
+  try {
+    // Runs pm install -r -d -g on the device.
+    await device.install('app-older.apk', { allowDowngrade: true, grantPermissions: true });
+    console.log('Installed')
+  } catch (err) {
+    // For example INSTALL_FAILED_VERSION_DOWNGRADE without allowDowngrade.
+    console.error('Install failed:', err.code)
+  }
+}
+```
+
+#### device.installRemote(apk[, options])
 
 Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
 
 Note that if the call seems to stall, you may have to accept a dialog on the phone first.
 
 -   **apk** The path to the APK file on the device. The file will be removed when the command completes.
--   **callback(err)** Optional. Use this or the returned `Promise`.
-    -   **err** `null` when successful, `Error` otherwise.
+-   **options** Optional. The same flags as for `device.install()`.
 -   Returns: `Promise`
 -   Resolves with: `true`
+-   Rejects with an `Error` if the device refuses the APK, as for `device.install()`.
 
 #### device.isInstalled(pkg)
 

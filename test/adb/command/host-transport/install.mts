@@ -22,6 +22,45 @@ describe('InstallCommand', function () {
     });
     return cmd.execute('foo');
   });
+  for (const [options, service] of [
+    [undefined, 'shell:pm install -r "foo"'],
+    [{}, 'shell:pm install -r "foo"'],
+    [{ reinstall: true }, 'shell:pm install -r "foo"'],
+    [{ reinstall: false }, 'shell:pm install "foo"'],
+    [{ allowDowngrade: true }, 'shell:pm install -r -d "foo"'],
+    [{ grantPermissions: true }, 'shell:pm install -r -g "foo"'],
+    [{ allowTestPackages: true }, 'shell:pm install -r -t "foo"'],
+    [{ allowDowngrade: false, grantPermissions: false, allowTestPackages: false }, 'shell:pm install -r "foo"'],
+    [
+      { reinstall: false, allowDowngrade: true, grantPermissions: true, allowTestPackages: true },
+      'shell:pm install -d -g -t "foo"',
+    ],
+    [{ allowDowngrade: true, args: ['--user', '10'] }, 'shell:pm install -r -d "--user" "10" "foo"'],
+    [{ args: [] }, 'shell:pm install -r "foo"'],
+    // Each arg stays one argument, and the shell expands nothing in it.
+    [
+      { args: ['a b', '$(reboot)', '`id`', 'x"; reboot; "', '\\'] },
+      'shell:pm install -r "a b" "\\$(reboot)" "\\`id\\`" "x\\"; reboot; \\"" "\\\\" "foo"',
+    ],
+    // A callback, as the README used to document, or null isn't options.
+    [() => undefined, 'shell:pm install -r "foo"'],
+    [null, 'shell:pm install -r "foo"'],
+  ] as const) {
+    it(`should send '${service}' for options ${typeof options === 'function' ? 'function' : JSON.stringify(options)}`, async function () {
+      const conn = new MockConnection();
+      const cmd = new InstallCommand(conn);
+      const writes: string[] = [];
+      conn.getSocket().on('write', (chunk) => writes.push(chunk.toString()));
+      setImmediate(function () {
+        conn.getSocket().causeRead(Protocol.OKAY);
+        conn.getSocket().causeRead('Success\r\n');
+        return conn.getSocket().causeEnd();
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(await cmd.execute('foo', options as any)).to.be.true;
+      expect(writes).to.eql([Protocol.encodeData(service).toString()]);
+    });
+  }
   it("should succeed when command responds with 'Success'", function () {
     const conn = new MockConnection();
     const cmd = new InstallCommand(conn);

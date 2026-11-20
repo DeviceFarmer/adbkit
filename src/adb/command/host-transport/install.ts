@@ -1,5 +1,6 @@
 import Protocol from '../../protocol';
 import Command from '../../command';
+import InstallOptions from '../../../InstallOptions';
 
 const OKAY_OUTPUT_REGEXP = /^(Success|Failure \[(.*?)\]|Exception)(.*)$/;
 const INSTALL_EXCEPTION_CODE = 'INSTALL_EXCEPTION';
@@ -13,8 +14,28 @@ class InstallError extends Error {
 }
 
 export default class InstallCommand extends Command<boolean> {
-  execute(apk: string): Promise<boolean> {
-    this._send(`shell:pm install -r ${this._escapeCompat(apk)}`);
+  execute(apk: string, options?: InstallOptions): Promise<boolean> {
+    // The README used to list a callback as the second argument of install()
+    // and installRemote(), so anything but an object means no options.
+    const opts: InstallOptions = typeof options === 'object' && options !== null ? options : {};
+    const args: string[] = [];
+    if (opts.reinstall !== false) {
+      args.push('-r');
+    }
+    if (opts.allowDowngrade) {
+      args.push('-d');
+    }
+    if (opts.grantPermissions) {
+      args.push('-g');
+    }
+    if (opts.allowTestPackages) {
+      args.push('-t');
+    }
+    for (const arg of opts.args ?? []) {
+      args.push(`${this._escapeCompat(arg)}`);
+    }
+    args.push(`${this._escapeCompat(apk)}`);
+    this._send(`shell:pm install ${args.join(' ')}`);
     return this.parser.readAscii(4).then((reply) => {
       switch (reply) {
         case Protocol.OKAY:
