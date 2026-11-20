@@ -793,7 +793,7 @@ Runs a shell command on the device. Note that you'll be limited to the permissio
 -   **options** Optional. The following options are supported:
     -   **signal** An [`AbortSignal`][node-abortsignal] that aborts the command, for example to give up on one that got stuck. Before the promise resolves, it rejects with `signal.reason` and the connection is closed; an already aborted signal rejects without connecting. After the promise resolves, the abort destroys `conn` with `signal.reason`: it emits `'error'`, then `'close'`, and closing the connection stops the command on the device. For a timeout, pass `AbortSignal.timeout(ms)`, which aborts with a `TimeoutError`.
 -   Returns: `Promise`
--   Resolves with: `conn` A readable stream (`Socket` actually) containing the progressive `stdout` of the command. Use with `adb.util.readAll` to get a readable String from it.
+-   Resolves with: `conn` A readable stream (`Socket` actually) containing the progressive `stdout` of the command. Use with `adb.util.readAll` to get a readable String from it. Read it to the end or destroy it, even when you don't need the output (e.g. for `input tap`): until then its socket stays open, and with a `signal`, so does the abort listener on the signal. This was already true of the socket before `signal` existed.
 
 ##### Example
 
@@ -873,10 +873,10 @@ const test = async (serial: string) => {
         const output = await Adb.util.readAll(conn);
         console.log(output.toString());
     } catch (err) {
-        if (err.name === 'TimeoutError') {
+        if (err instanceof Error && err.name === 'TimeoutError') {
             console.error('Gave up; the command on the device has been stopped');
         } else {
-            console.error('Something went wrong:', err.stack);
+            console.error('Something went wrong:', err);
         }
     }
 };
@@ -1167,6 +1167,7 @@ Cancellation, which used to rely on Bluebird, is now explicit:
 -   `tracker.end()` (from `client.trackDevices()` and `device.trackJdwp()`) stops tracking and closes the connection, also when called from an event listener. The JDWP tracker now also emits `end`, and it keeps reporting pid changes instead of only the first list.
 -   `pushTransfer.cancel()` and `pullTransfer.cancel()` stop the transfer and close the sync connection, as documented. A cancelled pull transfer ends, so pipes from it finish. Cancelling a transfer that has already finished does nothing.
 -   `device.waitBootComplete()` and `device.waitForDevice()` take an `AbortSignal`, for example `device.waitBootComplete({ signal: AbortSignal.timeout(60000) })`. An abort rejects right away, even while connecting.
+-   `device.shell()` takes one too, as `device.shell(command, { signal })`. Besides rejecting a pending call, an abort destroys the output stream once the command runs, which stops the command on the device.
 -   The internal `Parser`'s reads take an optional `AbortSignal`, which cancels just that read (it rejects with `signal.reason`). `parser.cancel()` gives up the whole parser: its pending and future reads reject with `Parser.CancellationError`.
 
 The methods that still accept a Node-style callback (`sync.stat()`, `sync.sta2()`, `sync.readdir()`, `adb.util.readAll()` and `adb.util.parsePublicKey()`) keep doing so.
