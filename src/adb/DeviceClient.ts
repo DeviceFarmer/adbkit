@@ -194,7 +194,7 @@ export default class DeviceClient {
   }
 
   /**
-   * Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
+   * Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `device.isInstalled()` instead.
    *
    * @param [flags] Flags to pass to the `pm list packages` command to filter the list
    * ```
@@ -203,6 +203,7 @@ export default class DeviceClient {
    * -s: filter to only show system packages
    * -3: filter to only show third party packages
    * ```
+   * The string is passed to the device shell as is, not escaped, so don't build it from untrusted input.
    * @returns An array of package names.
    */
   public getPackages(flags?: string): Promise<string[]> {
@@ -352,7 +353,7 @@ export default class DeviceClient {
   }
 
   /**
-   * Restarts the device, or boots it into another mode such as the bootloader or recovery, like `adb reboot [target]`. The promise resolves once ADB has accepted the reboot command, not once the device is back online.
+   * Restarts the device, or boots it into another mode such as the bootloader or recovery, like `adb reboot [target]`. The promise resolves when adbd closes the connection, which it does as the device goes down, not once the device is back online.
    *
    * @param target Optional. What to reboot into, as in `adb reboot <target>`: for example `'bootloader'`, `'recovery'`, `'sideload'` or `'fastboot'`. Passed to adbd as is, so what each target does depends on the device. Omit it for a normal reboot. If the device refuses the target (an emulator refuses `'recovery'`), adbd keeps the connection open and the returned promise doesn't settle, like `adb reboot <target>`.
    * @returns true
@@ -413,11 +414,11 @@ export default class DeviceClient {
   }
 
   /**
-   * Takes a screenshot in PNG format using the built-in `screencap` utility. This is analogous to `adb shell screencap -p`. Sadly, the utility is not available on most Android `<=2.3` devices, but a silent fallback to the `client.framebuffer()` command in PNG mode is attempted, so you should have its dependencies installed just in case.
+   * Takes a screenshot in PNG format using the built-in `screencap` utility. This is analogous to `adb shell screencap -p`. Sadly, the utility is not available on most Android `<=2.3` devices, but a silent fallback to the `device.framebuffer()` command in PNG mode is attempted, so you should have its dependencies installed just in case.
    *
    * Generating the PNG on the device naturally requires considerably more processing time on that side. However, as the data transferred over USB easily decreases by ~95%, and no conversion being required on the host, this method is usually several times faster than using the framebuffer. Naturally, this benefit does not apply if we're forced to fall back to the framebuffer.
    *
-   * For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `client.framebuffer('png')`, which is slower and has additional installation requirements.
+   * For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `device.framebuffer('png')`, which is slower and has additional installation requirements.
    *
    * @return The PNG stream.
    */
@@ -571,7 +572,7 @@ export default class DeviceClient {
   }
 
   /**
-   * Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `client.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
+   * Installs an APK file which must already be located on the device file system, and replaces any previously installed version. Useful if you've previously pushed the file to the device for some reason (perhaps to have direct access to `device.push()`'s transfer stats). This is roughly analogous to `adb shell pm install -r <apk>` followed by `adb shell rm -f <apk>`.
    *
    * Note that if the call seems to stall, you may have to accept a dialog on the phone first.
    *
@@ -643,13 +644,15 @@ export default class DeviceClient {
         if (!NoUserOptionError(err)) {
           throw err;
         }
-        options.user = undefined;
+        // null, not undefined: undefined would make the retry add --user 0
+        // again and loop forever.
+        options.user = null;
         return this.startService(options);
       });
   }
 
   /**
-   * Establishes a new Sync connection that can be used to push and pull files. This method provides the most freedom and the best performance for repeated use, but can be a bit cumbersome to use. For simple use cases, consider using `client.stat()`, `client.push()` and `client.pull()`.
+   * Establishes a new Sync connection that can be used to push and pull files. This method provides the most freedom and the best performance for repeated use, but can be a bit cumbersome to use. For simple use cases, consider using `device.stat()`, `device.push()` and `device.pull()`.
    *
    * @returns The Sync client. See below for details. Call `sync.end()` when done.
    */
