@@ -621,7 +621,7 @@ export default class DeviceClient {
    *
    * @param apk When `String`, interpreted as a path to an APK file. When [`Stream`][node-stream], installs directly from the stream, which must be a valid APK.
    * @param options Optional. Flags for `pm install`: `allowDowngrade` (`-d`), `grantPermissions` (`-g`), `allowTestPackages` (`-t`), `reinstall: false` to leave out `-r`, and `args` for anything else. See `InstallOptions`.
-   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave, such as `'INSTALL_FAILED_VERSION_DOWNGRADE'`.
+   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description.
    */
   public install(apk: string | Readable, options?: InstallOptions): Promise<boolean> {
     const temp = Sync.temp(typeof apk === 'string' ? apk : '_stream.apk');
@@ -650,7 +650,7 @@ export default class DeviceClient {
    *
    * @param apk The path to the APK file on the device. The file will be removed when the command completes.
    * @param options Optional. Flags for `pm install`, as for `install()`. See `InstallOptions`.
-   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave, such as `'INSTALL_FAILED_VERSION_DOWNGRADE'`.
+   * @returns true. If the device refuses the apk, rejects with an `Error` whose `code` is the reason the device gave. It starts with the reason code, such as `INSTALL_FAILED_VERSION_DOWNGRADE`, which newer Android versions follow with a description.
    */
   public installRemote(apk: string, options?: InstallOptions): Promise<boolean> {
     return this.transport().then((transport) => {

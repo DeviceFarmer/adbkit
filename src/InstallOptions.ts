@@ -3,7 +3,7 @@
  */
 export default interface InstallOptions {
   /**
-   * Passes `-r` to replace an already installed version of the app, keeping its data. Defaults to `true`, as before these options existed. Set it to `false` to leave `-r` out.
+   * Passes `-r` to replace an already installed version of the app, keeping its data. Defaults to `true`, as before these options existed. Set it to `false` to leave `-r` out. Newer Android versions, such as Android 16, replace the app even without `-r`.
    */
   reinstall?: boolean;
   /**
