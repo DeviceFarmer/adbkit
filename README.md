@@ -457,23 +457,23 @@ Attemps to retrieve the IP address of the device. Roughly analogous to `adb shel
 
 Retrieves the features of the device identified by the given serial number. This is analogous to `adb shell pm list features`. Useful for checking whether hardware features such as NFC are available (you'd check for `'android.hardware.nfc'`).
 
-**flags** Flags to pass to the `pm list packages` command to filter the list
-  ```
-  -d: filter to only show disabled packages
-  -e: filter to only show enabled packages
-  -s: filter to only show system packages
-  -3: filter to only show third party packages
-  ```
 -   **callback(err, features)** Optional. Use this or the returned `Promise`.
     -   **err** `null` when successful, `Error` otherwise.
     -   **features** An object of device features. Each key corresponds to a device feature, with the value being either `true` for a boolean feature, or the feature value as a string (e.g. `'0x20000'` for `reqGlEsVersion`).
 -   Returns: `Promise`
 -   Resolves with: `features` (see callback)
 
-#### device.getPackages()
+#### device.getPackages([flags])
 
 Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
 
+-   **flags** Optional. Flags to pass to the `pm list packages` command to filter the list
+    ```
+    -d: filter to only show disabled packages
+    -e: filter to only show enabled packages
+    -s: filter to only show system packages
+    -3: filter to only show third party packages
+    ```
 -   **callback(err, packages)** Optional. Use this or the returned `Promise`.
     -   **err** `null` when successful, `Error` otherwise.
     -   **packages** An array of package names.
@@ -584,7 +584,7 @@ Lists forwarded connections on the device. This is analogous to `adb forward --l
 
 #### device.listReverses()
 
-Lists forwarded connections on the device. This is analogous to `adb reverse --list`.
+Lists reversed connections on the device. This is analogous to `adb reverse --list`.
 
 -   **callback(err, forwards)** Optional. Use this or the returned `Promise`.
 
@@ -777,7 +777,7 @@ Takes a screenshot in PNG format using the built-in `screencap` utility. This is
 
 Generating the PNG on the device naturally requires considerably more processing time on that side. However, as the data transferred over USB easily decreases by ~95%, and no conversion being required on the host, this method is usually several times faster than using the framebuffer. Naturally, this benefit does not apply if we're forced to fall back to the framebuffer.
 
-For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `client.framebuffer(serial, 'png')`, which is slower and has additional installation requirements.
+For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `client.framebuffer('png')`, which is slower and has additional installation requirements.
 
 -   **callback(err, screencap)** Optional. Use this or the returned `Promise`.
     -   **err** `null` when successful, `Error` otherwise.
