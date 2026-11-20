@@ -304,6 +304,45 @@ Disconnects from the given device, which should have been connected via `client.
 -   Returns: `Promise`
 -   Resolves with: `id` (see callback)
 
+#### client.pair(host, port, code)
+
+Pairs the ADB server with a device for wireless debugging (Android 11 and newer). Same as `adb pair <host>:<port> <code>`. The ADB server does the pairing itself, so it must come from platform-tools 30 or newer; older servers reject the request.
+
+Pairing only exchanges keys. To use the device afterwards, call `client.connect()` with the device's IP address and its **connect** port, both shown on its Wireless debugging screen. The connect port is not the pairing port.
+
+-   **host** The device's IP address, as shown in the "Pair device with pairing code" dialog.
+-   **port** The pairing port from that dialog.
+-   **code** The six-digit pairing code from that dialog, as a `String` (it can start with `0`).
+-   Returns: `Promise`
+-   Resolves with: an object with the following properties:
+    -   **address** The pairing address the server reports, `host:port`. It isn't a serial and can't be used with `client.getDevice()`.
+    -   **guid** The device's ADB GUID, if the server reported one.
+    -   **reply** The server's reply as is, such as `Successfully paired to 192.168.1.5:37000 [guid=adb-...]`.
+-   Rejects with the server's message if pairing fails, for example `Failed: Unable to start pairing client.` when nothing answers on the port, or `Failed: Wrong password or connection was dropped.` for a wrong code. A peer that doesn't answer at all can take about 10 seconds to fail.
+
+##### Example
+
+```typescript
+import { Adb } from '@devicefarmer/adbkit';
+
+const client = Adb.createClient();
+
+const test = async () => {
+    try {
+        // From the device's "Pair device with pairing code" dialog.
+        const { guid } = await client.pair('192.168.1.5', 37123, '482915');
+        console.log(`Paired with ${guid}`);
+        // The IP address & port on the Wireless debugging screen itself.
+        const id = await client.connect('192.168.1.5', 41235);
+        const device = client.getDevice(id);
+        await device.waitForDevice();
+        console.log(`Connected to ${id}`);
+    } catch (err) {
+        console.error('Something went wrong:', err.stack);
+    }
+};
+```
+
 
 #### client.kill()
 
