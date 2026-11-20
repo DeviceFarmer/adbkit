@@ -186,13 +186,7 @@ export default class DeviceClient {
 
   /**
    * Retrieves the features of the device identified by the given serial number. This is analogous to `adb shell pm list features`. Useful for checking whether hardware features such as NFC are available (you'd check for `'android.hardware.nfc'`).
-   * @param [flags] Flags to pass to the `pm list packages` command to filter the list
-   * ```
-   * -d: filter to only show disabled packages
-   * -e: filter to only show enabled packages
-   * -s: filter to only show system packages
-   * -3: filter to only show third party packages
-   * ```
+   *
    * @returns An object of device features. Each key corresponds to a device feature, with the value being either `true` for a boolean feature, or the feature value as a string (e.g. `'0x20000'` for `reqGlEsVersion`).
    */
   public getFeatures(): Promise<Features> {
@@ -202,8 +196,14 @@ export default class DeviceClient {
   /**
    * Retrieves the list of packages present on the device. This is analogous to `adb shell pm list packages`. If you just want to see if something's installed, consider using `client.isInstalled()` instead.
    *
-   * @param flags TODO
-   * @returns An object of device features. Each key corresponds to a device feature, with the value being either `true` for a boolean feature, or the feature value as a string (e.g. `'0x20000'` for `reqGlEsVersion`)
+   * @param [flags] Flags to pass to the `pm list packages` command to filter the list
+   * ```
+   * -d: filter to only show disabled packages
+   * -e: filter to only show enabled packages
+   * -s: filter to only show system packages
+   * -3: filter to only show third party packages
+   * ```
+   * @returns An array of package names.
    */
   public getPackages(flags?: string): Promise<string[]> {
     return this.transport().then((transport) => new GetPackagesCommand(transport).execute(flags));
@@ -316,7 +316,7 @@ export default class DeviceClient {
     return this.transport().then((transport) => new ReverseCommand(transport).execute(remote, local));
   }
   /**
-   * Lists forwarded connections on the device. This is analogous to `adb reverse --list`.
+   * Lists reversed connections on the device. This is analogous to `adb reverse --list`.
    *
    * @returns An array of Reverse objects with the following properties:
    *  -   **remote** The remote endpoint on the device. Same format as `client.reverse()`'s `remote` argument.
@@ -352,10 +352,10 @@ export default class DeviceClient {
   }
 
   /**
-   * Puts the device into root mode which may be needed by certain shell commands. A remount is generally required after a successful root call. **Note that this will only work if your device supports this feature. Production devices almost never do.**
+   * Restarts the device, or boots it into another mode such as the bootloader or recovery, like `adb reboot [target]`. The promise resolves once ADB has accepted the reboot command, not once the device is back online.
    *
    * @param target Optional. What to reboot into, as in `adb reboot <target>`: for example `'bootloader'`, `'recovery'`, `'sideload'` or `'fastboot'`. Passed to adbd as is, so what each target does depends on the device. Omit it for a normal reboot. If the device refuses the target (an emulator refuses `'recovery'`), adbd keeps the connection open and the returned promise doesn't settle, like `adb reboot <target>`.
-   * @return true
+   * @returns true
    */
   public reboot(target?: string): Promise<boolean> {
     return this.transport().then((transport) => new RebootCommand(transport).execute(target));
@@ -417,7 +417,7 @@ export default class DeviceClient {
    *
    * Generating the PNG on the device naturally requires considerably more processing time on that side. However, as the data transferred over USB easily decreases by ~95%, and no conversion being required on the host, this method is usually several times faster than using the framebuffer. Naturally, this benefit does not apply if we're forced to fall back to the framebuffer.
    *
-   * For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `client.framebuffer(serial, 'png')`, which is slower and has additional installation requirements.
+   * For convenience purposes, if the screencap command fails (e.g. because it doesn't exist on older Androids), we fall back to `client.framebuffer('png')`, which is slower and has additional installation requirements.
    *
    * @return The PNG stream.
    */
@@ -629,7 +629,7 @@ export default class DeviceClient {
 
   /**
    * Starts the configured service on the device. Roughly analogous to `adb shell am startservice <options>`.
-   * @param options The activity configuration.
+   * @param options The service configuration.
    */
   public startService(options: StartServiceOptions): Promise<boolean> {
     return this.transport()
