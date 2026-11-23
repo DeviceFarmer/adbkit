@@ -73,8 +73,12 @@ export default class InstallCommand extends Command<boolean> {
                   throw new InstallError(buffer.toString(), INSTALL_EXCEPTION_CODE);
                 });
               } else {
-                const code = match[2];
-                throw new InstallError(`${apk} could not be installed [${code}]`, code);
+                // Newer Android prints 'Failure [INSTALL_FAILED_X: description]'
+                // while older versions print 'Failure [INSTALL_FAILED_X]'. The
+                // code is the reason alone; the message keeps the whole text.
+                const reason = match[2];
+                const code = reason.split(':')[0].trim();
+                throw new InstallError(`${apk} could not be installed [${reason}]`, code);
               }
             })
             .finally(() => {

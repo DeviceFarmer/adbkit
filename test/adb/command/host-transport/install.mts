@@ -124,6 +124,22 @@ describe('InstallCommand', function () {
       done();
     });
   });
+  it("should strip the description from the code of 'Failure [REASON: description]'", function (done) {
+    const conn = new MockConnection();
+    const cmd = new InstallCommand(conn);
+    const reason =
+      'INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package com.example signatures do not match previously installed version; ignoring!';
+    setImmediate(function () {
+      conn.getSocket().causeRead(Protocol.OKAY);
+      conn.getSocket().causeRead(`Failure [${reason}]\r\n`);
+      return conn.getSocket().causeEnd();
+    });
+    cmd.execute('foo').catch(function (err) {
+      expect(err.code).to.equal('INSTALL_FAILED_UPDATE_INCOMPATIBLE');
+      expect(err.message).to.equal(`foo could not be installed [${reason}]`);
+      done();
+    });
+  });
   return it('should ignore any other data', function () {
     const conn = new MockConnection();
     const cmd = new InstallCommand(conn);
