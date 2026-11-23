@@ -46,7 +46,7 @@ export default class InstallCommand extends Command<boolean> {
     for (const arg of extra) {
       args.push(`${this._escape(arg)}`);
     }
-    args.push(`${this._escapeCompat(apk)}`);
+    args.push(`${this._escape(apk)}`);
     return args;
   }
 
