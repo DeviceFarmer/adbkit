@@ -54,6 +54,12 @@ export default class ReverseStream {
         break;
       case Packet.A_WRTE:
         debug('I:A_WRTE', packet);
+        if (!this.opened) {
+          // The client must accept our A_OPEN before it writes; we would have no remote id to ack to.
+          debug('A_WRTE before the stream was open');
+          this.end();
+          break;
+        }
         this._write(packet.data || Buffer.alloc(0));
         break;
       case Packet.A_CLSE:

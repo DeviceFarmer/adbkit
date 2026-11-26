@@ -54,3 +54,54 @@ describe('TcpUsb Service write with delayed_ack', function () {
     expect(okay.readUInt32LE(24)).to.equal(4);
   });
 });
+
+function opened(delayedAck: boolean, credit: number) {
+  const written: Buffer[] = [];
+  const socket = {
+    delayedAck,
+    maxPayload: 4096,
+    write: (chunk: Buffer) => written.push(chunk),
+    rewriteReverseService: (name: string) => Promise.resolve(name),
+  };
+  const pending: Array<(err?: Error | null) => void> = [];
+  const transport = {
+    write: (_data: Buffer, cb?: (err?: Error | null) => void) => cb && pending.push(cb),
+    end: () => undefined,
+    parser: { readAscii: () => Promise.resolve('OKAY') },
+    socket: { on: () => transport.socket, read: (): Buffer | null => null },
+  };
+  const client = { getDevice: () => ({ transport: () => Promise.resolve(transport) }) };
+  const service = new Service(client as never, 'serial', 1, 7, socket as never);
+  // Stays pending while the stream is open, so it is not awaited.
+  void service.handle(new Packet(Packet.A_OPEN, 7, credit, 7, 0, 0, Buffer.from('shell:\x00')));
+  const commands = () => written.map((chunk) => chunk.readUInt32LE(0));
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
+  return { service, pending, written, commands, settle };
+}
+
+describe('TcpUsb Service window chosen at A_OPEN', function () {
+  it('should use delayed acks when the client has them and gives credit', async function () {
+    const { service, pending, written, commands, settle } = opened(true, 1024);
+    await settle();
+    expect(commands()).to.deep.equal([Packet.A_OKAY]);
+    expect(written[0].readUInt32LE(12)).to.equal(4);
+    expect(written[0].readUInt32LE(24)).to.equal(32 * 1024 * 1024);
+
+    await service.handle(new Packet(Packet.A_WRTE, 7, 1, 4, 0, 0, Buffer.from('data')));
+    pending[0]();
+    expect(commands()).to.deep.equal([Packet.A_OKAY, Packet.A_OKAY]);
+    expect(written[1].readUInt32LE(24)).to.equal(4);
+  });
+
+  it('should use plain acks when the client gives no credit', async function () {
+    const { service, pending, written, commands, settle } = opened(true, 0);
+    await settle();
+    expect(commands()).to.deep.equal([Packet.A_OKAY]);
+    expect(written[0].readUInt32LE(12)).to.equal(0);
+
+    await service.handle(new Packet(Packet.A_WRTE, 7, 1, 4, 0, 0, Buffer.from('data')));
+    pending[0]();
+    expect(commands()).to.deep.equal([Packet.A_OKAY, Packet.A_OKAY]);
+    expect(written[1].readUInt32LE(12)).to.equal(0);
+  });
+});
