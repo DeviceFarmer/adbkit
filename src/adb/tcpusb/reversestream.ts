@@ -77,21 +77,18 @@ export default class ReverseStream {
   }
 
   private _write(data: Buffer): void {
-    const ack = () =>
-      this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, this.window.ack(data.length)));
-    if (!this.window.delayed) {
-      this.conn.write(data);
-      ack();
-      return;
-    }
-    // Credit the client only once the bytes are written, so a slow reader pushes back.
+    // Ack or credit the client only once the bytes are written, so a slow reader pushes back.
+    // Without delayed_ack the client waits for each A_OKAY, so this holds back its next packet.
     this.conn.write(data, (err?: Error | null) => {
       if (err) {
         debug('conn write failed', err);
         this.end();
         return;
       }
-      if (!this.ended) ack();
+      if (!this.ended) {
+        debug('O:A_OKAY');
+        this.socket.write(Packet.assemble(Packet.A_OKAY, this.localId, this.remoteId, this.window.ack(data.length)));
+      }
     });
   }
 

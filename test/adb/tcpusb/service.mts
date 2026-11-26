@@ -40,3 +40,17 @@ describe('TcpUsb Service write without delayed_ack', function () {
     expect(commands()).to.include(Packet.A_CLSE);
   });
 });
+
+describe('TcpUsb Service write with delayed_ack', function () {
+  it('should credit the client only once the device side has taken the bytes', async function () {
+    const { service, pending, written, commands } = setup(true);
+    await service.handle(new Packet(Packet.A_WRTE, 7, 1, 4, 0, 0, Buffer.from('data')));
+    expect(commands()).to.not.include(Packet.A_OKAY);
+
+    pending[0]();
+    expect(commands()).to.deep.equal([Packet.A_OKAY]);
+    const okay = written[0];
+    expect([okay.readUInt32LE(4), okay.readUInt32LE(8), okay.readUInt32LE(12)]).to.deep.equal([1, 7, 4]);
+    expect(okay.readUInt32LE(24)).to.equal(4);
+  });
+});
