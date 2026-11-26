@@ -76,3 +76,50 @@ for (const delayedAck of [false, true]) {
     });
   });
 }
+
+// adb's INITIAL_DELAYED_ACK_BYTES: the credit we give a delayed_ack client.
+const WINDOW = 32 * 1024 * 1024;
+const wrte = (bytes: number) => new Packet(Packet.A_WRTE, 7, 1, bytes, 0, 0, Buffer.alloc(bytes));
+
+describe('TcpUsb ReverseStream write past what the client may send', function () {
+  it('should close the stream on a second write before our A_OKAY without delayed_ack', async function () {
+    const { stream, pending, commands } = setup(false);
+    await stream.handle(wrte(4));
+    await stream.handle(wrte(4));
+    expect(pending).to.have.length(1);
+    expect(commands()).to.deep.equal([Packet.A_CLSE]);
+
+    pending[0]();
+    expect(commands()).to.deep.equal([Packet.A_CLSE]);
+  });
+
+  it('should take the next write once the last one was acked without delayed_ack', async function () {
+    const { stream, pending, commands } = setup(false);
+    await stream.handle(wrte(4));
+    pending[0]();
+    await stream.handle(wrte(4));
+    expect(pending).to.have.length(2);
+    expect(commands()).to.deep.equal([Packet.A_OKAY]);
+  });
+
+  it('should take up to the credit and one more payload with delayed_ack', async function () {
+    const { stream, pending, commands } = setup(true);
+    await stream.handle(wrte(WINDOW));
+    await stream.handle(wrte(4096));
+    expect(pending).to.have.length(2);
+    expect(commands()).to.deep.equal([]);
+
+    await stream.handle(wrte(1));
+    expect(pending).to.have.length(2);
+    expect(commands()).to.deep.equal([Packet.A_CLSE]);
+  });
+
+  it('should give the credit back once the bytes are written with delayed_ack', async function () {
+    const { stream, pending, commands } = setup(true);
+    await stream.handle(wrte(WINDOW));
+    pending[0]();
+    await stream.handle(wrte(WINDOW));
+    expect(pending).to.have.length(2);
+    expect(commands()).to.deep.equal([Packet.A_OKAY]);
+  });
+});
